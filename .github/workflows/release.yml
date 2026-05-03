@@ -63,11 +63,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const tagName = process.env.GITHUB_REF_NAME || context.ref?.replace('refs/tags/', '') || '';
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: context.ref_name,
-              name: `RL Stats Companion ${context.ref_name}`,
+              tag_name: tagName,
+              name: `RL Stats Companion ${tagName}`,
               body: `## Changes
             ${{ steps.changelog.outputs.changelog }}
 
@@ -80,7 +81,7 @@ jobs:
               draft: context.eventName === 'workflow_dispatch'
                 ? context.payload.inputs.draft === 'true'
                 : true,
-              prerelease: context.ref_name.includes('-'),
+              prerelease: tagName.includes('-'),
               generate_release_notes: false,
             });
             return data.id;
