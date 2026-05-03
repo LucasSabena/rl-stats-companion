@@ -1,0 +1,264 @@
+# RL Stats Companion
+
+> A local-first desktop companion app for Rocket League. Capture live match data, build your personal match history, and analyze your performance — no cloud, no accounts, no tracking.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows)](https://github.com/LucasSabena/rl-stats-companion)
+[![Status: Pre-Alpha](https://img.shields.io/badge/Status-Pre--Alpha-red)](https://github.com/LucasSabena/rl-stats-companion)
+
+<!-- TODO: add screenshots -->
+<!--
+![Live Dashboard](docs/screenshots/live-dashboard.png)
+![Match History](docs/screenshots/match-history.png)
+![Analytics](docs/screenshots/analytics.png)
+-->
+
+---
+
+## About
+
+After Psyonix disabled BakkesMod for online play with the EAC update, players lost their primary stats tracking tool. The new official Rocket League Stats API streams live match data locally — but there's no official app to consume it.
+
+**RL Stats Companion** fills that gap. It reads the local TCP stream from your game, parses every event, and gives you:
+
+- **Live Dashboard** — Real-time player stats, scores, boost levels, and event feed during matches
+- **Match History** — Every match you play, saved locally with full detail: goals, assists, saves, demos, ball hits
+- **Performance Analytics** — Win rates, averages, trends, and streaks over days, weeks, and months
+- **Privacy First** — All data stays on your PC. No accounts, no cloud, no telemetry.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Desktop Shell | [Tauri 2](https://tauri.app/) (Rust) |
+| Backend | Rust (tokio, rusqlite, serde, thiserror) |
+| Frontend | React 19, TypeScript (strict), Vite |
+| State | Zustand (global), TanStack Query (async) |
+| Database | SQLite (WAL mode, r2d2 connection pooling) |
+| Styling | Tailwind CSS v4, shadcn/ui primitives |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Testing | Vitest, React Testing Library, Playwright (E2E) |
+| CI/CD | GitHub Actions (build, test, lint, release) |
+
+---
+
+## Prerequisites
+
+- **Windows 10 or 11** (the app is Windows-only for now)
+- **Rocket League installed** on the same machine
+- [Rust toolchain](https://rustup.rs/) (stable)
+- [Node.js 20+](https://nodejs.org/) with [pnpm](https://pnpm.io/) (recommended)
+
+---
+
+## Installation
+
+### Download
+
+Prebuilt Windows installers are published on every tagged GitHub release.
+
+- Go to **GitHub Releases**: `https://github.com/LucasSabena/rl-stats-companion/releases`
+- Download one of the Windows x64 artifacts:
+  - `*.msi` - Recommended standard Windows installer
+  - `*-setup.exe` - NSIS installer
+  - `*.zip` - Portable bundle when available
+
+### Packages And Release Assets
+
+Each release is expected to ship these assets:
+
+- `RL Stats Companion_<version>_x64_en-US.msi`
+- `RL Stats Companion_<version>_x64-setup.exe`
+- `latest.json` for the Tauri updater
+- `checksums.txt` with SHA256 hashes
+
+The project is open source, so source code, release notes, issues, and binary downloads all live in the same GitHub repository.
+
+### Development
+
+```bash
+# Clone the repository
+git clone https://github.com/LucasSabena/rl-stats-companion.git
+cd rl-stats-companion
+
+# Install dependencies
+pnpm install
+
+# Run in development mode (Vite dev server + Tauri)
+pnpm tauri dev
+```
+
+### Production Build
+
+```bash
+pnpm tauri build
+```
+
+The output will be in `src-tauri/target/release/bundle/`:
+- `RL Stats Companion_x.x.x_x64-setup.exe` — NSIS installer
+- `RL Stats Companion_x.x.x_x64_en-US.msi` — MSI installer
+
+---
+
+## Configuration
+
+The Rocket League Stats API must be enabled before the app can capture data. The API streams events locally on `127.0.0.1:49123`.
+
+### Enable the Stats API
+
+1. Go to your Rocket League config directory:
+   ```
+   %USERPROFILE%\Documents\My Games\Rocket League\TAGame\Config\
+   ```
+2. Open or create `TASystemSettings.ini`
+3. Add these lines under `[SystemSettings]`:
+   ```ini
+   [SystemSettings]
+   AllowPerFrameYield=False
+   AllowPerFrameSleep=False
+   bEnableReplayStatsAPI=True
+   ```
+4. Save the file and restart Rocket League
+
+> The app will show a connection status indicator on the Live Dashboard page. If the API isn't enabled or the game isn't running, you will see a "Waiting for match..." state.
+
+---
+
+## Project Structure
+
+```
+api-rocketleague/
+├── src/                        # React frontend (Vite + TypeScript)
+│   ├── components/             # Reusable UI components
+│   │   ├── live/               # Live match dashboard components
+│   │   ├── history/            # Match history components
+│   │   ├── analytics/          # Performance analytics components
+│   │   ├── settings/           # Settings panel components
+│   │   └── ui/                 # Base UI primitives (shadcn)
+│   ├── pages/                  # Route-level pages
+│   ├── hooks/                  # Custom React hooks
+│   ├── stores/                 # Zustand state stores
+│   ├── lib/                    # Utilities, types, constants
+│   └── styles/                 # Tailwind + global styles
+├── src-tauri/                  # Rust backend (Tauri)
+│   └── src/
+│       ├── main.rs             # Entry point
+│       ├── core/               # Domain logic
+│       │   ├── ingestor/       # TCP connection manager
+│       │   ├── parser/         # Event parsing and validation
+│       │   ├── models/         # Domain types and DTOs
+│       │   ├── storage/        # SQLite persistence layer
+│       │   ├── metrics/        # Derived metrics engine
+│       │   └── session/        # Match lifecycle tracking
+│       └── updater/            # Auto-update orchestration
+├── docs/                       # Project documentation
+├── scripts/                    # Build and release utilities
+├── tests/                      # End-to-end tests (Playwright)
+└── .github/workflows/          # CI/CD pipeline definitions
+```
+
+---
+
+## Architecture
+
+The app follows a layered architecture with clear separation of concerns:
+
+```
+Rocket League ──TCP──► Ingestor ──► Parser ──► Event Bus ──► Storage (SQLite)
+                                                     │
+                                                     ▼
+                                             Frontend (React/TS)
+```
+
+- **Ingestor** manages the TCP connection to `127.0.0.1:49123` with reconnection and exponential backoff
+- **Parser** validates JSON and maps raw events to strongly-typed Rust structs
+- **Event Bus** dispatches events to both the storage layer and the live frontend via Tauri events
+- **Storage** uses SQLite in WAL mode with connection pooling for concurrent reads
+- **Frontend** communicates with the backend through type-safe Tauri commands
+
+For a detailed breakdown of modules, database schema, and API surface, see the [Architecture Document](docs/ARCHITECTURE.md).
+
+---
+
+## Development
+
+### Commands
+
+```bash
+pnpm install           # Install frontend dependencies
+pnpm tauri dev         # Start development server
+pnpm tauri build       # Production build
+pnpm test              # Run frontend unit tests (Vitest)
+pnpm lint              # Run ESLint
+cd src-tauri && cargo test   # Run Rust tests
+cd src-tauri && cargo clippy # Run Rust linter
+```
+
+### Contributing
+
+Contributions are welcome! Before submitting a PR, please:
+
+1. Read the [Agent Guide](AGENTS.md) for coding conventions and project rules
+2. Read the [Design Document](docs/DESIGN.md) for the design system and component patterns
+3. Ensure all tests pass (`pnpm test` and `cargo test`)
+4. Run linting (`pnpm lint` and `cargo clippy`)
+5. Follow the commit conventions used in the project
+
+See the [Release Process](docs/RELEASE.md) for information about publishing new versions.
+
+### Open Source Distribution
+
+This repository is the canonical home for:
+
+- source code
+- issue tracking
+- documentation
+- release notes
+- downloadable Windows installers
+
+For end users, **GitHub Releases** is the main download page. If you publish a new version, make sure the MSI, NSIS installer, updater manifest, and checksums are attached.
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Product Requirements](docs/PRODUCT.md) | User stories, features by version, success metrics |
+| [Architecture](docs/ARCHITECTURE.md) | System design, data flow, database schema, module breakdown |
+| [Design System](docs/DESIGN.md) | Color palette, typography, components, animations, accessibility |
+| [Security & Privacy](docs/SECURITY.md) | Threat model, privacy policy, operational security rules |
+| [Release Process](docs/RELEASE.md) | Version bumping, changelog, CI/CD, updater testing |
+| [Agent Guide](AGENTS.md) | Coding conventions, project rules, key decisions |
+
+---
+
+## Limitations
+
+The Rocket League Stats API does **not** provide:
+
+- **MMR / Rank / Division** — The API streams in-match data only, not competitive rankings
+- **Historical match data** — No access to Psyonix servers; the app only captures matches played while it's running
+- **Reliable playlist/mode detection** — The API does not reliably report whether a match is Ranked, Casual, or an Extra Mode
+- **Distance traveled or total boost used** — These are estimated as derived metrics (not directly provided by the API)
+- **Cross-platform support** — Windows only in V1; macOS/Linux may be explored in the future
+
+---
+
+## License
+
+MIT © Lucas Sabena
+
+See [LICENSE](LICENSE) for full text.
+
+---
+
+## Acknowledgments
+
+- [Rocket League](https://www.rocketleague.com/) and [Psyonix](https://www.psyonix.com/) for the official Stats API
+- [rlstatsapi](https://github.com/xentrick/rlstatsapi) — Rust library reference for event parsing
+- [RocketLeagueStatsAPI](https://github.com/manucabral/RocketLeagueStatsAPI) — Python library reference for event schema
+- [Tauri](https://tauri.app/) — The framework that makes this app possible

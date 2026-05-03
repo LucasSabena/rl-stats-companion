@@ -1,0 +1,43 @@
+[package]
+name = "rl-stats-companion"
+version = "0.1.0"
+description = "Local-first desktop companion for Rocket League Stats API"
+authors = ["Lucas Sabena"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/LucasSabena/rl-stats-companion"
+
+[lib]
+name = "rl_stats_companion_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+thiserror = "2"
+rusqlite = { version = "0.35", features = ["bundled", "chrono"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.28"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+dirs = "6"
+sysinfo = "0.34"
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "cookies"], default-features = false }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+
+[profile.dev]
+opt-level = 1

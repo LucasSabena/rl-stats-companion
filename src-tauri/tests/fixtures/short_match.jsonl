@@ -1,0 +1,12 @@
+{"event":"MatchCreated","data":{}}
+{"event":"UpdateState","data":{"MatchGuid":"660e8400-e29b-41d4-a716-446655440001","Game":{"TimeSeconds":300,"bOvertime":false,"Arena":"ChampionsField","Ball":{"Location":{"X":0.0,"Y":0.0,"Z":92.75},"Speed":0.0},"Target":{"Name":"BlueGoal"},"Teams":[{"Score":0},{"Score":0}]},"Players":[{"PrimaryId":"Solo1_guid_101","Name":"SoloWarrior","TeamNum":0,"Score":0,"Goals":0,"Shots":0,"Assists":0,"Saves":0,"Touches":0,"CarTouches":0,"Demos":0,"Speed":0.0,"Boost":33},{"PrimaryId":"Solo2_guid_102","Name":"LoneWolf","TeamNum":1,"Score":0,"Goals":0,"Shots":0,"Assists":0,"Saves":0,"Touches":0,"CarTouches":0,"Demos":0,"Speed":0.0,"Boost":33}]}}
+{"event":"BallHit","data":{}}
+{"event":"UpdateState","data":{"MatchGuid":"660e8400-e29b-41d4-a716-446655440001","Game":{"TimeSeconds":180,"bOvertime":false,"Arena":"ChampionsField","Ball":{"Location":{"X":2000.0,"Y":0.0,"Z":500.0},"Speed":2500.0},"Target":{"Name":"OrangeGoal"},"Teams":[{"Score":1},{"Score":0}]},"Players":[{"PrimaryId":"Solo1_guid_101","Name":"SoloWarrior","TeamNum":0,"Score":350,"Goals":1,"Shots":3,"Assists":0,"Saves":0,"Touches":6,"CarTouches":4,"Demos":0,"Speed":2000.0,"Boost":45},{"PrimaryId":"Solo2_guid_102","Name":"LoneWolf","TeamNum":1,"Score":50,"Goals":0,"Shots":1,"Assists":0,"Saves":2,"Touches":4,"CarTouches":2,"Demos":0,"Speed":1500.0,"Boost":60}]}}
+{"event":"StatfeedEvent","data":{"EventName":"Goal","MainTarget":{"PrimaryId":"Solo1_guid_101","Name":"SoloWarrior","TeamNum":0},"SecondaryTarget":null}}
+{"event":"GoalScored","data":{"Scorer":{"PrimaryId":"Solo1_guid_101","Name":"SoloWarrior","TeamNum":0},"Assister":null}}
+{"event":"GoalReplayStart","data":{}}
+{"event":"GoalReplayEnd","data":{}}
+{"event":"GoalReplayWillEnd","data":{}}
+{"event":"UpdateState","data":{"MatchGuid":"660e8400-e29b-41d4-a716-446655440001","Game":{"TimeSeconds":60,"bOvertime":false,"Arena":"ChampionsField","Ball":{"Location":{"X":0.0,"Y":0.0,"Z":92.75},"Speed":0.0},"Target":{"Name":"BlueGoal"},"Teams":[{"Score":2},{"Score":0}]},"Players":[{"PrimaryId":"Solo1_guid_101","Name":"SoloWarrior","TeamNum":0,"Score":520,"Goals":2,"Shots":4,"Assists":0,"Saves":0,"Touches":9,"CarTouches":5,"Demos":0,"Speed":1800.0,"Boost":55},{"PrimaryId":"Solo2_guid_102","Name":"LoneWolf","TeamNum":1,"Score":80,"Goals":0,"Shots":2,"Assists":0,"Saves":3,"Touches":6,"CarTouches":3,"Demos":0,"Speed":1600.0,"Boost":72}]}}
+{"event":"MatchEnded","data":{}}
+{"event":"MatchDestroyed","data":{}}

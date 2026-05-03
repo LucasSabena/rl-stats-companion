@@ -1,0 +1,285 @@
+// Mirrored from Rust backend (serde rename_all = "camelCase")
+
+export type ConnectionStatus = "connected" | "disconnected" | "connecting" | "game_not_running";
+
+export type Team = 0 | 1;
+
+export interface Player {
+  id: string;
+  name: string;
+  team: Team;
+  score: number;
+  goals: number;
+  shots: number;
+  assists: number;
+  saves: number;
+  demos: number;
+  touches: number;
+  boostAmount: number;
+  speed: number;
+}
+
+export interface PlayerStats extends Player {
+  mvp?: boolean;
+  avgBoost?: number;
+  maxSpeed?: number;
+  avgSpeed?: number;
+  timeInAir?: number;
+}
+
+export interface GameState {
+  timeRemaining: number;
+  isOvertime: boolean;
+  isReplay: boolean;
+  arena: string | null;
+  ballSpeed: number;
+  ballPosition: {
+    x: number;
+    y: number;
+    z: number;
+  } | null;
+}
+
+export interface LiveMatchState {
+  matchGuid: string | null;
+  players: Player[];
+  gameState: GameState;
+  teamBlueScore: number;
+  teamOrangeScore: number;
+  playerCount?: number;
+  matchType?: string | null;
+}
+
+export interface SessionSummary {
+  match_guid: string;
+  duration_seconds: number;
+  score_blue: number;
+  score_orange: number;
+  winner: number | null;
+  players: {
+    id: number;
+    primary_id: string;
+    name: string;
+    team_num: number;
+    stats: Record<string, unknown>;
+  }[];
+}
+
+export type RlEventType =
+  | "UpdateState"
+  | "BallHit"
+  | "GoalScored"
+  | "StatfeedEvent"
+  | "MatchCreated"
+  | "MatchEnded"
+  | "ReplayStart"
+  | "ReplayEnd"
+  | "PlayerJoined"
+  | "PlayerLeft";
+
+export interface RlEvent {
+  id: string;
+  type: RlEventType;
+  timestamp: number;
+  data: Record<string, unknown>;
+}
+
+export interface MatchSummary {
+  id: number;
+  matchGuid: string | null;
+  startTime: number;
+  endTime: number | null;
+  durationSeconds: number | null;
+  arena: string | null;
+  teamBlueScore: number;
+  teamOrangeScore: number;
+  winnerTeamNum: number | null;
+  localTeamNum?: number | null;
+  isOnline: boolean;
+  isOvertime: boolean;
+  matchType?: MatchType | null;
+  playlist?: string | null;
+}
+
+export interface MatchDetail extends MatchSummary {
+  players: PlayerStats[];
+  events: RlEvent[];
+  goals: Goal[];
+}
+
+export interface Goal {
+  id: string;
+  scorerId: string;
+  scorerName: string;
+  scorerTeam: Team;
+  assisterId?: string;
+  assisterName?: string;
+  time: number;
+  ballSpeed: number;
+}
+
+export interface MatchFilters {
+  search?: string;
+  result?: "win" | "loss" | null;
+  mode?: string | null;
+  matchType?: MatchType | null;
+  dateFrom?: number | null;
+  dateTo?: number | null;
+  limit?: number;
+  offset?: number;
+}
+
+export type AnalyticsPeriod = "day" | "week" | "month" | "session";
+
+export interface AnalyticsData {
+  period: AnalyticsPeriod;
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  avgScore: number;
+  avgGoals: number;
+  avgAssists: number;
+  avgSaves: number;
+  avgShots: number;
+  avgBoost: number;
+  totalGoals: number;
+  totalAssists: number;
+  totalSaves: number;
+  totalShots: number;
+  totalDemos: number;
+  bestStreak: number;
+  currentStreak: number;
+  peakSpeed: number;
+  avgDuration: number;
+}
+
+export interface DailyRollup {
+  date: string;
+  matchesPlayed: number;
+  wins: number;
+  losses: number;
+  avgScore: number;
+  totalGoals: number;
+}
+
+export type MatchType = "ranked" | "casual" | "tournament" | "other";
+
+export interface AppSettings {
+  playerName?: string;
+  localPrimaryId?: string | null;
+  autoStart: boolean;
+  rlPath: string | null;
+  platform: "steam" | "epic" | null;
+  defaultMatchType: MatchType;
+  trackerApiKey?: string | null;
+  trackerPlatform?: string | null;
+  trackerUsername?: string | null;
+  trackerAutoRefresh?: boolean;
+  trackerRefreshIntervalMin?: number;
+}
+
+export interface UpdateInfo {
+  version: string;
+  notes: string;
+  date: string;
+  mandatory: boolean;
+}
+
+export interface StorageStats {
+  totalMatches: number;
+  totalEvents: number;
+  databaseSizeBytes: number;
+  oldestMatchDate: number | null;
+  dbPath?: string | null;
+}
+
+export interface ToastItem {
+  id: string;
+  type: "success" | "error" | "warning" | "info";
+  title: string;
+  message?: string;
+  duration?: number;
+}
+
+// ─── Tracker Network ─────────────────────────────────────────────────────────
+
+export type TrackerPlatform = "epic" | "steam" | "psn" | "xbl" | "switch";
+
+export interface RankTier {
+  index: number;
+  name: string;
+}
+
+export interface RankDivision {
+  index: number;
+  name: string;
+}
+
+export interface RankInfo {
+  tier: RankTier;
+  division: RankDivision;
+  imageUrl: string | null;
+}
+
+export interface PlaylistStats {
+  rank: RankInfo | null;
+  mmr: number | null;
+  matchesPlayed: number | null;
+  winStreak: number | null;
+  loseStreak: number | null;
+}
+
+export interface OverviewStats {
+  assists: number | null;
+  goals: number | null;
+  goalShotRatio: number | null;
+  mvps: number | null;
+  saves: number | null;
+  shots: number | null;
+  wins: number | null;
+  seasonRank: RankInfo | null;
+}
+
+export interface RankedPlaylists {
+  duel: PlaylistStats | null;
+  double: PlaylistStats | null;
+  standard: PlaylistStats | null;
+}
+
+export interface ExtraPlaylists {
+  dropshot: PlaylistStats | null;
+  hoops: PlaylistStats | null;
+  rumble: PlaylistStats | null;
+  snowday: PlaylistStats | null;
+}
+
+export interface LinkedAccount {
+  platform: string;
+  username: string;
+}
+
+export interface TrackerStats {
+  overview: OverviewStats;
+  ranked: RankedPlaylists;
+  extra: ExtraPlaylists;
+  unranked: PlaylistStats | null;
+  totalMatchesPlayed: number | null;
+}
+
+export interface TrackerProfile {
+  platform: string;
+  username: string;
+  avatarUrl: string | null;
+  countryCode: string | null;
+  linkedAccounts: LinkedAccount[];
+  stats: TrackerStats;
+}
+
+export interface TrackerSettings {
+  apiKey: string;
+  platform: TrackerPlatform;
+  username: string;
+  autoRefresh: boolean;
+  refreshIntervalMin: number;
+}

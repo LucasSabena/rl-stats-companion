@@ -1,0 +1,524 @@
+import { invoke } from "@tauri-apps/api/core";
+import {
+  type LiveMatchState,
+  type ConnectionStatus,
+  type Player,
+  type MatchSummary,
+  type MatchDetail,
+  type PlayerStats,
+  type Goal,
+  type RlEvent,
+  type MatchFilters,
+  type MatchType,
+  type AnalyticsData,
+  type AnalyticsPeriod,
+  type DailyRollup,
+  type AppSettings,
+  type UpdateInfo,
+  type StorageStats,
+  type TrackerProfile,
+} from "./types";
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public code?: string
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (isApiError(error)) return error.message;
+  if (error instanceof Error) return error.message;
+  return "An unknown error occurred";
+}
+
+interface RawConnectionStatus {
+  connected: boolean;
+  address: string;
+  last_error: string | null;
+  reconnect_attempts: number;
+  game_running: boolean;
+}
+
+interface RawLivePlayer {
+  id: string;
+  name: string;
+  team: number;
+  score: number;
+  goals: number;
+  shots: number;
+  assists: number;
+  saves: number;
+  touches: number;
+  demos: number;
+  speed: number;
+  boost: number;
+}
+
+interface RawLiveMatchState {
+  match_guid: string | null;
+  arena: string | null;
+  is_online: boolean;
+  is_overtime: boolean;
+  time_remaining: number;
+  score_blue: number;
+  score_orange: number;
+  players: RawLivePlayer[];
+  ball_speed: number;
+}
+
+interface RawMatchSummary {
+  id: number;
+  guid: string;
+  start_time: string;
+  end_time: string | null;
+  arena: string | null;
+  score_blue: number;
+  score_orange: number;
+  winner: number | null;
+  local_team_num?: number | null;
+  is_online: boolean;
+  is_overtime: boolean;
+  duration_seconds: number;
+  match_type?: string | null;
+  playlist?: string | null;
+}
+
+interface RawPlayerStats {
+  score: number;
+  goals: number;
+  shots: number;
+  assists: number;
+  saves: number;
+  touches: number;
+  demos: number;
+  speed: number;
+  boost: number;
+}
+
+interface RawMatchPlayer {
+  id: number;
+  primary_id: string;
+  name: string;
+  team_num: number;
+  stats: RawPlayerStats;
+}
+
+interface RawRlEvent {
+  id: string;
+  type: string;
+  timestamp: number;
+  data: Record<string, unknown>;
+}
+
+interface RawGoal {
+  id: string;
+  scorerId: string;
+  scorerName: string;
+  scorerTeam: number;
+  assisterId?: string;
+  assisterName?: string;
+  time: number;
+  ballSpeed: number;
+}
+
+interface RawAppSettings {
+  player_name: string;
+  local_primary_id?: string | null;
+  auto_start: boolean;
+  port: number;
+  data_retention_days: number;
+  rl_path?: string | null;
+  platform?: string | null;
+  theme?: string;
+  language?: string;
+  default_match_type?: string | null;
+  tracker_api_key?: string | null;
+  tracker_platform?: string | null;
+  tracker_username?: string | null;
+  tracker_auto_refresh?: boolean;
+  tracker_refresh_interval_min?: number;
+}
+
+interface RawDailyRollup {
+  date: string;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  goals_scored: number;
+  goals_conceded: number;
+  total_shots: number;
+  total_saves: number;
+  avg_duration_seconds: number;
+}
+
+interface RawStorageStats {
+  total_matches?: number;
+  totalMatches?: number;
+  total_events?: number;
+  totalEvents?: number;
+  database_size_bytes?: number;
+  databaseSizeBytes?: number;
+  oldest_match_date?: number | null;
+  oldestMatchDate?: number | null;
+  db_path?: string | null;
+  dbPath?: string | null;
+}
+
+function mapConnectionStatus(status: RawConnectionStatus): ConnectionStatus {
+  if (!status.game_running) return "game_not_running";
+  if (status.connected) return "connected";
+  if (status.reconnect_attempts > 0) return "connecting";
+  return "disconnected";
+}
+
+function mapPlayer(player: RawLivePlayer): Player {
+  return {
+    id: player.id,
+    name: player.name,
+    team: player.team === 1 ? 1 : 0,
+    score: player.score,
+    goals: player.goals,
+    shots: player.shots,
+    assists: player.assists,
+    saves: player.saves,
+    demos: player.demos,
+    touches: player.touches,
+    boostAmount: player.boost,
+    speed: player.speed,
+  };
+}
+
+function mapLiveState(state: RawLiveMatchState | null): LiveMatchState | null {
+  if (!state) return null;
+  const mappedPlayers = state.players.map(mapPlayer);
+  const playerCount = mappedPlayers.length;
+  const matchType = state.is_online ? "online" : "local";
+  return {
+    matchGuid: state.match_guid,
+    players: mappedPlayers,
+    gameState: {
+      timeRemaining: state.time_remaining,
+      isOvertime: state.is_overtime,
+      isReplay: false,
+      arena: state.arena,
+      ballSpeed: state.ball_speed,
+      ballPosition: null,
+    },
+    teamBlueScore: state.score_blue,
+    teamOrangeScore: state.score_orange,
+    playerCount,
+    matchType,
+  };
+}
+
+function mapMatchSummary(match: RawMatchSummary): MatchSummary {
+  return {
+    id: match.id,
+    matchGuid: match.guid,
+    startTime: Date.parse(match.start_time) / 1000,
+    endTime: match.end_time ? Date.parse(match.end_time) / 1000 : null,
+    durationSeconds: match.duration_seconds,
+    arena: match.arena,
+    teamBlueScore: match.score_blue,
+    teamOrangeScore: match.score_orange,
+    winnerTeamNum: match.winner,
+    localTeamNum: match.local_team_num ?? null,
+    isOnline: match.is_online,
+    isOvertime: match.is_overtime,
+    matchType: (match.match_type as MatchType) ?? null,
+    playlist: match.playlist ?? null,
+  };
+}
+
+function mapPlayerStats(player: RawMatchPlayer): PlayerStats {
+  return {
+    id: player.primary_id,
+    name: player.name,
+    team: player.team_num === 1 ? 1 : 0,
+    score: player.stats.score,
+    goals: player.stats.goals,
+    shots: player.stats.shots,
+    assists: player.stats.assists,
+    saves: player.stats.saves,
+    demos: player.stats.demos,
+    touches: player.stats.touches,
+    boostAmount: player.stats.boost,
+    speed: player.stats.speed,
+  };
+}
+
+function mapRlEvent(event: RawRlEvent): RlEvent {
+  return {
+    id: event.id,
+    type: event.type as RlEvent["type"],
+    timestamp: event.timestamp,
+    data: event.data,
+  };
+}
+
+function mapGoal(goal: RawGoal): Goal {
+  return {
+    id: goal.id,
+    scorerId: goal.scorerId,
+    scorerName: goal.scorerName,
+    scorerTeam: goal.scorerTeam === 1 ? 1 : 0,
+    assisterId: goal.assisterId,
+    assisterName: goal.assisterName,
+    time: goal.time,
+    ballSpeed: goal.ballSpeed,
+  };
+}
+
+function periodToDays(period: AnalyticsPeriod): number {
+  switch (period) {
+    case "day":
+      return 1;
+    case "week":
+      return 7;
+    case "month":
+      return 30;
+    case "session":
+      return 7;
+  }
+}
+
+function mapRollup(rollup: RawDailyRollup): DailyRollup {
+  return {
+    date: rollup.date,
+    matchesPlayed: rollup.matches_played,
+    wins: rollup.wins,
+    losses: rollup.losses,
+    avgScore: rollup.matches_played > 0 ? rollup.goals_scored / rollup.matches_played : 0,
+    totalGoals: rollup.goals_scored,
+  };
+}
+
+function buildAnalytics(period: AnalyticsPeriod, rollups: RawDailyRollup[]): AnalyticsData {
+  const totalMatches = rollups.reduce((sum, item) => sum + item.matches_played, 0);
+  const wins = rollups.reduce((sum, item) => sum + item.wins, 0);
+  const losses = rollups.reduce((sum, item) => sum + item.losses, 0);
+  const totalGoals = rollups.reduce((sum, item) => sum + item.goals_scored, 0);
+  const totalShots = rollups.reduce((sum, item) => sum + item.total_shots, 0);
+  const totalSaves = rollups.reduce((sum, item) => sum + item.total_saves, 0);
+  const avgDuration = totalMatches > 0
+    ? rollups.reduce((sum, item) => sum + item.avg_duration_seconds * item.matches_played, 0) / totalMatches
+    : 0;
+
+  return {
+    period,
+    totalMatches,
+    wins,
+    losses,
+    winRate: totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0,
+    avgScore: totalMatches > 0 ? totalGoals / totalMatches : 0,
+    avgGoals: totalMatches > 0 ? totalGoals / totalMatches : 0,
+    avgAssists: 0,
+    avgSaves: totalMatches > 0 ? totalSaves / totalMatches : 0,
+    avgShots: totalMatches > 0 ? totalShots / totalMatches : 0,
+    avgBoost: 0,
+    totalGoals,
+    totalAssists: 0,
+    totalSaves,
+    totalShots,
+    totalDemos: 0,
+    bestStreak: 0,
+    currentStreak: 0,
+    peakSpeed: 0,
+    avgDuration,
+  };
+}
+
+async function invokeCommand<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  try {
+    return await invoke<T>(command, args);
+  } catch (error) {
+    const message = typeof error === "string" ? error : getErrorMessage(error);
+    throw new ApiError(message);
+  }
+}
+
+// Live match
+export async function getLiveState(): Promise<LiveMatchState | null> {
+  const state = await invokeCommand<RawLiveMatchState | null>("get_live_state");
+  return mapLiveState(state);
+}
+
+export async function getConnectionStatus(): Promise<ConnectionStatus> {
+  const status = await invokeCommand<RawConnectionStatus>("get_connection_status");
+  return mapConnectionStatus(status);
+}
+
+// History
+export async function getMatches(filters?: MatchFilters): Promise<MatchSummary[]> {
+  const response = await invokeCommand<{ matches: RawMatchSummary[] }>("get_matches", {
+    filters: {
+      limit: filters?.limit,
+      offset: filters?.offset,
+      arena: filters?.mode ?? undefined,
+      match_type: filters?.matchType ?? undefined,
+      result: filters?.result ?? undefined,
+      date_from: filters?.dateFrom ? new Date(filters.dateFrom * 1000).toISOString().slice(0, 10) : undefined,
+      date_to: filters?.dateTo ? new Date(filters.dateTo * 1000).toISOString().slice(0, 10) : undefined,
+      search: filters?.search ?? undefined,
+    },
+  });
+  return response.matches.map(mapMatchSummary);
+}
+
+export async function getMatchDetail(matchId: number): Promise<MatchDetail> {
+  const response = await invokeCommand<{
+    match: RawMatchSummary;
+    players: RawMatchPlayer[];
+    events: RawRlEvent[];
+    goals: RawGoal[];
+  }>("get_match_detail", {
+    matchId,
+  });
+  return {
+    ...mapMatchSummary(response.match),
+    players: response.players.map(mapPlayerStats),
+    events: response.events.map(mapRlEvent),
+    goals: response.goals.map(mapGoal),
+  };
+}
+
+export async function deleteMatch(matchId: number): Promise<void> {
+  return invokeCommand<void>("delete_match_cmd", { matchId });
+}
+
+export async function updateMatch(
+  matchId: number,
+  data: { matchType?: string | null; playlist?: string | null }
+): Promise<void> {
+  return invokeCommand<void>("update_match_cmd", {
+    matchId,
+    matchType: data.matchType ?? null,
+    playlist: data.playlist ?? null,
+  });
+}
+
+// Analytics
+export async function getAnalytics(period: AnalyticsPeriod): Promise<AnalyticsData> {
+  const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_analytics", {
+    period: { days: periodToDays(period) },
+  });
+  return buildAnalytics(period, response.rollups);
+}
+
+export async function getDailyRollups(period: AnalyticsPeriod): Promise<DailyRollup[]> {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - periodToDays(period));
+  const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_daily_rollups", {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  });
+  return response.rollups.map(mapRollup);
+}
+
+// Settings
+export async function getSettings(): Promise<AppSettings> {
+  const settings = await invokeCommand<RawAppSettings>("get_settings_cmd");
+  return {
+    playerName: settings.player_name,
+    localPrimaryId: settings.local_primary_id ?? null,
+    autoStart: settings.auto_start,
+    rlPath: settings.rl_path ?? null,
+    platform: (settings.platform === "epic" ? "epic" : settings.platform === "steam" ? "steam" : null),
+    defaultMatchType: (settings.default_match_type as MatchType) ?? "ranked",
+    trackerApiKey: settings.tracker_api_key ?? null,
+    trackerPlatform: settings.tracker_platform ?? null,
+    trackerUsername: settings.tracker_username ?? null,
+    trackerAutoRefresh: settings.tracker_auto_refresh ?? true,
+    trackerRefreshIntervalMin: settings.tracker_refresh_interval_min ?? 5,
+  };
+}
+
+export async function setSettings(settings: AppSettings): Promise<void> {
+  return invokeCommand<void>("set_settings_cmd", {
+    settings: {
+      player_name: settings.playerName ?? "",
+      local_primary_id: settings.localPrimaryId ?? null,
+      auto_start: settings.autoStart,
+      port: 49123,
+      data_retention_days: 90,
+      rl_path: settings.rlPath ?? null,
+      platform: settings.platform ?? null,
+      theme: "dark",
+      language: "es",
+      default_match_type: settings.defaultMatchType,
+      tracker_api_key: settings.trackerApiKey ?? null,
+      tracker_platform: settings.trackerPlatform ?? null,
+      tracker_username: settings.trackerUsername ?? null,
+      tracker_auto_refresh: settings.trackerAutoRefresh ?? true,
+      tracker_refresh_interval_min: settings.trackerRefreshIntervalMin ?? 5,
+    },
+  });
+}
+
+export async function configureRlIni(port?: number): Promise<void> {
+  return invokeCommand<void>("configure_rl_ini_cmd", { port: port ?? 49123 });
+}
+
+export async function detectRlPath(): Promise<string[]> {
+  return invokeCommand<string[]>("detect_rl_path");
+}
+
+// Data management
+export async function exportData(path: string): Promise<void> {
+  return invokeCommand<void>("export_data", { path });
+}
+
+export async function importData(path: string): Promise<void> {
+  return invokeCommand<void>("import_data", { path });
+}
+
+export async function exportDataJson(): Promise<string> {
+  return invokeCommand<string>("export_data_json");
+}
+
+export async function importDataJson(content: string): Promise<void> {
+  return invokeCommand<void>("import_data_json", { content });
+}
+
+export async function getStorageStats(): Promise<StorageStats> {
+  const stats = await invokeCommand<RawStorageStats>("get_storage_stats_cmd");
+  return {
+    totalMatches: stats.totalMatches ?? stats.total_matches ?? 0,
+    totalEvents: stats.totalEvents ?? stats.total_events ?? 0,
+    databaseSizeBytes: stats.databaseSizeBytes ?? stats.database_size_bytes ?? 0,
+    oldestMatchDate: stats.oldestMatchDate ?? stats.oldest_match_date ?? null,
+    dbPath: stats.dbPath ?? stats.db_path ?? null,
+  };
+}
+
+export async function clearAllData(): Promise<void> {
+  return invokeCommand<void>("clear_all_data_cmd");
+}
+
+// Updates
+export async function checkForUpdate(): Promise<UpdateInfo | null> {
+  return null;
+}
+
+// ─── Tracker Network ─────────────────────────────────────────────────────────
+
+export async function fetchTrackerProfile(): Promise<TrackerProfile> {
+  return invokeCommand<TrackerProfile>("fetch_tracker_profile");
+}
+
+export async function getCachedProfile(): Promise<TrackerProfile | null> {
+  return invokeCommand<TrackerProfile | null>("get_cached_profile");
+}
+
+export async function refreshTrackerProfile(): Promise<TrackerProfile> {
+  return invokeCommand<TrackerProfile>("refresh_tracker_profile");
+}

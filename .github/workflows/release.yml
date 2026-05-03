@@ -1,0 +1,288 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: 'Create as draft release'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: short
+
+jobs:
+  # ───────────────────────────────────────────────
+  # Create GitHub Release draft
+  # ───────────────────────────────────────────────
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          echo "version=$version" >> "$env:GITHUB_OUTPUT"
+        shell: pwsh
+
+      - name: Generate changelog section
+        id: changelog
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $prevTag = git describe --tags --abbrev=0 "$tag^" 2>$null
+          if (-not $prevTag) { $prevTag = git rev-list --max-parents=0 HEAD }
+          echo "Changes since $prevTag:"
+          git log --pretty=format:"- %s (%h)" "$prevTag..$tag" | Tee-Object -FilePath changelog.txt
+          $content = Get-Content changelog.txt -Raw
+          "changelog<<EOF" | Out-File -Append -FilePath $env:GITHUB_OUTPUT -Encoding utf8
+          $content | Out-File -Append -FilePath $env:GITHUB_OUTPUT -Encoding utf8
+          "EOF" | Out-File -Append -FilePath $env:GITHUB_OUTPUT -Encoding utf8
+        shell: pwsh
+
+      - name: Create GitHub Release
+        id: create-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: context.ref_name,
+              name: `RL Stats Companion ${context.ref_name}`,
+              body: `## Changes
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## Installation
+            Download the MSI or NSIS installer below for Windows x64.
+
+            ## Verification
+            SHA256 checksums are attached for all binaries.
+            `,
+              draft: context.eventName === 'workflow_dispatch'
+                ? context.payload.inputs.draft === 'true'
+                : true,
+              prerelease: context.ref_name.includes('-'),
+              generate_release_notes: false,
+            });
+            return data.id;
+
+  # ───────────────────────────────────────────────
+  # Build Windows x64 Tauri app
+  # ───────────────────────────────────────────────
+  build-windows:
+    name: Build Windows x64
+    needs: create-release
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      # Windows code signing (optional — uncomment and configure when certificate is available)
+      # TAURI_WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+      # TAURI_WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache Cargo target
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/target
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('src-tauri/Cargo.lock') }}-${{ hashFiles('src-tauri/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-release-
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri app
+        run: pnpm tauri build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      # ── Optional: Windows code signing ──────────────────
+      # Uncomment the section below once you have a code signing certificate.
+      # Store the certificate as base64 in GitHub Secret WINDOWS_CERTIFICATE
+      # and the password in WINDOWS_CERTIFICATE_PASSWORD.
+      #
+      # - name: Import code signing certificate
+      #   if: env.TAURI_WINDOWS_CERTIFICATE != ''
+      #   run: |
+      #     $bytes = [Convert]::FromBase64String("${{ secrets.WINDOWS_CERTIFICATE }}")
+      #     [IO.File]::WriteAllBytes("certificate.pfx", $bytes)
+      #     Import-PfxCertificate -FilePath certificate.pfx -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String "${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}" -AsPlainText -Force)
+      #   shell: pwsh
+      #
+      # Then set TAURI_WINDOWS_CERTIFICATE_THUMBPRINT in tauri.conf.json or pass via env.
+      # ─────────────────────────────────────────────────────
+
+      - name: Calculate SHA256 checksums
+        id: checksums
+        run: |
+          $artifacts = Get-ChildItem -Path "src-tauri/target/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip"
+          foreach ($file in $artifacts) {
+            $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
+            "$hash  $($file.Name)" | Tee-Object -Append -FilePath checksums.txt
+          }
+          echo "files=$(($artifacts | ForEach-Object { $_.FullName }) -join ',')" >> "$env:GITHUB_OUTPUT"
+        shell: pwsh
+
+      - name: Prepare artifact list
+        id: artifacts
+        run: |
+          $files = Get-ChildItem -Path "src-tauri/target/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip","latest.json" | Select-Object -ExpandProperty FullName
+          if (-not $files) { $files = @() }
+          $json = ($files | ConvertTo-Json -Compress)
+          "list=$json" >> "$env:GITHUB_OUTPUT"
+        shell: pwsh
+
+      - name: Upload artifacts to release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const releaseId = ${{ needs.create-release.outputs.release_id }};
+            let files = [];
+            try {
+              files = JSON.parse('${{ steps.artifacts.outputs.list }}');
+              if (!Array.isArray(files)) files = [files];
+            } catch {
+              console.log('No bundle artifacts found.');
+            }
+
+            for (const file of files) {
+              const name = path.basename(file);
+              console.log(`Uploading ${name}...`);
+              const data = fs.readFileSync(file);
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseId,
+                name: name,
+                data: data,
+              });
+            }
+
+            // Upload checksums
+            if (fs.existsSync('checksums.txt')) {
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseId,
+                name: 'checksums.txt',
+                data: fs.readFileSync('checksums.txt'),
+              });
+            }
+
+      - name: Upload build artifacts for debugging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build-debug-${{ github.run_id }}
+          path: |
+            src-tauri/target/release/bundle/
+            checksums.txt
+          retention-days: 5
+
+  # ───────────────────────────────────────────────
+  # Verify updater manifest is attached
+  # ───────────────────────────────────────────────
+  publish-updater-manifest:
+    name: Publish Updater Manifest
+    needs: [create-release, build-windows]
+    runs-on: ubuntu-latest
+    if: always() && needs.build-windows.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify latest.json exists in release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseId = ${{ needs.create-release.outputs.release_id }};
+            const { data: release } = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: releaseId,
+            });
+
+            const hasLatestJson = release.assets.some(a => a.name === 'latest.json');
+            if (!hasLatestJson) {
+              core.setFailed('latest.json updater manifest was not found in release assets. The Tauri updater will not work.');
+            } else {
+              console.log('✅ latest.json updater manifest verified in release assets.');
+            }
+
+      - name: Generate static updater URL
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════"
+          echo "  Updater manifest URL:"
+          echo "  https://github.com/${{ github.repository }}/releases/latest/download/latest.json"
+          echo "═══════════════════════════════════════════════════════"
+          echo ""

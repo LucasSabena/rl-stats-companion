@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0A0E17;
+  --color-bg-secondary: #111827;
+  --color-bg-tertiary: #1A2235;
+  --color-surface-hover: #1E293B;
+  --color-border-subtle: #1E293B;
+  --color-border-strong: #334155;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-tertiary: #64748B;
+  --color-text-muted: #475569;
+  --color-accent-primary: #3B82F6;
+  --color-accent-primary-hover: #2563EB;
+  --color-accent-secondary: #10B981;
+  --color-accent-danger: #EF4444;
+  --color-accent-warning: #F59E0B;
+  --color-accent-info: #06B6D4;
+  --color-accent-purple: #8B5CF6;
+  --color-team-blue: #3B82F6;
+  --color-team-orange: #F97316;
+  --color-team-blue-dark: #1E40AF;
+  --color-team-orange-dark: #C2410C;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --shadow-level-1: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-level-2: 0 4px 6px rgba(0,0,0,0.4);
+  --shadow-level-3: 0 10px 15px rgba(0,0,0,0.5);
+  --shadow-level-4: 0 20px 25px rgba(0,0,0,0.6);
+  --shadow-glow-accent: 0 0 20px rgba(59,130,246,0.15);
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(59, 130, 246, 0.3);
+    color: var(--color-text-primary);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg-primary);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-tertiary);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .overlay-mode {
+    background: rgba(10, 10, 15, 0.85) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px !important;
+  }
+}

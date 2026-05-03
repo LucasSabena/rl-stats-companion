@@ -1,0 +1,90 @@
+version: 2
+
+updates:
+  # npm / pnpm dependencies
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'LucasSabena'
+    assignees:
+      - 'LucasSabena'
+    labels:
+      - 'dependencies'
+      - 'javascript'
+    commit-message:
+      prefix: 'deps'
+      include: 'scope'
+    groups:
+      tauri:
+        patterns:
+          - '@tauri-apps/*'
+          - 'tauri-plugin-*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react*'
+      tailwind:
+        patterns:
+          - 'tailwindcss'
+          - '@tailwindcss/*'
+      testing:
+        patterns:
+          - 'vitest'
+          - '@testing-library/*'
+          - 'jsdom'
+          - 'playwright'
+
+  # Cargo / Rust dependencies
+  - package-ecosystem: 'cargo'
+    directory: '/src-tauri'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'LucasSabena'
+    assignees:
+      - 'LucasSabena'
+    labels:
+      - 'dependencies'
+      - 'rust'
+    commit-message:
+      prefix: 'deps'
+      include: 'scope'
+    groups:
+      tauri-rust:
+        patterns:
+          - 'tauri*'
+      serde:
+        patterns:
+          - 'serde'
+          - 'serde_json'
+      async:
+        patterns:
+          - 'tokio'
+
+  # GitHub Actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 5
+    reviewers:
+      - 'LucasSabena'
+    assignees:
+      - 'LucasSabena'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'

@@ -1,0 +1,8 @@
+{"event":"UpdateState","data":{"MatchGuid":"770e8400-e29b-41d4-a716-446655440002","Game":{"TimeSeconds":300,"bOvertime":false,"Arena":"UtopiaColiseum","Ball":{"Location":{"X":0.0,"Y":0.0,"Z":92.75},"Speed":0.0},"Teams":[{"Score":0},{"Score":0}]},"Players":[{"PrimaryId":"Malformed1","Name":"ValidPlayer","TeamNum":0,"Score":100,"Goals":0,"Shots":2,"Assists":0,"Saves":0,"Touches":5,"CarTouches":3,"Demos":0,"Speed":1200.0,"Boost":45}]}}
+{"event":"UpdateState","data":{"MatchGuid":"770e8400-e29b-41d4-a716-446655440002","Game":{"TimeSeconds":250,"bOvertime":false,"Arena":"UtopiaColiseum","Teams":[{"Score":1},{"Score":0}]},"Players":[{"PrimaryId":"Malformed1","Name":"ValidPlayer","TeamNum":0,"Score":150,"Goals":1,"Shots":3,"Assists":0,"Saves":0,"Touches":7,"CarTouches":4,"Demos":0,"Speed":1500.0,"Boost":60}]}}
+this is not json at all just random text
+{"event":"UpdateState","data":{"MatchGuid":"770e8400-e29b-41d4-a716-446655440002","BadStructure
+{"event":"StatfeedEvent","data":{"EventName":"Goal","MainTarget":{"PrimaryId":"Malformed1","Name":"ValidPlayer","TeamNum":0},"SecondaryTarget":null}}
+another line of garbage
+{"event":"UpdateState","data":{"MatchGuid":"770e8400-e29b-41d4-a716-446655440002","Game":{"TimeSeconds":120,"bOvertime":false,"Arena":"UtopiaColiseum","Ball":{"Location":{"X":500.0,"Y":200.0,"Z":300.0},"Speed":1800.0},"Teams":[{"Score":2},{"Score":1}]},"Players":[{"PrimaryId":"Malformed1","Name":"ValidPlayer","TeamNum":0,"Score":280,"Goals":2,"Shots":5,"Assists":0,"Saves":1,"Touches":10,"CarTouches":6,"Demos":0,"Speed":1600.0,"Boost":38}]}}
+{"event":"MatchEnded","data":{}}
