@@ -1,5 +1,9 @@
 use std::sync::Arc;
-use tauri::{Emitter, Manager};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
+};
 #[cfg(not(debug_assertions))]
 use tauri_plugin_updater::UpdaterExt;
 use tokio::sync::RwLock;
@@ -10,8 +14,10 @@ pub mod core;
 pub mod error;
 mod updater;
 
+use crate::core::autostart::configure_autostart;
 use crate::core::ingestor::{start_ingestor, IngestorHandle};
 use crate::core::models::RlEvent;
+use crate::core::overlay::OverlayServer;
 use crate::core::process_watcher::ProcessWatcher;
 use crate::core::session::{MatchPhase, SessionManager};
 use crate::core::settings::get_settings;
@@ -23,11 +29,15 @@ pub struct AppState {
     pub session_manager: Arc<RwLock<SessionManager>>,
     pub ingestor_status: Arc<RwLock<core::models::ConnectionStatus>>,
     pub game_running: Arc<std::sync::atomic::AtomicBool>,
+    pub overlay_server: Arc<tokio::sync::Mutex<Option<OverlayServer>>>,
+    pub overlay_handle: Arc<std::sync::Mutex<Option<tauri::WebviewWindow>>>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize tracing subscriber for structured logging.
+    // Check if launched with --minimized (autostart)
+    let start_minimized = std::env::args().any(|arg| arg == "--minimized");
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -47,6 +57,7 @@ pub fn run() {
             commands::history::delete_match_cmd,
             commands::history::update_match_cmd,
             commands::analytics::get_analytics,
+            commands::analytics::get_sessions,
             commands::analytics::get_daily_rollups,
             commands::settings::get_settings_cmd,
             commands::settings::set_settings_cmd,
@@ -63,8 +74,23 @@ pub fn run() {
             commands::tracker::fetch_tracker_profile,
             commands::tracker::get_cached_profile,
             commands::tracker::refresh_tracker_profile,
+            commands::overlay::start_overlay_server,
+            commands::overlay::stop_overlay_server,
+            commands::overlay::get_overlay_server_status,
+            commands::overlay::get_overlay_urls,
+            commands::overlay::get_overlay_state,
+            commands::overlay_window::create_overlay_window,
+            commands::overlay_window::destroy_overlay_window,
+            commands::overlay_window::get_overlay_window_state,
+            commands::overlay_window::toggle_overlay_enabled,
+            commands::overlay_window::update_overlay_position,
+            commands::overlay_window::update_overlay_size,
+            commands::overlay_window::update_overlay_opacity,
+            commands::overlay_window::set_overlay_clickthrough,
+            commands::overlay_window::notify_overlay_settings_changed,
+            commands::overlay_window::set_overlay_interactive,
         ])
-        .setup(|app| {
+        .setup(move |app| {
             #[cfg(all(desktop, not(debug_assertions)))]
             {
                 let handle = app.handle().clone();
@@ -75,7 +101,6 @@ pub fn run() {
                 });
             }
 
-            // Determine database path in app data directory.
             let app_dir = app
                 .path()
                 .app_data_dir()
@@ -92,22 +117,76 @@ pub fn run() {
                 }
             };
 
-            // Load settings to get configured port.
             let settings = get_settings(&db_pool).unwrap_or_default();
             let port = settings.port;
 
-            // Start process watcher to detect when Rocket League is running.
+            // Configure autostart based on current setting
+            configure_autostart(settings.auto_start);
+
+            // Start hidden if launched via autostart
+            let main_window = app.get_webview_window("main");
+
+            // Build system tray
+            let show_item = MenuItem::with_id(app, "show", "Mostrar", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            let tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .tooltip("RL Stats Companion")
+                .menu(&menu)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            // Intercept close event to hide instead of quitting
+            if let Some(ref window) = main_window {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = window_clone.hide();
+                    }
+                });
+            }
+
+            // If launched via autostart, start minimized to tray
+            if start_minimized {
+                if let Some(ref window) = main_window {
+                    let _ = window.hide();
+                }
+            }
+
             let watcher = ProcessWatcher::new();
             let game_running_flag = watcher.start();
 
-            // Start TCP ingestor with game-running awareness.
             let ingestor = start_ingestor(port, Arc::clone(&game_running_flag));
             let ingestor_status = Arc::clone(&ingestor.status);
 
-            // Session manager shared state.
             let session_manager = Arc::new(RwLock::new(SessionManager::new()));
 
-            // Spawn event processing task.
             let session_mgr_clone = Arc::clone(&session_manager);
             let db_pool_clone = Arc::clone(&db_pool);
             let app_handle = app.handle().clone();
@@ -115,25 +194,52 @@ pub fn run() {
                 process_events(ingestor, session_mgr_clone, db_pool_clone, app_handle).await;
             });
 
-            // Spawn tracker profile auto-refresh task.
             let db_pool_tracker = Arc::clone(&db_pool);
             let app_handle_tracker = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 tracker_refresh_loop(db_pool_tracker, app_handle_tracker).await;
             });
 
-            // Manage shared state for commands.
             app.manage(AppState {
-                db_pool,
+                db_pool: db_pool.clone(),
                 session_manager,
                 ingestor_status,
                 game_running: game_running_flag,
+                overlay_server: Arc::new(tokio::sync::Mutex::new(None)),
+                overlay_handle: Arc::new(std::sync::Mutex::new(None)),
             });
+
+            // Store tray in app state so it stays alive. We move it into a "leaked" Box to
+            // keep it for the lifetime of the app without having to manage it through AppState.
+            // The tray handle must not be dropped.
+            app.manage(TrayHandle {
+                _tray: Box::new(tray),
+            });
+
+            // Restore overlay window if it was enabled last session
+            if settings.overlay_enabled {
+                let app_handle = app.handle().clone();
+                let pool = db_pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                    let app_settings = get_settings(&pool).unwrap_or_default();
+                    if app_settings.overlay_enabled {
+                        if let Err(e) = create_overlay_window_inner(&app_handle, &app_settings).await {
+                            tracing::warn!(error = %e, "Failed to restore overlay window on startup");
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// Wrapper to keep the tray icon alive for the app lifetime.
+pub struct TrayHandle {
+    _tray: Box<tauri::tray::TrayIcon>,
 }
 
 /// Background task that consumes events from the ingestor and drives the session manager.
@@ -150,7 +256,6 @@ async fn process_events(
         let mut session = session_manager.write().await;
         let was_finished = session.phase() == &MatchPhase::Finished;
 
-        // Emit match-started when a new match is created or initialized.
         match &event {
             RlEvent::MatchCreated | RlEvent::MatchInitialized => {
                 let _ = app_handle.emit(
@@ -169,15 +274,22 @@ async fn process_events(
             let _ = app_handle.emit("live-event", live_event);
         }
 
-        // Emit live state to frontend whenever state changes (UpdateState, GoalScored, etc.)
         {
             let live_data = session.live_state();
-            let _ = app_handle.emit("live-update", live_data);
+            let _ = app_handle.emit("live-update", &live_data);
+
+            let overlay = app_handle.state::<AppState>().overlay_server.clone();
+            let overlay_data = live_data.clone();
+            tokio::spawn(async move {
+                let guard = overlay.lock().await;
+                if let Some(ref server) = *guard {
+                    server.broadcast_state(&overlay_data);
+                }
+            });
         }
 
         let is_finished = session.phase() == &MatchPhase::Finished;
         if !was_finished && is_finished {
-            // Match just ended; persist after a short delay to allow final state accumulation.
             drop(session);
             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
@@ -186,10 +298,8 @@ async fn process_events(
                 match session.persist_finished_match(&db_pool) {
                     Ok(summary) => {
                         info!(guid = %summary.match_guid, "Match persisted");
-                        // Emit match-summary event so the frontend can refresh history/analytics.
                         let _ = app_handle.emit("match-summary", &summary);
                         session.handle_event(RlEvent::MatchDestroyed);
-                        // Emit final update after match-end cleanup.
                         let final_state = session.live_state();
                         let _ = app_handle.emit("live-update", final_state);
                     }
@@ -222,7 +332,6 @@ fn map_live_event(event: &RlEvent) -> Option<serde_json::Value> {
 }
 
 async fn tracker_refresh_loop(db_pool: Arc<DbPool>, app_handle: tauri::AppHandle) {
-    // Wait a bit on startup before first refresh.
     tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
 
     loop {
@@ -289,4 +398,53 @@ async fn tracker_refresh_loop(db_pool: Arc<DbPool>, app_handle: tauri::AppHandle
         let interval_secs = (settings.tracker_refresh_interval_min.max(1) as u64) * 60;
         tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
     }
+}
+
+/// Internal helper to create the overlay window without going through the command system.
+/// Used during startup restoration.
+async fn create_overlay_window_inner(
+    app: &tauri::AppHandle,
+    settings: &crate::core::settings::AppSettings,
+) -> Result<(), String> {
+    let url = WebviewUrl::App("index.html".into());
+
+    let win = WebviewWindowBuilder::new(app, "overlay", url)
+        .title("RL Overlay")
+        .inner_size(settings.overlay_width as f64, settings.overlay_height as f64)
+        .position(
+            settings.overlay_position_x as f64,
+            settings.overlay_position_y as f64,
+        )
+        .transparent(true)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .minimizable(false)
+        .maximizable(false)
+        .shadow(false)
+        .visible_on_all_workspaces(true)
+        .build()
+        .map_err(|e| format!("Failed to create overlay window: {}", e))?;
+
+    win.set_ignore_cursor_events(settings.overlay_clickthrough)
+        .map_err(|e| e.to_string())?;
+
+    let _ = win.emit(
+        "overlay-settings-updated",
+        serde_json::json!({
+            "showScore": settings.overlay_show_score,
+            "showPlayers": settings.overlay_show_players,
+            "showStats": settings.overlay_show_stats,
+            "showTimer": settings.overlay_show_timer,
+            "fontScale": settings.overlay_font_scale,
+            "opacity": settings.overlay_opacity,
+        }),
+    );
+    let _ = win.emit("overlay-opacity-changed", settings.overlay_opacity);
+    let _ = win.emit("overlay-clickthrough-changed", settings.overlay_clickthrough);
+
+    let _ = win.show();
+
+    Ok(())
 }

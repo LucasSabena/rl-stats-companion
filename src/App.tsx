@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AppShell } from "@/components/layout/AppShell";
 import { OverlayView } from "@/components/overlay/OverlayView";
 import { LivePage } from "@/pages/LivePage";
@@ -25,18 +27,27 @@ const queryClient = new QueryClient({
 function AppContent() {
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
   const completeOnboarding = useSettingsStore((s) => s.completeOnboarding);
-  const overlayMode = useSettingsStore((s) => s.overlayMode);
+  const [isOverlayWindow, setIsOverlayWindow] = useState(false);
+  const [detecting, setDetecting] = useState(true);
 
-  // In overlay mode, render only the overlay widget (no sidebar, no header, no routing)
-  if (overlayMode) {
-    return (
-      <>
-        <OverlayView />
-        {!hasCompletedOnboarding && (
-          <OnboardingOverlay onComplete={completeOnboarding} />
-        )}
-      </>
-    );
+  useEffect(() => {
+    try {
+      const win = getCurrentWindow();
+      if (win.label === "overlay") {
+        setIsOverlayWindow(true);
+      }
+    } catch {
+      // Running outside Tauri (dev mode in browser) — not an overlay window
+    }
+    setDetecting(false);
+  }, []);
+
+  // Show nothing while detecting window type to avoid flash
+  if (detecting) return null;
+
+  // Overlay window: render only the overlay widget (no sidebar, no routing)
+  if (isOverlayWindow) {
+    return <OverlayView />;
   }
 
   return (

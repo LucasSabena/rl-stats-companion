@@ -13,6 +13,10 @@ import {
   type AnalyticsData,
   type AnalyticsPeriod,
   type DailyRollup,
+  type MatchSession,
+  type OverlayServerStatus,
+  type OverlayUrl,
+  type OverlayWindowState,
   type AppSettings,
   type UpdateInfo,
   type StorageStats,
@@ -145,6 +149,19 @@ interface RawAppSettings {
   tracker_username?: string | null;
   tracker_auto_refresh?: boolean;
   tracker_refresh_interval_min?: number;
+  session_gap_minutes?: number;
+  overlay_enabled?: boolean;
+  overlay_opacity?: number;
+  overlay_position_x?: number;
+  overlay_position_y?: number;
+  overlay_width?: number;
+  overlay_height?: number;
+  overlay_show_score?: boolean;
+  overlay_show_players?: boolean;
+  overlay_show_stats?: boolean;
+  overlay_show_timer?: boolean;
+  overlay_font_scale?: string;
+  overlay_clickthrough?: boolean;
 }
 
 interface RawDailyRollup {
@@ -170,6 +187,30 @@ interface RawStorageStats {
   oldestMatchDate?: number | null;
   db_path?: string | null;
   dbPath?: string | null;
+}
+
+interface RawSessionAnalytics {
+  sessions: MatchSession[];
+  summary: {
+    totalMatches: number;
+    wins: number;
+    losses: number;
+    avgScore: number;
+    avgGoals: number;
+    avgAssists: number;
+    avgSaves: number;
+    avgShots: number;
+    avgBoost: number;
+    totalGoals: number;
+    totalAssists: number;
+    totalSaves: number;
+    totalShots: number;
+    totalDemos: number;
+    bestStreak: number;
+    currentStreak: number;
+    peakSpeed: number;
+    avgDuration: number;
+  };
 }
 
 function mapConnectionStatus(status: RawConnectionStatus): ConnectionStatus {
@@ -286,7 +327,7 @@ function periodToDays(period: AnalyticsPeriod): number {
     case "month":
       return 30;
     case "session":
-      return 7;
+      return 0;
   }
 }
 
@@ -406,11 +447,26 @@ export async function updateMatch(
 }
 
 // Analytics
-export async function getAnalytics(period: AnalyticsPeriod): Promise<AnalyticsData> {
+export async function getAnalytics(period: AnalyticsPeriod): Promise<AnalyticsData | RawSessionAnalytics> {
+  const days = periodToDays(period);
+
+  if (period === "session") {
+    const response = await invokeCommand<RawSessionAnalytics>("get_analytics", {
+      period: { days },
+    });
+    return response;
+  }
+
   const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_analytics", {
-    period: { days: periodToDays(period) },
+    period: { days },
   });
   return buildAnalytics(period, response.rollups);
+}
+
+export async function getSessions(gapMinutes?: number): Promise<MatchSession[]> {
+  return invokeCommand<MatchSession[]>("get_sessions", {
+    gapMinutes: gapMinutes ?? undefined,
+  });
 }
 
 export async function getDailyRollups(period: AnalyticsPeriod): Promise<DailyRollup[]> {
@@ -439,6 +495,19 @@ export async function getSettings(): Promise<AppSettings> {
     trackerUsername: settings.tracker_username ?? null,
     trackerAutoRefresh: settings.tracker_auto_refresh ?? true,
     trackerRefreshIntervalMin: settings.tracker_refresh_interval_min ?? 5,
+    sessionGapMinutes: settings.session_gap_minutes ?? 30,
+    overlayEnabled: settings.overlay_enabled ?? false,
+    overlayOpacity: settings.overlay_opacity ?? 0.75,
+    overlayPositionX: settings.overlay_position_x ?? 40,
+    overlayPositionY: settings.overlay_position_y ?? 80,
+    overlayWidth: settings.overlay_width ?? 420,
+    overlayHeight: settings.overlay_height ?? 320,
+    overlayShowScore: settings.overlay_show_score ?? true,
+    overlayShowPlayers: settings.overlay_show_players ?? true,
+    overlayShowStats: settings.overlay_show_stats ?? true,
+    overlayShowTimer: settings.overlay_show_timer ?? true,
+    overlayFontScale: settings.overlay_font_scale ?? "medium",
+    overlayClickthrough: settings.overlay_clickthrough ?? true,
   };
 }
 
@@ -460,6 +529,19 @@ export async function setSettings(settings: AppSettings): Promise<void> {
       tracker_username: settings.trackerUsername ?? null,
       tracker_auto_refresh: settings.trackerAutoRefresh ?? true,
       tracker_refresh_interval_min: settings.trackerRefreshIntervalMin ?? 5,
+      session_gap_minutes: settings.sessionGapMinutes ?? 30,
+      overlay_enabled: settings.overlayEnabled ?? false,
+      overlay_opacity: settings.overlayOpacity ?? 0.75,
+      overlay_position_x: settings.overlayPositionX ?? 40,
+      overlay_position_y: settings.overlayPositionY ?? 80,
+      overlay_width: settings.overlayWidth ?? 420,
+      overlay_height: settings.overlayHeight ?? 320,
+      overlay_show_score: settings.overlayShowScore ?? true,
+      overlay_show_players: settings.overlayShowPlayers ?? true,
+      overlay_show_stats: settings.overlayShowStats ?? true,
+      overlay_show_timer: settings.overlayShowTimer ?? true,
+      overlay_font_scale: settings.overlayFontScale ?? "medium",
+      overlay_clickthrough: settings.overlayClickthrough ?? true,
     },
   });
 }
@@ -507,6 +589,70 @@ export async function clearAllData(): Promise<void> {
 // Updates
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
   return null;
+}
+
+// ─── Overlay / OBS Streaming ─────────────────────────────────────────────────
+
+export async function startOverlayServer(port: number): Promise<OverlayServerStatus> {
+  return invokeCommand<OverlayServerStatus>("start_overlay_server", { port });
+}
+
+export async function stopOverlayServer(): Promise<void> {
+  return invokeCommand<void>("stop_overlay_server");
+}
+
+export async function getOverlayServerStatus(): Promise<OverlayServerStatus> {
+  return invokeCommand<OverlayServerStatus>("get_overlay_server_status");
+}
+
+export async function getOverlayUrls(): Promise<OverlayUrl[]> {
+  return invokeCommand<OverlayUrl[]>("get_overlay_urls");
+}
+
+export async function getOverlayState(): Promise<Record<string, unknown>> {
+  return invokeCommand<Record<string, unknown>>("get_overlay_state");
+}
+
+// ─── Overlay Window ─────────────────────────────────────────────────────────
+
+export async function createOverlayWindow(): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("create_overlay_window");
+}
+
+export async function destroyOverlayWindow(): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("destroy_overlay_window");
+}
+
+export async function getOverlayWindowState(): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("get_overlay_window_state");
+}
+
+export async function toggleOverlayEnabled(): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("toggle_overlay_enabled");
+}
+
+export async function updateOverlayPosition(x: number, y: number): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("update_overlay_position", { x, y });
+}
+
+export async function updateOverlaySize(width: number, height: number): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("update_overlay_size", { width, height });
+}
+
+export async function updateOverlayOpacity(opacity: number): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("update_overlay_opacity", { opacity });
+}
+
+export async function setOverlayClickthrough(clickthrough: boolean): Promise<OverlayWindowState> {
+  return invokeCommand<OverlayWindowState>("set_overlay_clickthrough", { clickthrough });
+}
+
+export async function notifyOverlaySettingsChanged(): Promise<void> {
+  return invokeCommand<void>("notify_overlay_settings_changed");
+}
+
+export async function setOverlayInteractive(durationSecs: number): Promise<void> {
+  return invokeCommand<void>("set_overlay_interactive", { durationSecs });
 }
 
 // ─── Tracker Network ─────────────────────────────────────────────────────────

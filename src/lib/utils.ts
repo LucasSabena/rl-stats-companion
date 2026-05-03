@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(timestamp: number | string | Date): string {
-  const date = typeof timestamp === "number" ? new Date(timestamp * 1000) : new Date(timestamp);
+  const date = typeof timestamp === "number" ? new Date(timestamp) : new Date(timestamp);
   return date.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "short",
@@ -15,7 +15,7 @@ export function formatDate(timestamp: number | string | Date): string {
 }
 
 export function formatDateTime(timestamp: number | string | Date): string {
-  const date = typeof timestamp === "number" ? new Date(timestamp * 1000) : new Date(timestamp);
+  const date = typeof timestamp === "number" ? new Date(timestamp) : new Date(timestamp);
   return date.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "short",

@@ -9,7 +9,6 @@ interface SettingsState {
   hasCompletedOnboarding: boolean;
   rlPath: string | null;
   platform: "steam" | "epic" | null;
-  overlayMode: boolean;
   defaultMatchType: MatchType;
 
   setAutoStart: (value: boolean) => void;
@@ -17,7 +16,6 @@ interface SettingsState {
   completeOnboarding: () => void;
   setRlPath: (path: string | null) => void;
   setPlatform: (platform: "steam" | "epic" | null) => void;
-  setOverlayMode: (value: boolean) => void;
   setDefaultMatchType: (type: MatchType) => void;
 }
 
@@ -29,7 +27,6 @@ export const useSettingsStore = create<SettingsState>()(
       hasCompletedOnboarding: false,
       rlPath: null,
       platform: null,
-      overlayMode: false,
       defaultMatchType: "ranked",
 
       setAutoStart: (value) => set((state) => { state.autoStart = value; }),
@@ -37,7 +34,6 @@ export const useSettingsStore = create<SettingsState>()(
       completeOnboarding: () => set((state) => { state.hasCompletedOnboarding = true; }),
       setRlPath: (path) => set((state) => { state.rlPath = path; }),
       setPlatform: (platform) => set((state) => { state.platform = platform; }),
-      setOverlayMode: (value) => set((state) => { state.overlayMode = value; }),
       setDefaultMatchType: (type) => set((state) => { state.defaultMatchType = type; }),
     })),
     { name: "settings-store" }

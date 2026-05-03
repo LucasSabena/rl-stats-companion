@@ -72,9 +72,8 @@
   }
 
   .overlay-mode {
-    background: rgba(10, 10, 15, 0.85) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-radius: 12px !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    user-select: none;
   }
 }

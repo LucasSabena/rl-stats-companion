@@ -65,7 +65,7 @@
     opts = opts || {};
 
     var host = opts.host || '127.0.0.1';
-    var port = opts.port || 9528;
+    var port = opts.port || (location.port || 9528);
     var reconnectDelay = (typeof opts.reconnectDelay === 'number')
       ? opts.reconnectDelay
       : 2000;

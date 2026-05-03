@@ -1,6 +1,8 @@
+pub mod autostart;
 pub mod ingestor;
 pub mod metrics;
 pub mod models;
+pub mod overlay;
 pub mod parser;
 pub mod process_watcher;
 pub mod session;

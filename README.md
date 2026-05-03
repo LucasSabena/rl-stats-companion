@@ -23,7 +23,9 @@ After Psyonix disabled BakkesMod for online play with the EAC update, players lo
 
 - **Live Dashboard** — Real-time player stats, scores, boost levels, and event feed during matches
 - **Match History** — Every match you play, saved locally with full detail: goals, assists, saves, demos, ball hits
-- **Performance Analytics** — Win rates, averages, trends, and streaks over days, weeks, and months
+- **Performance Analytics** — Win rates, averages, trends, and streaks over days, weeks, months, and play sessions
+- **OBS Overlay Streaming** — Built-in HTTP/WebSocket server for OBS Studio browser sources with live scoreboards, player stats, and event feeds
+- **Session Detection** — Automatic grouping of consecutive matches into play sessions based on configurable time gaps
 - **Privacy First** — All data stays on your PC. No accounts, no cloud, no telemetry.
 
 ---
@@ -42,6 +44,60 @@ After Psyonix disabled BakkesMod for online play with the EAC update, players lo
 | Icons | Lucide React |
 | Testing | Vitest, React Testing Library, Playwright (E2E) |
 | CI/CD | GitHub Actions (build, test, lint, release) |
+
+---
+
+## OBS Overlay Streaming
+
+The app includes a built-in HTTP/WebSocket server for streaming live match data to OBS Studio as browser source overlays.
+
+### Available Overlays
+
+| Overlay | URL | Description |
+|---------|-----|-------------|
+| Scoreboard | `http://127.0.0.1:9528/overlays/scoreboard` | Live score, arena, timer, OT badge |
+| Player Stats | `http://127.0.0.1:9528/overlays/player-stats` | Blue/orange team panels with stats |
+| Event Feed | `http://127.0.0.1:9528/overlays/event-feed` | Goals, saves, demos in a live feed |
+| All-in-One | `http://127.0.0.1:9528/overlays/all-in-one` | Combined scoreboard + stats + events |
+
+### How to Use
+
+1. Go to **Settings > Streaming OBS** and click **Iniciar streaming**
+2. Open OBS Studio and add a new **Browser** source
+3. Copy and paste one of the overlay URLs into the URL field
+4. Adjust width/height to match the overlay design
+5. Start Rocket League and play — the overlays update in real time
+
+The server runs locally on `127.0.0.1`. The default port is `9528` (configurable in settings). Make sure your local firewall allows connections to this port.
+
+### Custom Overlays
+
+Developers can create custom OBS overlays using the included RL Overlay SDK:
+
+```html
+<script src="http://127.0.0.1:9528/sdk/rl-overlay.js"></script>
+<script>
+  const overlay = RLOverlay.connect({ port: 9528 });
+  overlay.on("state", (data) => {
+    console.log("Blue:", data.scoreBlue, "Orange:", data.scoreOrange);
+  });
+</script>
+```
+
+The SDK auto-detects the port from the page URL when loaded from the overlay server.
+
+---
+
+## Session Detection
+
+The app automatically groups consecutive matches into play sessions. A session is a sequence of matches where the gap between matches does not exceed a configurable threshold.
+
+### How It Works
+
+- Matches are ordered by start time and grouped when consecutive matches are played within the **session gap** (default: 30 minutes)
+- If more than 30 minutes pass between matches, a new session starts
+- The session gap can be configured in **Settings > General**
+- Sessions are used in the **Analytics** page under the "Sesion" tab for per-session performance stats
 
 ---
 
@@ -152,8 +208,14 @@ api-rocketleague/
 │       │   ├── models/         # Domain types and DTOs
 │       │   ├── storage/        # SQLite persistence layer
 │       │   ├── metrics/        # Derived metrics engine
-│       │   └── session/        # Match lifecycle tracking
+│       │   ├── session/        # Match lifecycle & session grouping
+│       │   ├── overlay/        # OBS overlay HTTP/WebSocket server
+│       │   ├── settings/       # Configuration & RL INI helper
+│       │   ├── tracker_api/    # Tracker Network API client
+│       │   └── process_watcher/ # RL process detection
+│       ├── commands/           # Tauri IPC command handlers
 │       └── updater/            # Auto-update orchestration
+├── src-tauri/overlays/         # Embedded overlay HTML/CSS/JS for OBS
 ├── docs/                       # Project documentation
 ├── scripts/                    # Build and release utilities
 ├── tests/                      # End-to-end tests (Playwright)
@@ -167,15 +229,19 @@ api-rocketleague/
 The app follows a layered architecture with clear separation of concerns:
 
 ```
-Rocket League ──TCP──► Ingestor ──► Parser ──► Event Bus ──► Storage (SQLite)
-                                                     │
-                                                     ▼
-                                             Frontend (React/TS)
+Rocket League ──TCP──► Ingestor ──► Parser ──► SessionManager ──► Storage (SQLite)
+                                           │              │
+                                           ▼              ▼
+                                    Tauri Events    OverlayServer
+                                           │       (OBS via HTTP/WS)
+                                           ▼
+                                    Frontend (React/TS)
 ```
 
 - **Ingestor** manages the TCP connection to `127.0.0.1:49123` with reconnection and exponential backoff
 - **Parser** validates JSON and maps raw events to strongly-typed Rust structs
-- **Event Bus** dispatches events to both the storage layer and the live frontend via Tauri events
+- **SessionManager** tracks match lifecycle (Waiting -> Active -> Finished) and drives both the frontend and overlay server
+- **OverlayServer** broadcasts live state to OBS browser sources via WebSocket and REST endpoints
 - **Storage** uses SQLite in WAL mode with connection pooling for concurrent reads
 - **Frontend** communicates with the backend through type-safe Tauri commands
 

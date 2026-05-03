@@ -25,6 +25,20 @@ pub struct AppSettings {
     pub tracker_username: Option<String>,
     pub tracker_auto_refresh: bool,
     pub tracker_refresh_interval_min: u32,
+    pub session_gap_minutes: u32,
+    // ─── Overlay window settings ─────────────────────────────────────────
+    pub overlay_enabled: bool,
+    pub overlay_opacity: f64,
+    pub overlay_position_x: i32,
+    pub overlay_position_y: i32,
+    pub overlay_width: i32,
+    pub overlay_height: i32,
+    pub overlay_show_score: bool,
+    pub overlay_show_players: bool,
+    pub overlay_show_stats: bool,
+    pub overlay_show_timer: bool,
+    pub overlay_font_scale: String,
+    pub overlay_clickthrough: bool,
 }
 
 impl Default for AppSettings {
@@ -45,6 +59,19 @@ impl Default for AppSettings {
             tracker_username: None,
             tracker_auto_refresh: true,
             tracker_refresh_interval_min: 5,
+            session_gap_minutes: 30,
+            overlay_enabled: false,
+            overlay_opacity: 0.75,
+            overlay_position_x: 40,
+            overlay_position_y: 80,
+            overlay_width: 420,
+            overlay_height: 320,
+            overlay_show_score: true,
+            overlay_show_players: true,
+            overlay_show_stats: true,
+            overlay_show_timer: true,
+            overlay_font_scale: "medium".to_string(),
+            overlay_clickthrough: true,
         }
     }
 }
@@ -87,6 +114,25 @@ impl AppSettings {
             (
                 "tracker_refresh_interval_min",
                 self.tracker_refresh_interval_min.to_string(),
+            ),
+            (
+                "session_gap_minutes",
+                self.session_gap_minutes.to_string(),
+            ),
+            ("overlay_enabled", self.overlay_enabled.to_string()),
+            ("overlay_opacity", self.overlay_opacity.to_string()),
+            ("overlay_position_x", self.overlay_position_x.to_string()),
+            ("overlay_position_y", self.overlay_position_y.to_string()),
+            ("overlay_width", self.overlay_width.to_string()),
+            ("overlay_height", self.overlay_height.to_string()),
+            ("overlay_show_score", self.overlay_show_score.to_string()),
+            ("overlay_show_players", self.overlay_show_players.to_string()),
+            ("overlay_show_stats", self.overlay_show_stats.to_string()),
+            ("overlay_show_timer", self.overlay_show_timer.to_string()),
+            ("overlay_font_scale", self.overlay_font_scale.clone()),
+            (
+                "overlay_clickthrough",
+                self.overlay_clickthrough.to_string(),
             ),
         ]
     }
@@ -145,6 +191,43 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
             "tracker_auto_refresh" => settings.tracker_auto_refresh = value.parse().unwrap_or(true),
             "tracker_refresh_interval_min" => {
                 settings.tracker_refresh_interval_min = value.parse().unwrap_or(5)
+            }
+            "session_gap_minutes" => {
+                settings.session_gap_minutes = value.parse().unwrap_or(30)
+            }
+            "overlay_enabled" => {
+                settings.overlay_enabled = value.parse().unwrap_or(false)
+            }
+            "overlay_opacity" => {
+                settings.overlay_opacity = value.parse::<f64>().unwrap_or(0.75)
+            }
+            "overlay_position_x" => {
+                settings.overlay_position_x = value.parse().unwrap_or(40)
+            }
+            "overlay_position_y" => {
+                settings.overlay_position_y = value.parse().unwrap_or(80)
+            }
+            "overlay_width" => {
+                settings.overlay_width = value.parse().unwrap_or(420)
+            }
+            "overlay_height" => {
+                settings.overlay_height = value.parse().unwrap_or(320)
+            }
+            "overlay_show_score" => {
+                settings.overlay_show_score = value.parse().unwrap_or(true)
+            }
+            "overlay_show_players" => {
+                settings.overlay_show_players = value.parse().unwrap_or(true)
+            }
+            "overlay_show_stats" => {
+                settings.overlay_show_stats = value.parse().unwrap_or(true)
+            }
+            "overlay_show_timer" => {
+                settings.overlay_show_timer = value.parse().unwrap_or(true)
+            }
+            "overlay_font_scale" => settings.overlay_font_scale = value,
+            "overlay_clickthrough" => {
+                settings.overlay_clickthrough = value.parse().unwrap_or(true)
             }
             _ => {}
         }

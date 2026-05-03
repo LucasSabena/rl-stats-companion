@@ -163,6 +163,31 @@ export interface DailyRollup {
   totalGoals: number;
 }
 
+export interface MatchSession {
+  id: number;
+  start_time: string;
+  end_time: string;
+  duration_seconds: number;
+  match_count: number;
+  wins: number;
+  losses: number;
+  goals_scored: number;
+  goals_conceded: number;
+  total_shots: number;
+  total_saves: number;
+}
+
+export interface OverlayServerStatus {
+  running: boolean;
+  port: number;
+  connected_clients: number;
+}
+
+export interface OverlayUrl {
+  name: string;
+  url: string;
+}
+
 export type MatchType = "ranked" | "casual" | "tournament" | "other";
 
 export interface AppSettings {
@@ -177,6 +202,58 @@ export interface AppSettings {
   trackerUsername?: string | null;
   trackerAutoRefresh?: boolean;
   trackerRefreshIntervalMin?: number;
+  sessionGapMinutes?: number;
+  overlayEnabled?: boolean;
+  overlayOpacity?: number;
+  overlayPositionX?: number;
+  overlayPositionY?: number;
+  overlayWidth?: number;
+  overlayHeight?: number;
+  overlayShowScore?: boolean;
+  overlayShowPlayers?: boolean;
+  overlayShowStats?: boolean;
+  overlayShowTimer?: boolean;
+  overlayFontScale?: string;
+  overlayClickthrough?: boolean;
+}
+
+// ─── Overlay Window ─────────────────────────────────────────────────────────
+
+export interface OverlayWindowState {
+  visible: boolean;
+  clickthrough: boolean;
+  opacity: number;
+  position_x: number;
+  position_y: number;
+  width: number;
+  height: number;
+}
+
+export interface OverlayDisplaySettings {
+  showScore: boolean;
+  showPlayers: boolean;
+  showStats: boolean;
+  showTimer: boolean;
+  fontScale: "small" | "medium" | "large";
+  opacity: number;
+}
+
+export type OverlayPositionPreset = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "custom";
+
+export interface OverlayConfigForm {
+  enabled: boolean;
+  opacity: number;
+  positionPreset: OverlayPositionPreset;
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
+  showScore: boolean;
+  showPlayers: boolean;
+  showStats: boolean;
+  showTimer: boolean;
+  fontScale: "small" | "medium" | "large";
+  clickthrough: boolean;
 }
 
 export interface UpdateInfo {

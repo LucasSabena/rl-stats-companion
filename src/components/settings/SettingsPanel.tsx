@@ -3,7 +3,6 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { detectRlPath } from "@/lib/api";
-import { useToggleOverlay } from "@/hooks/useToggleOverlay";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -22,7 +21,6 @@ export function SettingsPanel() {
   const updateSettings = useUpdateSettings();
   const addToast = useUIStore((state) => state.addToast);
   const [isDetecting, setIsDetecting] = useState(false);
-  const { toggle: toggleOverlay } = useToggleOverlay();
 
   const {
     register,
@@ -38,8 +36,8 @@ export function SettingsPanel() {
       autoStart: false,
       rlPath: null,
       platform: null,
-      overlayMode: false,
       defaultMatchType: "ranked",
+      sessionGapMinutes: 30,
     },
   });
 
@@ -50,8 +48,8 @@ export function SettingsPanel() {
         playerName: settings.playerName ?? "",
         rlPath: settings.rlPath ?? null,
         platform: settings.platform as "steam" | "epic" | null,
-        overlayMode: false,
         defaultMatchType: settings.defaultMatchType ?? "ranked",
+        sessionGapMinutes: settings.sessionGapMinutes ?? 30,
       });
     }
   }, [settings, reset]);
@@ -64,6 +62,7 @@ export function SettingsPanel() {
       rlPath: data.rlPath,
       platform: data.platform,
       defaultMatchType: data.defaultMatchType,
+      sessionGapMinutes: data.sessionGapMinutes,
     }, {
       onSuccess: () =>
         addToast({ type: "success", title: "Ajustes guardados", message: "Los cambios se aplicaron correctamente." }),
@@ -158,18 +157,28 @@ export function SettingsPanel() {
               )} />
             <label htmlFor="autoStart" className="text-sm text-text-secondary">Iniciar con Windows</label>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-text-secondary">Modo overlay</p>
-              <p className="text-xs text-text-muted">Widget flotante sobre el juego</p>
-            </div>
-            <Controller name="overlayMode" control={control}
+          <div className="space-y-2">
+            <label htmlFor="sessionGapMinutes" className="text-sm font-medium text-text-secondary">
+              Brecha entre sesiones (minutos)
+            </label>
+            <Controller name="sessionGapMinutes" control={control}
               render={({ field }) => (
-                <button type="button" onClick={() => { toggleOverlay(); field.onChange(!field.value); }}
-                  className={cn("relative inline-flex h-6 w-11 items-center rounded-full transition-colors", field.value ? "bg-accent-primary" : "bg-border-strong")}>
-                  <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white transition-transform", field.value ? "translate-x-6" : "translate-x-1")} />
-                </button>
+                <input
+                  id="sessionGapMinutes"
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={field.value}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  className={cn(inputClass, "w-24 text-center")}
+                />
               )} />
+            <p className="text-xs text-text-muted">
+              Minutos entre partidas para considerarlas la misma sesion (5-120, por defecto 30).
+            </p>
+            {errors.sessionGapMinutes && (
+              <p className="text-xs text-accent-danger">{errors.sessionGapMinutes.message}</p>
+            )}
           </div>
         </div>
       </section>

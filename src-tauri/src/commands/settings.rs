@@ -1,3 +1,4 @@
+use crate::core::autostart::configure_autostart;
 use crate::core::models::PlayerStats;
 use crate::core::settings::{configure_rl_ini, get_settings, set_settings, AppSettings};
 use crate::core::storage::{self, clear_all_data, MatchPlayerRow, MatchQuery, MatchUpsert};
@@ -24,8 +25,15 @@ pub async fn set_settings_cmd(
     settings: AppSettings,
 ) -> Result<(), String> {
     let pool = &state.db_pool;
+    let auto_start_changed = match get_settings(pool) {
+        Ok(existing) => existing.auto_start != settings.auto_start,
+        Err(_) => false,
+    };
     match set_settings(pool, &settings) {
         Ok(()) => {
+            if auto_start_changed {
+                configure_autostart(settings.auto_start);
+            }
             let player_names = identity_candidate_names(&settings);
             if let Err(e) = storage::rebuild_daily_rollups_for_identity(
                 pool,

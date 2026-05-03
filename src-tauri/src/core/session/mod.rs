@@ -37,6 +37,7 @@ pub struct SessionManager {
     ball_speed: f64,
     match_type: Option<String>,
     winner_team_num: Option<i32>,
+    max_player_count: usize,
 }
 
 impl SessionManager {
@@ -57,6 +58,7 @@ impl SessionManager {
             ball_speed: 0.0,
             match_type: Some("ranked".into()),
             winner_team_num: None,
+            max_player_count: 0,
         }
     }
 
@@ -120,6 +122,7 @@ impl SessionManager {
                             self.score_orange = teams[1].score;
                         }
                     }
+                    self.max_player_count = self.max_player_count.max(players.len());
                     for (id, player) in players.iter() {
                         self.players.insert(id.clone(), player.clone());
                     }
@@ -207,7 +210,17 @@ impl SessionManager {
                 None
             }
         });
-        let playlist = infer_playlist(self.players.values());
+        let is_training = self.max_player_count <= 1;
+        let effective_match_type = if is_training {
+            Some("training")
+        } else {
+            self.match_type.as_deref()
+        };
+        let playlist = if is_training {
+            None
+        } else {
+            infer_playlist(self.players.values())
+        };
 
         let match_id = insert_match(
             pool,
@@ -215,7 +228,7 @@ impl SessionManager {
             start_time,
             Some(&arena),
             self.is_online,
-            self.match_type.as_deref(),
+            effective_match_type,
             playlist.as_deref(),
         )?;
         self.match_id = Some(match_id);
@@ -378,6 +391,7 @@ impl SessionManager {
         self.events.clear();
         self.ball_speed = 0.0;
         self.winner_team_num = None;
+        self.max_player_count = 0;
     }
 
     fn has_meaningful_match_data(&self) -> bool {

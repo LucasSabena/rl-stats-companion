@@ -2,6 +2,8 @@ pub mod analytics;
 pub mod detect;
 pub mod history;
 pub mod live;
+pub mod overlay;
+pub mod overlay_window;
 pub mod settings;
 pub mod tracker;
 pub mod window;

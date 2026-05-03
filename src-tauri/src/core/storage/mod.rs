@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{params, OptionalExtension};
+use serde::Serialize;
 use std::path::Path;
 use tracing::{debug, info};
 
@@ -1071,6 +1072,179 @@ pub fn insert_session_if_not_exists(
         .map_err(|e| AppError::StorageError(e.to_string()))?;
     }
     Ok(())
+}
+
+// ─── Session grouping ───────────────────────────────────────────────────────
+
+/// A group of consecutive matches played within a time gap threshold.
+#[derive(Clone, Debug, Serialize)]
+pub struct MatchSession {
+    /// 1-based sequential session number (most recent = 1).
+    pub id: i32,
+    /// ISO 8601 start time of the session (first match start_time).
+    pub start_time: String,
+    /// ISO 8601 end time of the session (last match end_time or start_time).
+    pub end_time: String,
+    /// Total duration from first match start to last match end, in seconds.
+    pub duration_seconds: i32,
+    /// Number of matches in this session.
+    pub match_count: i32,
+    /// Wins in this session.
+    pub wins: i32,
+    /// Losses in this session.
+    pub losses: i32,
+    /// Goals scored by local player in this session.
+    pub goals_scored: i32,
+    /// Goals conceded by local player in this session.
+    pub goals_conceded: i32,
+    /// Total shots across all matches in this session.
+    pub total_shots: i32,
+    /// Total saves across all matches in this session.
+    pub total_saves: i32,
+}
+
+/// Groups matches into play sessions separated by at most `gap_minutes`.
+///
+/// A session is defined as a sequence of matches where the gap between
+/// consecutive matches (previous match end_time to next match start_time)
+/// does not exceed `gap_minutes`. Matches are ordered by start_time
+/// descending so session #1 is the most recent.
+pub fn get_match_sessions(
+    pool: &DbPool,
+    gap_minutes: u32,
+) -> AppResult<Vec<MatchSession>> {
+    let conn = get_conn(pool)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, guid, start_time, end_time, arena, score_blue, score_orange, winner,
+                is_online, is_overtime, duration_seconds, match_type, playlist
+         FROM matches
+         ORDER BY start_time DESC"
+    )?;
+
+    let matches: Vec<Match> = stmt
+        .query_map([], map_match_row)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
+
+    if matches.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let gap = chrono::Duration::minutes(gap_minutes as i64);
+    let mut sessions: Vec<Vec<&Match>> = Vec::new();
+    let mut current_group: Vec<&Match> = Vec::new();
+
+    // Matches are ordered by start_time DESC (most recent first).
+    // We iterate and group: if the previous match in the group started
+    // within `gap` of this match's end, they belong to the same session.
+    for m in &matches {
+        if let Some(last) = current_group.last() {
+            // last.end_time is the previous match (more recent), m is the current (older).
+            // Check if m ended close enough to last's start.
+            let prev_end = last.end_time.unwrap_or(last.start_time);
+            let gap_duration = prev_end - m.start_time;
+            if gap_duration <= gap {
+                current_group.push(m);
+            } else {
+                sessions.push(std::mem::take(&mut current_group));
+                current_group.push(m);
+            }
+        } else {
+            current_group.push(m);
+        }
+    }
+    if !current_group.is_empty() {
+        sessions.push(current_group);
+    }
+
+    // Build session summaries.
+    let mut result = Vec::with_capacity(sessions.len());
+    for (idx, group) in sessions.iter().enumerate() {
+        let first = group.last().unwrap(); // oldest match in group
+        let last = group.first().unwrap(); // newest match in group
+        let start_time = first.start_time;
+        let end_time = last.end_time.unwrap_or(last.start_time);
+        let duration_seconds = (end_time - start_time).num_seconds().max(0) as i32;
+
+        let match_count = group.len() as i32;
+        let mut wins = 0i32;
+        let mut losses = 0i32;
+        let mut goals_scored = 0i32;
+        let mut goals_conceded = 0i32;
+        let mut total_shots = 0i32;
+        let mut total_saves = 0i32;
+
+        // Get local player identity for W/L and goals.
+        let settings = crate::core::settings::get_settings(pool)
+            .unwrap_or_default();
+        let local_id = settings.local_primary_id.clone();
+
+        for m in group.iter() {
+            // Winner: 0 = blue, 1 = orange
+            let local_team = if let Some(ref lid) = local_id {
+                get_local_team_num(pool, m.id, Some(lid), &[]).unwrap_or(None)
+            } else {
+                None
+            };
+
+            if let Some(lt) = local_team {
+                if m.winner == Some(lt) {
+                    wins += 1;
+                } else if m.winner.is_some() {
+                    losses += 1;
+                }
+            }
+
+            // Aggregate goals per match
+            if let Some(_lt) = local_team {
+                goals_scored += if local_team == Some(0) {
+                    m.score_blue
+                } else {
+                    m.score_orange
+                };
+                goals_conceded += if local_team == Some(0) {
+                    m.score_orange
+                } else {
+                    m.score_blue
+                };
+            }
+
+            // Aggregate shots/saves from match_players
+            let mut mp_stmt = conn.prepare(
+                "SELECT mp.shots, mp.saves
+                 FROM match_players mp
+                 JOIN players p ON mp.player_id = p.id
+                 WHERE mp.match_id = ?1 AND p.primary_id = ?2"
+            ).map_err(|e| AppError::StorageError(e.to_string()))?;
+
+            if let Some(ref lid) = local_id {
+                if let Ok(iter) = mp_stmt.query_map(params![m.id, lid], |row| {
+                    Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+                }) {
+                    for row in iter.flatten() {
+                        total_shots += row.0;
+                        total_saves += row.1;
+                    }
+                }
+            }
+        }
+
+        result.push(MatchSession {
+            id: (idx + 1) as i32,
+            start_time: start_time.to_rfc3339(),
+            end_time: end_time.to_rfc3339(),
+            duration_seconds,
+            match_count,
+            wins,
+            losses,
+            goals_scored,
+            goals_conceded,
+            total_shots,
+            total_saves,
+        });
+    }
+
+    Ok(result)
 }
 
 // ─── Tracker Network cache helpers ───────────────────────────────────────────

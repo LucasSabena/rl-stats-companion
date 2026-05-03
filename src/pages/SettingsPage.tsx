@@ -3,7 +3,8 @@ import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { IniHelper } from "@/components/settings/IniHelper";
 import { DataManagement } from "@/components/settings/DataManagement";
 import { UpdateChecker } from "@/components/settings/UpdateChecker";
-import { OverlayToggle } from "@/components/settings/OverlayToggle";
+import { OverlayConfig } from "@/components/settings/OverlayConfig";
+import { OverlayStreaming } from "@/components/settings/OverlayStreaming";
 import { TrackerSetup } from "@/components/settings/TrackerSetup";
 
 export function SettingsPage() {
@@ -13,8 +14,13 @@ export function SettingsPage() {
 
       <div className="space-y-8">
         <section>
-          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-tertiary">Modo overlay</h3>
-          <OverlayToggle />
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-tertiary">Streaming OBS</h3>
+          <OverlayStreaming />
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-tertiary">Overlay in-game</h3>
+          <OverlayConfig />
         </section>
 
         <section>
