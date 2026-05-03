@@ -55,7 +55,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFFNDE1MDY4NjI5QTk5NTMKUldSR0d1WUx5K3RPRjJOZzFSQnB2RHdSSm1qQ2J1cUN3aXJxYmVoYjB4Z2JtbE1tbVpXS0RDNk0K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFENDQzMURFNkI4ODY3MwpSV1J6aHJqbUhVUFVBUTRCRUJCd2JybXc2azltS2VmakI3OElBZjFDbWNjZHYxQXZNZzFDdXlXRQo=",
       "endpoints": [
         "https://github.com/LucasSabena/rl-stats-companion/releases/latest/download/latest.json"
       ],

@@ -9,6 +9,16 @@ updates:
       day: 'monday'
       time: '09:00'
     open-pull-requests-limit: 10
+    versioning-strategy: increase-if-necessary
+    ignore:
+      - dependency-name: 'recharts'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'lucide-react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitejs/plugin-react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint-plugin-react-hooks'
+        update-types: ['version-update:semver-major']
     reviewers:
       - 'LucasSabena'
     assignees:
