@@ -188,11 +188,20 @@ jobs:
           echo "files=$(($artifacts | ForEach-Object { $_.FullName }) -join ',')" >> "$env:GITHUB_OUTPUT"
         shell: pwsh
 
+      - name: Generate updater manifest
+        run: |
+          ./scripts/generate-latest-json.ps1 `
+            -BundleDir "src-tauri/target/x86_64-pc-windows-msvc/release/bundle" `
+            -Version "${{ needs.create-release.outputs.version }}" `
+            -ReleaseUrl "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}" `
+            -OutFile "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/latest.json"
+        shell: pwsh
+
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $bundleFiles = Get-ChildItem -Path "src-tauri/target/*/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip","latest.json"
+          $bundleFiles = Get-ChildItem -Path "src-tauri/target/*/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip","*.sig","latest.json"
           foreach ($file in $bundleFiles) {
             gh release upload "${{ github.ref_name }}" "$($file.FullName)" --clobber
           }
