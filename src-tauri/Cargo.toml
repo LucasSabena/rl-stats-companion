@@ -1,11 +1,11 @@
 [package]
 name = "rl-stats-companion"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local-first desktop companion for Rocket League Stats API"
 authors = ["Lucas Sabena"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/lukit/rl-stats-companion"
+repository = "https://github.com/LucasSabena/rl-stats-companion"
 
 [lib]
 name = "rl_stats_companion_lib"
