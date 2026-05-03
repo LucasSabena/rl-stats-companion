@@ -13,6 +13,7 @@ const MATCH_TYPE_LABELS: Record<MatchType, string> = {
   ranked: "Ranked",
   casual: "Casual",
   tournament: "Torneo",
+  training: "Entrenamiento",
   other: "Otro",
 };
 
@@ -20,6 +21,7 @@ const MATCH_TYPE_VARIANTS: Record<MatchType, "ranked" | "default"> = {
   ranked: "ranked",
   casual: "default",
   tournament: "default",
+  training: "default",
   other: "default",
 };
 

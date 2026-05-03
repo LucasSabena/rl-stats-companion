@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import {
   type LiveMatchState,
   type ConnectionStatus,
@@ -18,7 +19,7 @@ import {
   type OverlayUrl,
   type OverlayWindowState,
   type AppSettings,
-  type UpdateInfo,
+
   type StorageStats,
   type TrackerProfile,
 } from "./types";
@@ -162,6 +163,10 @@ interface RawAppSettings {
   overlay_show_timer?: boolean;
   overlay_font_scale?: string;
   overlay_clickthrough?: boolean;
+  overlay_player_scope?: string;
+  overlay_show_names?: boolean;
+  overlay_show_player_score?: boolean;
+  overlay_show_boost?: boolean;
 }
 
 interface RawDailyRollup {
@@ -508,6 +513,10 @@ export async function getSettings(): Promise<AppSettings> {
     overlayShowTimer: settings.overlay_show_timer ?? true,
     overlayFontScale: settings.overlay_font_scale ?? "medium",
     overlayClickthrough: settings.overlay_clickthrough ?? true,
+    overlayPlayerScope: (settings.overlay_player_scope ?? "all") as "all" | "team",
+    overlayShowNames: settings.overlay_show_names ?? true,
+    overlayShowPlayerScore: settings.overlay_show_player_score ?? true,
+    overlayShowBoost: settings.overlay_show_boost ?? false,
   };
 }
 
@@ -542,6 +551,10 @@ export async function setSettings(settings: AppSettings): Promise<void> {
       overlay_show_timer: settings.overlayShowTimer ?? true,
       overlay_font_scale: settings.overlayFontScale ?? "medium",
       overlay_clickthrough: settings.overlayClickthrough ?? true,
+      overlay_player_scope: settings.overlayPlayerScope ?? "all",
+      overlay_show_names: settings.overlayShowNames ?? true,
+      overlay_show_player_score: settings.overlayShowPlayerScore ?? true,
+      overlay_show_boost: settings.overlayShowBoost ?? false,
     },
   });
 }
@@ -587,8 +600,8 @@ export async function clearAllData(): Promise<void> {
 }
 
 // Updates
-export async function checkForUpdate(): Promise<UpdateInfo | null> {
-  return null;
+export async function checkForUpdate(): Promise<Update | null> {
+  return check();
 }
 
 // ─── Overlay / OBS Streaming ─────────────────────────────────────────────────

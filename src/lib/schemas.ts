@@ -13,7 +13,7 @@ export const settingsSchema = z.object({
   autoStart: z.boolean(),
   rlPath: z.preprocess(emptyStringToNull, z.string().nullable()),
   platform: z.preprocess(emptyStringToNull, z.enum(["steam", "epic"]).nullable()),
-  defaultMatchType: z.enum(["ranked", "casual", "tournament", "other"]),
+  defaultMatchType: z.enum(["ranked", "casual", "tournament", "training", "other"]),
   sessionGapMinutes: z.number().int().min(5).max(120),
 });
 

@@ -439,6 +439,10 @@ async fn create_overlay_window_inner(
             "showTimer": settings.overlay_show_timer,
             "fontScale": settings.overlay_font_scale,
             "opacity": settings.overlay_opacity,
+            "playerScope": settings.overlay_player_scope,
+            "showNames": settings.overlay_show_names,
+            "showPlayerScore": settings.overlay_show_player_score,
+            "showBoost": settings.overlay_show_boost,
         }),
     );
     let _ = win.emit("overlay-opacity-changed", settings.overlay_opacity);

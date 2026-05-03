@@ -14,6 +14,10 @@ const DEFAULT_DISPLAY: OverlayDisplaySettings = {
   showTimer: true,
   fontScale: "medium",
   opacity: 0.75,
+  playerScope: "all",
+  showNames: true,
+  showPlayerScore: true,
+  showBoost: false,
 };
 
 export function OverlayView() {
@@ -23,6 +27,16 @@ export function OverlayView() {
   const connectionStatus = useLiveStore((s) => s.connectionStatus);
   const [display, setDisplay] = useState<OverlayDisplaySettings>(DEFAULT_DISPLAY);
   const [interactive, setInteractive] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.add("overlay-body");
+    document.documentElement.style.background = "transparent";
+
+    return () => {
+      document.body.classList.remove("overlay-body");
+      document.documentElement.style.background = "";
+    };
+  }, []);
 
   useEffect(() => {
     const unlisteners: Array<() => void> = [];
@@ -50,17 +64,11 @@ export function OverlayView() {
 
   return (
     <div
-      className="overlay-mode group relative flex h-screen w-screen flex-col overflow-hidden font-sans text-text-primary"
-      style={{
-        opacity: display.opacity,
-        background: interactive
-          ? "rgba(10, 10, 15, 0.7)"
-          : "transparent",
-        backdropFilter: interactive ? "blur(8px)" : "none",
-        WebkitBackdropFilter: interactive ? "blur(8px)" : "none",
-        borderRadius: interactive ? "12px" : "0",
-        transition: "opacity 0.3s ease, background 0.3s ease",
-      }}
+      className={cn(
+        "overlay-mode flex h-screen w-screen flex-col overflow-hidden font-sans text-text-primary",
+        interactive && "pointer-events-auto"
+      )}
+      style={{ opacity: display.opacity }}
     >
       {interactive && <OverlayDismissButton />}
 
@@ -72,26 +80,20 @@ export function OverlayView() {
           fontScaleClass={fontScaleClass}
         />
       ) : (
-        <WaitingState connectionStatus={connectionStatus} display={display} />
+        <WaitingState connectionStatus={connectionStatus} />
       )}
     </div>
   );
 }
 
-function WaitingState({
-  connectionStatus,
-  display,
-}: {
-  connectionStatus: string;
-  display: OverlayDisplaySettings;
-}) {
+function WaitingState({ connectionStatus }: { connectionStatus: string }) {
   const label =
     connectionStatus === "game_not_running"
       ? "Esperando Rocket League..."
       : "Esperando partida...";
 
   return (
-    <div className="flex flex-1 items-center justify-center" style={{ opacity: display.opacity }}>
+    <div className="flex flex-1 items-center justify-center">
       <p className="animate-pulse text-xs text-text-tertiary">{label}</p>
     </div>
   );
@@ -105,8 +107,15 @@ interface MatchContentProps {
 }
 
 function MatchContent({ match, connectionStatus, display, fontScaleClass }: MatchContentProps) {
-  const bluePlayers = match.players.filter((p: Player) => p.team === 0);
-  const orangePlayers = match.players.filter((p: Player) => p.team === 1);
+  const localTeam = identifyLocalTeam(match.players);
+  const allPlayers = match.players;
+  const visiblePlayers = display.playerScope === "team" && localTeam !== null
+    ? allPlayers.filter((p: Player) => p.team === localTeam)
+    : allPlayers;
+
+  const bluePlayers = visiblePlayers.filter((p: Player) => p.team === 0);
+  const orangePlayers = visiblePlayers.filter((p: Player) => p.team === 1);
+  const showBothTeams = bluePlayers.length > 0 && orangePlayers.length > 0;
 
   return (
     <div className="flex flex-1 flex-col gap-2 p-3 pt-4">
@@ -125,12 +134,32 @@ function MatchContent({ match, connectionStatus, display, fontScaleClass }: Matc
 
       {display.showPlayers && (
         <div className="flex flex-1 gap-2 overflow-hidden" style={{ fontSize: fontScaleClass }}>
-          <TeamColumn team="blue" players={bluePlayers} display={display} />
-          <TeamColumn team="orange" players={orangePlayers} display={display} />
+          {bluePlayers.length > 0 && (
+            <TeamColumn players={bluePlayers} display={display} />
+          )}
+          {showBothTeams && (
+            <TeamColumn players={orangePlayers} display={display} />
+          )}
+          {orangePlayers.length > 0 && !showBothTeams && (
+            <TeamColumn players={orangePlayers} display={display} />
+          )}
         </div>
       )}
     </div>
   );
+}
+
+function identifyLocalTeam(players: Player[]): number | null {
+  if (players.length >= 4) return null;
+  if (players.length === 0) return null;
+
+  // If only players from one team exist, that's our team
+  const teams = new Set(players.map((p) => p.team));
+  if (teams.size === 1) return players[0]?.team ?? null;
+
+  // In solo queue (3v3), the team with 1 player vs 3+ is the local team
+  // In 2v2, if we have 2 players on blue and 2 on orange, can't determine
+  return null;
 }
 
 function OverlayTopBar({
@@ -200,26 +229,16 @@ const ScoreRow = memo(function ScoreRow({
 });
 
 const TeamColumn = memo(function TeamColumn({
-  team,
   players,
   display,
 }: {
-  team: "blue" | "orange";
   players: Player[];
   display: OverlayDisplaySettings;
 }) {
-  const isBlue = team === "blue";
-
   return (
     <div className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden">
-      <div className="flex items-center gap-1.5 pb-1">
-        <div className={cn("h-2 w-2 rounded-full", isBlue ? "bg-team-blue" : "bg-team-orange")} />
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
-          {isBlue ? "Azul" : "Nar"}
-        </span>
-      </div>
       {players.length === 0 ? (
-        <p className="text-[10px] text-text-muted">Sin jugadores</p>
+        <p className="text-[10px] text-text-muted px-1">-</p>
       ) : (
         players.map((p) => (
           <OverlayPlayerRow key={p.id} player={p} display={display} />
@@ -236,29 +255,56 @@ const OverlayPlayerRow = memo(function OverlayPlayerRow({
   player: Player;
   display: OverlayDisplaySettings;
 }) {
+  const isBlue = player.team === 0;
+
   return (
-    <div
-      className={cn(
-        "flex items-center gap-1 rounded px-1 py-0.5",
-        player.team === 0 ? "bg-team-blue/10" : "bg-team-orange/10"
-      )}
-    >
-      <span className="w-[56px] truncate font-medium text-text-secondary">
-        {player.name}
-      </span>
-      <span className="ml-auto font-mono font-semibold text-text-primary tabular-nums">
-        {player.score}
-      </span>
-      {display.showStats && (
-        <span className="ml-0.5 flex items-center gap-0.5 text-[9px] text-text-tertiary">
-          <span className="tabular-nums">{player.goals}</span>
-          <span className="text-text-muted">G</span>
-          <span className="tabular-nums">{player.assists}</span>
-          <span className="text-text-muted">A</span>
-          <span className="tabular-nums">{player.saves}</span>
-          <span className="text-text-muted">S</span>
-        </span>
+    <div className="flex flex-col gap-0.5">
+      <div
+        className={cn(
+          "flex items-center gap-1 rounded px-1 py-0.5",
+          isBlue ? "bg-team-blue/15" : "bg-team-orange/15"
+        )}
+      >
+        {display.showNames && (
+          <span className="truncate font-medium text-text-secondary max-w-[60px]">
+            {player.name}
+          </span>
+        )}
+        {display.showPlayerScore && (
+          <span className={cn("font-mono font-semibold text-text-primary tabular-nums", !display.showNames && "ml-0")}>
+            {player.score}
+          </span>
+        )}
+        {display.showStats && (
+          <span className={cn("flex items-center gap-0.5 text-[9px] text-text-tertiary", display.showNames || display.showPlayerScore ? "ml-auto" : "ml-0")}>
+            <span className="tabular-nums">{player.goals}</span>
+            <span className="text-text-muted">G</span>
+            <span className="tabular-nums">{player.assists}</span>
+            <span className="text-text-muted">A</span>
+            <span className="tabular-nums">{player.saves}</span>
+            <span className="text-text-muted">S</span>
+          </span>
+        )}
+      </div>
+      {display.showBoost && (
+        <BoostBar boost={player.boostAmount} />
       )}
     </div>
   );
 });
+
+function BoostBar({ boost }: { boost: number }) {
+  const pct = Math.min(100, Math.max(0, boost));
+  const colorClass =
+    pct > 60 ? "bg-boost-full" :
+    pct > 25 ? "bg-boost-mid" : "bg-boost-low";
+
+  return (
+    <div className="h-1 w-full rounded-full bg-text-muted/20">
+      <div
+        className={cn("h-full rounded-full transition-all duration-300", colorClass)}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}

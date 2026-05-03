@@ -22,6 +22,9 @@
   --color-team-orange: #F97316;
   --color-team-blue-dark: #1E40AF;
   --color-team-orange-dark: #C2410C;
+  --color-boost-full: #10B981;
+  --color-boost-mid: #F59E0B;
+  --color-boost-low: #EF4444;
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -47,7 +50,6 @@
     color: var(--color-text-primary);
   }
 
-  /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -70,10 +72,16 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
+}
 
-  .overlay-mode {
-    background: transparent !important;
-    border-radius: 0 !important;
-    user-select: none;
-  }
+.overlay-mode {
+  background: transparent !important;
+  border-radius: 0 !important;
+  user-select: none;
+  pointer-events: none;
+}
+
+body.overlay-body,
+body.overlay-body #root {
+  background: transparent !important;
 }

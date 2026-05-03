@@ -258,6 +258,10 @@ pub async fn notify_overlay_settings_changed(
                 "showTimer": app_settings.overlay_show_timer,
                 "fontScale": app_settings.overlay_font_scale,
                 "opacity": app_settings.overlay_opacity,
+                "playerScope": app_settings.overlay_player_scope,
+                "showNames": app_settings.overlay_show_names,
+                "showPlayerScore": app_settings.overlay_show_player_score,
+                "showBoost": app_settings.overlay_show_boost,
             }),
         );
     }
@@ -307,6 +311,10 @@ fn apply_overlay_settings(
             "showTimer": settings.overlay_show_timer,
             "fontScale": settings.overlay_font_scale,
             "opacity": settings.overlay_opacity,
+            "playerScope": settings.overlay_player_scope,
+            "showNames": settings.overlay_show_names,
+            "showPlayerScore": settings.overlay_show_player_score,
+            "showBoost": settings.overlay_show_boost,
         }),
     );
 

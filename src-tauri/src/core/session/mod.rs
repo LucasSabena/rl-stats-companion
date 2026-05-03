@@ -354,23 +354,25 @@ impl SessionManager {
 
         insert_session(pool, match_id, &summary)?;
 
-        // Update daily rollup
-        let date = start_time.format("%Y-%m-%d").to_string();
+        // Update daily rollup — skip for training matches
+        if !is_training {
+            let date = start_time.format("%Y-%m-%d").to_string();
 
-        let rollup = crate::core::models::DailyRollup {
-            date,
-            matches_played: 1,
-            wins: if is_win { 1 } else { 0 },
-            losses: if is_loss { 1 } else { 0 },
-            goals_scored: my_goals,
-            goals_conceded: their_goals,
-            total_shots,
-            total_saves,
-            avg_duration_seconds: duration,
-            total_demos,
-            total_assists,
-        };
-        upsert_daily_rollup(pool, &rollup)?;
+            let rollup = crate::core::models::DailyRollup {
+                date,
+                matches_played: 1,
+                wins: if is_win { 1 } else { 0 },
+                losses: if is_loss { 1 } else { 0 },
+                goals_scored: my_goals,
+                goals_conceded: their_goals,
+                total_shots,
+                total_saves,
+                avg_duration_seconds: duration,
+                total_demos,
+                total_assists,
+            };
+            upsert_daily_rollup(pool, &rollup)?;
+        }
 
         info!(match_id, "Match persisted successfully");
         Ok(summary)
@@ -411,13 +413,17 @@ fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> Option<S
         }
     });
 
+    let total = blue_count + orange_count;
     let team_size = blue_count.max(orange_count);
-    let playlist = match team_size {
-        0 => return None,
-        1 => "Duel",
-        2 => "Doubles",
-        3 => "Standard",
-        4 => "Chaos",
+    let playlist = match total {
+        0 | 1 => return None, // solo = training, not a real playlist
+        2 => "Duel",
+        3 | 4 => match team_size {
+            2 => "Doubles",
+            3 => "Standard",
+            4 => "Chaos",
+            _ => "Other",
+        },
         _ => "Other",
     };
 

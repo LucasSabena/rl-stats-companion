@@ -39,6 +39,10 @@ pub struct AppSettings {
     pub overlay_show_timer: bool,
     pub overlay_font_scale: String,
     pub overlay_clickthrough: bool,
+    pub overlay_player_scope: String,
+    pub overlay_show_names: bool,
+    pub overlay_show_player_score: bool,
+    pub overlay_show_boost: bool,
 }
 
 impl Default for AppSettings {
@@ -72,6 +76,10 @@ impl Default for AppSettings {
             overlay_show_timer: true,
             overlay_font_scale: "medium".to_string(),
             overlay_clickthrough: true,
+            overlay_player_scope: "all".to_string(),
+            overlay_show_names: true,
+            overlay_show_player_score: true,
+            overlay_show_boost: false,
         }
     }
 }
@@ -133,6 +141,19 @@ impl AppSettings {
             (
                 "overlay_clickthrough",
                 self.overlay_clickthrough.to_string(),
+            ),
+            ("overlay_player_scope", self.overlay_player_scope.clone()),
+            (
+                "overlay_show_names",
+                self.overlay_show_names.to_string(),
+            ),
+            (
+                "overlay_show_player_score",
+                self.overlay_show_player_score.to_string(),
+            ),
+            (
+                "overlay_show_boost",
+                self.overlay_show_boost.to_string(),
             ),
         ]
     }
@@ -228,6 +249,16 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
             "overlay_font_scale" => settings.overlay_font_scale = value,
             "overlay_clickthrough" => {
                 settings.overlay_clickthrough = value.parse().unwrap_or(true)
+            }
+            "overlay_player_scope" => settings.overlay_player_scope = value,
+            "overlay_show_names" => {
+                settings.overlay_show_names = value.parse().unwrap_or(true)
+            }
+            "overlay_show_player_score" => {
+                settings.overlay_show_player_score = value.parse().unwrap_or(true)
+            }
+            "overlay_show_boost" => {
+                settings.overlay_show_boost = value.parse().unwrap_or(false)
             }
             _ => {}
         }

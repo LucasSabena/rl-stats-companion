@@ -188,7 +188,7 @@ export interface OverlayUrl {
   url: string;
 }
 
-export type MatchType = "ranked" | "casual" | "tournament" | "other";
+export type MatchType = "ranked" | "casual" | "tournament" | "training" | "other";
 
 export interface AppSettings {
   playerName?: string;
@@ -215,6 +215,10 @@ export interface AppSettings {
   overlayShowTimer?: boolean;
   overlayFontScale?: string;
   overlayClickthrough?: boolean;
+  overlayPlayerScope?: "all" | "team";
+  overlayShowNames?: boolean;
+  overlayShowPlayerScore?: boolean;
+  overlayShowBoost?: boolean;
 }
 
 // ─── Overlay Window ─────────────────────────────────────────────────────────
@@ -236,6 +240,10 @@ export interface OverlayDisplaySettings {
   showTimer: boolean;
   fontScale: "small" | "medium" | "large";
   opacity: number;
+  playerScope: "all" | "team";
+  showNames: boolean;
+  showPlayerScore: boolean;
+  showBoost: boolean;
 }
 
 export type OverlayPositionPreset = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "custom";
@@ -254,6 +262,10 @@ export interface OverlayConfigForm {
   showTimer: boolean;
   fontScale: "small" | "medium" | "large";
   clickthrough: boolean;
+  playerScope: "all" | "team";
+  showNames: boolean;
+  showPlayerScore: boolean;
+  showBoost: boolean;
 }
 
 export interface UpdateInfo {

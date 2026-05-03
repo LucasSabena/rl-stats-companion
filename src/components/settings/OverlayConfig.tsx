@@ -24,6 +24,9 @@ import {
   Move,
   Settings2,
   Type,
+  Users,
+  UsersRound,
+  User,
 } from "lucide-react";
 import type { OverlayWindowState, OverlayConfigForm, OverlayPositionPreset } from "@/lib/types";
 
@@ -63,6 +66,10 @@ export function OverlayConfig() {
       showTimer: true,
       fontScale: "medium",
       clickthrough: true,
+      playerScope: "all",
+      showNames: true,
+      showPlayerScore: true,
+      showBoost: false,
     },
   });
 
@@ -92,6 +99,10 @@ export function OverlayConfig() {
           showTimer: appSettings.overlayShowTimer ?? true,
           fontScale: (appSettings.overlayFontScale as OverlayConfigForm["fontScale"]) ?? "medium",
           clickthrough: appSettings.overlayClickthrough ?? true,
+          playerScope: (appSettings.overlayPlayerScope ?? "all") as "all" | "team",
+          showNames: appSettings.overlayShowNames ?? true,
+          showPlayerScore: appSettings.overlayShowPlayerScore ?? true,
+          showBoost: appSettings.overlayShowBoost ?? false,
         });
       } catch {
         addToast({ type: "error", title: "Error", message: "No se pudo cargar la config del overlay" });
@@ -121,7 +132,6 @@ export function OverlayConfig() {
         addToast({ type: "info", title: "Overlay desactivado" });
       }
       setValue("enabled", newEnabled);
-      // Persist enabled state
       const s = await getSettings();
       await setSettings({ ...s, overlayEnabled: newEnabled });
     } catch (err: unknown) {
@@ -148,7 +158,6 @@ export function OverlayConfig() {
     setSaving(true);
     try {
       const appSettings = await getSettings();
-      // Persist all overlay settings
       await setSettings({
         ...appSettings,
         overlayEnabled: data.enabled,
@@ -163,9 +172,12 @@ export function OverlayConfig() {
         overlayShowTimer: data.showTimer,
         overlayFontScale: data.fontScale,
         overlayClickthrough: data.clickthrough,
+        overlayPlayerScope: data.playerScope,
+        overlayShowNames: data.showNames,
+        overlayShowPlayerScore: data.showPlayerScore,
+        overlayShowBoost: data.showBoost,
       });
 
-      // Apply changes to existing overlay window
       if (state?.visible) {
         await updateOverlayOpacity(data.opacity);
         await updateOverlayPosition(data.positionX, data.positionY);
@@ -299,6 +311,30 @@ export function OverlayConfig() {
 
           <div>
             <div className="flex items-center gap-1.5 mb-2">
+              <Users size={14} className="text-text-tertiary" />
+              <span className="text-xs font-medium text-text-secondary">Jugadores a mostrar</span>
+            </div>
+            <div className="flex gap-1.5">
+              {(["all", "team"] as const).map((scope) => (
+                <button
+                  key={scope}
+                  type="button"
+                  onClick={() => setValue("playerScope", scope)}
+                  className={cn(
+                    "rounded-md border px-3 py-1.5 text-xs transition-colors flex items-center gap-1.5",
+                    watched.playerScope === scope
+                      ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
+                      : "border-border-subtle text-text-tertiary hover:text-text-secondary"
+                  )}
+                >
+                  {scope === "all" ? <><UsersRound size={13} /> Todos</> : <><User size={13} /> Solo mi equipo</>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
               <Settings2 size={14} className="text-text-tertiary" />
               <span className="text-xs font-medium text-text-secondary">Datos visibles</span>
             </div>
@@ -318,6 +354,18 @@ export function OverlayConfig() {
               <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showStats")} />
                 <span className="text-xs text-text-secondary">Estadisticas (G/A/S)</span>
+              </label>
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showNames")} />
+                <span className="text-xs text-text-secondary">Nombres</span>
+              </label>
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showPlayerScore")} />
+                <span className="text-xs text-text-secondary">Puntos</span>
+              </label>
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showBoost")} />
+                <span className="text-xs text-text-secondary">Boost</span>
               </label>
             </div>
           </div>
