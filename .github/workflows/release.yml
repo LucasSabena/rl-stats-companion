@@ -180,7 +180,7 @@ jobs:
       - name: Calculate SHA256 checksums
         id: checksums
         run: |
-          $artifacts = Get-ChildItem -Path "src-tauri/target/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip"
+          $artifacts = Get-ChildItem -Path "src-tauri/target" -Recurse -Include "*.msi","*.exe","*.zip"
           foreach ($file in $artifacts) {
             $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
             "$hash  $($file.Name)" | Tee-Object -Append -FilePath checksums.txt
@@ -191,7 +191,7 @@ jobs:
       - name: Prepare artifact list
         id: artifacts
         run: |
-          $files = Get-ChildItem -Path "src-tauri/target/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip","latest.json" | Select-Object -ExpandProperty FullName
+          $files = Get-ChildItem -Path "src-tauri/target" -Recurse -Include "*.msi","*.exe","*.zip","latest.json" | Select-Object -ExpandProperty FullName
           if (-not $files) { $files = @() }
           $json = ($files | ConvertTo-Json -Compress)
           "list=$json" >> "$env:GITHUB_OUTPUT"
@@ -243,7 +243,7 @@ jobs:
         with:
           name: tauri-build-debug-${{ github.run_id }}
           path: |
-            src-tauri/target/release/bundle/
+            src-tauri/target/*/release/bundle/
             checksums.txt
           retention-days: 5
 
