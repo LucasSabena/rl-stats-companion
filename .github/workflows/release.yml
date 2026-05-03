@@ -69,18 +69,10 @@ jobs:
               repo: context.repo.repo,
               tag_name: tagName,
               name: `RL Stats Companion ${tagName}`,
-              body: `## Changes
-            ${{ steps.changelog.outputs.changelog }}
-
-            ## Installation
-            Download the MSI or NSIS installer below for Windows x64.
-
-            ## Verification
-            SHA256 checksums are attached for all binaries.
-            `,
+              body: `Windows installer for ${tagName}.`,
               draft: context.eventName === 'workflow_dispatch'
                 ? context.payload.inputs.draft === 'true'
-                : true,
+                : false,
               prerelease: tagName.includes('-'),
               generate_release_notes: false,
             });
@@ -177,37 +169,13 @@ jobs:
       # Then set TAURI_WINDOWS_CERTIFICATE_THUMBPRINT in tauri.conf.json or pass via env.
       # ─────────────────────────────────────────────────────
 
-      - name: Calculate SHA256 checksums
-        id: checksums
-        run: |
-          $artifacts = Get-ChildItem -Path "src-tauri/target" -Recurse -Include "*.msi","*.exe","*.zip"
-          foreach ($file in $artifacts) {
-            $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash
-            "$hash  $($file.Name)" | Tee-Object -Append -FilePath checksums.txt
-          }
-          echo "files=$(($artifacts | ForEach-Object { $_.FullName }) -join ',')" >> "$env:GITHUB_OUTPUT"
-        shell: pwsh
-
-      - name: Generate updater manifest
-        run: |
-          ./scripts/generate-latest-json.ps1 `
-            -BundleDir "src-tauri/target/x86_64-pc-windows-msvc/release/bundle" `
-            -Version "${{ needs.create-release.outputs.version }}" `
-            -ReleaseUrl "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}" `
-            -OutFile "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/latest.json"
-        shell: pwsh
-
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $bundleFiles = Get-ChildItem -Path "src-tauri/target/*/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip","*.sig","latest.json"
-          foreach ($file in $bundleFiles) {
-            gh release upload "${{ github.ref_name }}" "$($file.FullName)" --clobber
-          }
-          if (Test-Path "checksums.txt") {
-            gh release upload "${{ github.ref_name }}" "checksums.txt" --clobber
-          }
+          $installer = Get-ChildItem -Path "src-tauri/target/*/release/bundle/nsis" -Recurse -Filter "*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "Installer not found" }
+          gh release upload "${{ github.ref_name }}" "$($installer.FullName)" --clobber
         shell: pwsh
 
       - name: Upload build artifacts for debugging
@@ -217,44 +185,4 @@ jobs:
           name: tauri-build-debug-${{ github.run_id }}
           path: |
             src-tauri/target/*/release/bundle/
-            checksums.txt
           retention-days: 5
-
-  # ───────────────────────────────────────────────
-  # Verify updater manifest is attached
-  # ───────────────────────────────────────────────
-  publish-updater-manifest:
-    name: Publish Updater Manifest
-    needs: [create-release, build-windows]
-    runs-on: ubuntu-latest
-    if: always() && needs.build-windows.result == 'success'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Verify latest.json exists in release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const releaseId = ${{ needs.create-release.outputs.release_id }};
-            const { data: release } = await github.rest.repos.getRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: releaseId,
-            });
-
-            const hasLatestJson = release.assets.some(a => a.name === 'latest.json');
-            if (!hasLatestJson) {
-              core.setFailed('latest.json updater manifest was not found in release assets. The Tauri updater will not work.');
-            } else {
-              console.log('✅ latest.json updater manifest verified in release assets.');
-            }
-
-      - name: Generate static updater URL
-        run: |
-          echo ""
-          echo "═══════════════════════════════════════════════════════"
-          echo "  Updater manifest URL:"
-          echo "  https://github.com/${{ github.repository }}/releases/latest/download/latest.json"
-          echo "═══════════════════════════════════════════════════════"
-          echo ""

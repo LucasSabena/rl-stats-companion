@@ -147,6 +147,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 25
     needs: [frontend-check, rust-check]
+    if: ${{ hashFiles('playwright.config.*', 'tests/**/*') != '' }}
 
     steps:
       - name: Checkout repository

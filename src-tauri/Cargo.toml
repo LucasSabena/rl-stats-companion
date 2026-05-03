@@ -1,6 +1,6 @@
 [package]
 name = "rl-stats-companion"
-version = "0.1.6"
+version = "0.1.7"
 description = "Local-first desktop companion for Rocket League Stats API"
 authors = ["Lucas Sabena"]
 edition = "2021"
