@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload frontend build artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-dist-${{ github.run_id }}
           path: dist/
@@ -133,7 +133,7 @@ jobs:
 
       - name: Upload Cargo build artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cargo-build-${{ github.run_id }}
           path: src-tauri/target/
@@ -212,7 +212,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ github.run_id }}
           path: |
@@ -222,7 +222,7 @@ jobs:
 
       - name: Upload test videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-videos-${{ github.run_id }}
           path: test-results/**/*.webm
