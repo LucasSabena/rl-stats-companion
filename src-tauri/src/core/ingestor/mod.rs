@@ -1,8 +1,8 @@
 use crate::core::models::{ConnectionStatus, RlEvent};
 use crate::core::parser::parse_event;
 use crate::error::AppResult;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -44,7 +44,11 @@ pub fn start_ingestor(port: u16, game_running: Arc<AtomicBool>) -> IngestorHandl
         });
     });
 
-    IngestorHandle { event_rx, status, game_running }
+    IngestorHandle {
+        event_rx,
+        status,
+        game_running,
+    }
 }
 
 async fn ingestor_loop(
@@ -197,16 +201,14 @@ fn extract_json_messages(buffer: &mut String) -> Vec<String> {
                 }
                 depth += 1;
             }
-            '}' => {
-                if depth > 0 {
-                    depth -= 1;
-                    if depth == 0 {
-                        if let Some(start) = start_index {
-                            let end = byte_index + ch.len_utf8();
-                            messages.push(buffer[start..end].to_string());
-                            consumed_until = end;
-                            start_index = None;
-                        }
+            '}' if depth > 0 => {
+                depth -= 1;
+                if depth == 0 {
+                    if let Some(start) = start_index {
+                        let end = byte_index + ch.len_utf8();
+                        messages.push(buffer[start..end].to_string());
+                        consumed_until = end;
+                        start_index = None;
                     }
                 }
             }

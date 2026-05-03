@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Player Stats Overlay</title>
+<style>
+  :root {
+    --blue: #2277ff;
+    --blue-bg: rgba(34, 119, 255, 0.08);
+    --orange: #ff8822;
+    --orange-bg: rgba(255, 136, 34, 0.08);
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.45);
+    --text-dim: rgba(255, 255, 255, 0.65);
+    --bg-row: rgba(8, 12, 20, 0.55);
+    --bg-row-alt: rgba(8, 12, 20, 0.35);
+    --bg-header: rgba(8, 12, 20, 0.7);
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    --radius: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font);
+    color: var(--text);
+  }
+
+  body {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 8px 12px;
+  }
+
+  .stats-container {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .team-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  /* Header */
+  .team-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-header);
+    border-radius: var(--radius);
+    margin-bottom: 2px;
+  }
+
+  .team-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+    flex-shrink: 0;
+  }
+  .team-dot.blue { background: var(--blue); color: var(--blue); }
+  .team-dot.orange { background: var(--orange); color: var(--orange); }
+
+  .team-name {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+  .team-panel.blue .team-name { color: var(--blue); }
+  .team-panel.orange .team-name { color: var(--orange); }
+
+  .team-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-left: auto;
+    font-family: var(--font-mono);
+  }
+
+  /* Column labels row */
+  .col-labels {
+    display: grid;
+    grid-template-columns: 1fr 38px 28px 28px 28px 28px;
+    gap: 2px;
+    padding: 2px 12px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  /* Player row */
+  .player-row {
+    display: grid;
+    grid-template-columns: 1fr 38px 28px 28px 28px 28px;
+    gap: 2px;
+    align-items: center;
+    padding: 4px 12px;
+    background: var(--bg-row);
+    border-radius: var(--radius);
+    font-size: 13px;
+    transition: background 0.25s ease;
+  }
+  .player-row:nth-child(odd) { background: var(--bg-row-alt); }
+
+  .player-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  }
+
+  .stat-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .stat-val.highlight { color: var(--text); }
+  .stat-val.score { color: #ffe066; }
+
+  /* Labels in first row */
+  .stat-label {
+    font-size: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  .no-players {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 16px 12px;
+    font-style: italic;
+  }
+
+  .disconnected {
+    position: fixed;
+    top: 8px;
+    right: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #ff4444;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+    display: none;
+  }
+  .disconnected.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="stats-container" id="statsContainer">
+  <!-- Blue team -->
+  <div class="team-panel blue" id="panelBlue">
+    <div class="team-header">
+      <div class="team-dot blue"></div>
+      <div class="team-name">BLUE</div>
+      <div class="team-count" id="blueCount">0</div>
+    </div>
+    <div class="col-labels">
+      <span></span>
+      <span class="stat-label">Pts</span>
+      <span class="stat-label">G</span>
+      <span class="stat-label">A</span>
+      <span class="stat-label">S</span>
+      <span class="stat-label">Sh</span>
+    </div>
+    <div id="bluePlayers"></div>
+  </div>
+
+  <!-- Orange team -->
+  <div class="team-panel orange" id="panelOrange">
+    <div class="team-header">
+      <div class="team-dot orange"></div>
+      <div class="team-name">ORANGE</div>
+      <div class="team-count" id="orangeCount">0</div>
+    </div>
+    <div class="col-labels">
+      <span></span>
+      <span class="stat-label">Pts</span>
+      <span class="stat-label">G</span>
+      <span class="stat-label">A</span>
+      <span class="stat-label">S</span>
+      <span class="stat-label">Sh</span>
+    </div>
+    <div id="orangePlayers"></div>
+  </div>
+</div>
+
+<div class="disconnected" id="disconnected">Sin conexion</div>
+
+<script>
+(function() {
+  var WS_URL = 'ws://127.0.0.1:9528/ws';
+  var ws;
+
+  function $(id) { return document.getElementById(id); }
+
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = function() {
+      console.log('[PlayerStats] Connected');
+      $('disconnected').classList.remove('visible');
+    };
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      if (msg.type === 'connected') {
+        $('disconnected').classList.remove('visible');
+      }
+      if (msg.type === 'state' && msg.data) {
+        $('disconnected').classList.remove('visible');
+        render(msg.data);
+      }
+    };
+    ws.onclose = function() {
+      $('disconnected').classList.add('visible');
+      setTimeout(connect, 2000);
+    };
+    ws.onerror = function() { ws.close(); };
+  }
+
+  function truncateName(name, max) {
+    if (!name) return '---';
+    return name.length > max ? name.slice(0, max - 1) + '\u2026' : name;
+  }
+
+  function playerRow(p, isBlue) {
+    return (
+      '<div class="player-row">' +
+        '<span class="player-name" title="' + (p.name || '') + '">' + truncateName(p.name, 16) + '</span>' +
+        '<span class="stat-val score">' + (p.score || 0) + '</span>' +
+        '<span class="stat-val highlight">' + (p.goals || 0) + '</span>' +
+        '<span class="stat-val highlight">' + (p.assists || 0) + '</span>' +
+        '<span class="stat-val highlight">' + (p.saves || 0) + '</span>' +
+        '<span class="stat-val highlight">' + (p.shots || 0) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function render(d) {
+    var players = d.players || [];
+
+    var blue = players
+      .filter(function(p) { return p.team === 0; })
+      .sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+
+    var orange = players
+      .filter(function(p) { return p.team === 1; })
+      .sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+
+    $('blueCount').textContent = blue.length;
+    $('orangeCount').textContent = orange.length;
+
+    var blueHTML = blue.length
+      ? blue.map(function(p) { return playerRow(p, true); }).join('')
+      : '<div class="no-players">Sin jugadores</div>';
+
+    var orangeHTML = orange.length
+      ? orange.map(function(p) { return playerRow(p, false); }).join('')
+      : '<div class="no-players">Sin jugadores</div>';
+
+    $('bluePlayers').innerHTML = blueHTML;
+    $('orangePlayers').innerHTML = orangeHTML;
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
+use crate::core::models::PlayerStats;
 use crate::core::settings::{configure_rl_ini, get_settings, set_settings, AppSettings};
-use crate::core::storage::{self, clear_all_data};
+use crate::core::storage::{self, clear_all_data, MatchPlayerRow, MatchQuery, MatchUpsert};
 use crate::AppState;
 use std::fs;
 use tauri::State;
@@ -86,7 +87,20 @@ pub async fn export_data_json(state: State<'_, AppState>) -> Result<String, Stri
 fn export_data_json_internal(pool: &storage::DbPool) -> Result<String, String> {
     // Export all data necessary for a complete backup/restore.
     let match_count = storage::get_match_count(pool).map_err(|e| e.to_string())?;
-    let matches = storage::get_matches(pool, match_count.max(1), 0, None, None, None, None, None, None).map_err(|e| e.to_string())?;
+    let matches = storage::get_matches(
+        pool,
+        MatchQuery {
+            limit: match_count.max(1),
+            offset: 0,
+            arena: None,
+            match_type: None,
+            result: None,
+            date_from: None,
+            date_to: None,
+            search: None,
+        },
+    )
+    .map_err(|e| e.to_string())?;
     let players = storage::get_all_players(pool).map_err(|e| e.to_string())?;
     let match_players = storage::get_all_match_players(pool).map_err(|e| e.to_string())?;
     let match_events = storage::get_all_match_events(pool).map_err(|e| e.to_string())?;
@@ -149,7 +163,8 @@ fn import_data_json_internal(
     let result: Result<(), String> = (|| {
         // ── 1. Players ──
         let mut imported_players = 0u32;
-        let mut player_name_by_primary_id: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+        let mut player_name_by_primary_id: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
         if let Some(players) = import.get("players").and_then(|v| v.as_array()) {
             for player in players {
                 let primary_id = match player.get("primary_id").and_then(|v| v.as_str()) {
@@ -173,7 +188,8 @@ fn import_data_json_internal(
 
         // ── 2. Matches (upsert by guid) ──
         let mut imported_matches = 0u32;
-        let mut guid_to_id: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+        let mut guid_to_id: std::collections::HashMap<String, i64> =
+            std::collections::HashMap::new();
 
         if let Some(matches) = import.get("matches").and_then(|v| v.as_array()) {
             for m in matches {
@@ -184,17 +200,21 @@ fn import_data_json_internal(
                         continue;
                     }
                 };
-                let start_time = m
-                    .get("start_time")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let start_time = m.get("start_time").and_then(|v| v.as_str()).unwrap_or("");
                 let end_time = m.get("end_time").and_then(|v| v.as_str());
                 let arena = m.get("arena").and_then(|v| v.as_str());
                 let score_blue = m.get("score_blue").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                let score_orange = m.get("score_orange").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                let score_orange =
+                    m.get("score_orange").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let winner = m.get("winner").and_then(|v| v.as_i64()).map(|v| v as i32);
-                let is_online = m.get("is_online").and_then(|v| v.as_bool()).unwrap_or(false);
-                let is_overtime = m.get("is_overtime").and_then(|v| v.as_bool()).unwrap_or(false);
+                let is_online = m
+                    .get("is_online")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let is_overtime = m
+                    .get("is_overtime")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
                 let duration_seconds = m
                     .get("duration_seconds")
                     .and_then(|v| v.as_i64())
@@ -204,18 +224,20 @@ fn import_data_json_internal(
 
                 let match_id = storage::upsert_match_by_guid(
                     &conn,
-                    guid,
-                    start_time,
-                    end_time,
-                    arena,
-                    score_blue,
-                    score_orange,
-                    winner,
-                    is_online,
-                    is_overtime,
-                    duration_seconds,
-                    match_type,
-                    playlist,
+                    MatchUpsert {
+                        guid,
+                        start_time,
+                        end_time,
+                        arena,
+                        score_blue,
+                        score_orange,
+                        winner,
+                        is_online,
+                        is_overtime,
+                        duration_seconds,
+                        match_type,
+                        playlist,
+                    },
                 )
                 .map_err(|e| e.to_string())?;
 
@@ -239,7 +261,10 @@ fn import_data_json_internal(
                 let match_id = match guid_to_id.get(match_guid) {
                     Some(id) => *id,
                     None => {
-                        warn!(match_guid, "match_guid not found in imported matches, skipping");
+                        warn!(
+                            match_guid,
+                            "match_guid not found in imported matches, skipping"
+                        );
                         continue;
                     }
                 };
@@ -262,7 +287,8 @@ fn import_data_json_internal(
                 let assists = mp.get("assists").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let saves = mp.get("saves").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let touches = mp.get("touches").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-                let car_touches = mp.get("car_touches").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                let car_touches =
+                    mp.get("car_touches").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let demos = mp.get("demos").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let speed = mp.get("speed").and_then(|v| v.as_f64()).unwrap_or(0.0);
                 let boost = mp.get("boost").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
@@ -270,18 +296,22 @@ fn import_data_json_internal(
                 storage::upsert_match_player_row(
                     &conn,
                     match_id,
-                    player_id,
-                    team_num,
-                    score,
-                    goals,
-                    shots,
-                    assists,
-                    saves,
-                    touches,
-                    car_touches,
-                    demos,
-                    speed,
-                    boost,
+                    MatchPlayerRow {
+                        player_id,
+                        team_num,
+                        stats: PlayerStats {
+                            score,
+                            goals,
+                            shots,
+                            assists,
+                            saves,
+                            touches,
+                            car_touches,
+                            demos,
+                            speed,
+                            boost,
+                        },
+                    },
                 )
                 .map_err(|e| e.to_string())?;
                 imported_match_players += 1;
@@ -394,8 +424,7 @@ fn import_data_json_internal(
             }
             info!(
                 path = source_path.unwrap_or("memory"),
-                version,
-                "Data import completed successfully"
+                version, "Data import completed successfully"
             );
             Ok(())
         }
@@ -408,7 +437,9 @@ fn import_data_json_internal(
 }
 
 #[tauri::command]
-pub async fn get_storage_stats_cmd(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub async fn get_storage_stats_cmd(
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
     let pool = &state.db_pool;
     match storage::get_storage_stats(pool) {
         Ok(stats) => Ok(stats),

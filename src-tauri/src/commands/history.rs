@@ -1,5 +1,5 @@
 use crate::core::settings::{get_settings, AppSettings};
-use crate::core::storage;
+use crate::core::storage::{self, MatchQuery};
 use crate::AppState;
 use serde::Deserialize;
 use serde_json::Value;
@@ -37,7 +37,19 @@ pub async fn get_matches(
     let player_names = resolve_local_player_names(&settings);
     let local_primary_id = settings.local_primary_id.as_deref();
 
-    match storage::get_matches(pool, limit, offset, arena, match_type, result, date_from, date_to, search) {
+    match storage::get_matches(
+        pool,
+        MatchQuery {
+            limit,
+            offset,
+            arena,
+            match_type,
+            result,
+            date_from,
+            date_to,
+            search,
+        },
+    ) {
         Ok(matches) => Ok(serde_json::json!({
             "matches": matches.into_iter().map(|m| serde_json::json!({
                 "id": m.id,
@@ -207,10 +219,7 @@ fn resolve_local_player_names(settings: &AppSettings) -> Vec<String> {
 }
 
 #[tauri::command]
-pub async fn delete_match_cmd(
-    state: State<'_, AppState>,
-    match_id: i64,
-) -> Result<(), String> {
+pub async fn delete_match_cmd(state: State<'_, AppState>, match_id: i64) -> Result<(), String> {
     let pool = &state.db_pool;
     match storage::delete_match(pool, match_id) {
         Ok(()) => Ok(()),

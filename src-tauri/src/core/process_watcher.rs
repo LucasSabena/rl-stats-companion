@@ -1,16 +1,19 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 use tracing::info;
 
-const RL_PROCESS_NAMES: &[&str] = &[
-    "RocketLeague.exe",
-    "RocketLeague-Win64-Shipping.exe",
-];
+const RL_PROCESS_NAMES: &[&str] = &["RocketLeague.exe", "RocketLeague-Win64-Shipping.exe"];
 
 pub struct ProcessWatcher {
     pub game_running: Arc<AtomicBool>,
+}
+
+impl Default for ProcessWatcher {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ProcessWatcher {
@@ -43,10 +46,7 @@ fn is_rl_running() -> bool {
     let mut system = sysinfo::System::new_all();
     system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
     for process in system.processes().values() {
-        let name = process
-            .name()
-            .to_str()
-            .unwrap_or_default();
+        let name = process.name().to_str().unwrap_or_default();
         for rl_name in RL_PROCESS_NAMES {
             if name.eq_ignore_ascii_case(rl_name) {
                 return true;

@@ -5,6 +5,7 @@ use crate::core::settings::{get_settings, set_settings, AppSettings};
 use crate::core::storage::{
     finish_match, get_or_create_player, insert_match, insert_match_event, insert_match_player,
     insert_session, rebuild_daily_rollups_for_identity, upsert_daily_rollup, DbPool,
+    FinishMatchUpdate, MatchPlayerRow,
 };
 use crate::error::AppResult;
 use chrono::Utc;
@@ -112,7 +113,7 @@ impl SessionManager {
                     self.time_remaining = game.time;
                     self.ball_speed = game.ball.as_ref().map(|ball| ball.speed).unwrap_or(0.0);
                     if let Some(teams) = &game.teams {
-                        if teams.len() > 0 {
+                        if !teams.is_empty() {
                             self.score_blue = teams[0].score;
                         }
                         if teams.len() > 1 {
@@ -135,26 +136,20 @@ impl SessionManager {
             RlEvent::ClockUpdatedSeconds { time } => {
                 self.time_remaining = *time;
             }
-            RlEvent::GoalScored { data } => {
-                if self.phase == MatchPhase::Active {
-                    info!(scorer = %data.scorer.name, "Goal scored");
-                    let json = serde_json::to_string(&data).unwrap_or_default();
-                    self.events.push(("GoalScored".into(), json, Utc::now()));
-                }
+            RlEvent::GoalScored { data } if self.phase == MatchPhase::Active => {
+                info!(scorer = %data.scorer.name, "Goal scored");
+                let json = serde_json::to_string(&data).unwrap_or_default();
+                self.events.push(("GoalScored".into(), json, Utc::now()));
             }
-            RlEvent::StatfeedEvent { data } => {
-                if self.phase == MatchPhase::Active {
-                    debug!(event = %data.event_name, target = %data.main_target.name, "Statfeed event");
-                    let json = serde_json::to_string(&data).unwrap_or_default();
-                    self.events.push(("StatfeedEvent".into(), json, Utc::now()));
-                }
+            RlEvent::StatfeedEvent { data } if self.phase == MatchPhase::Active => {
+                debug!(event = %data.event_name, target = %data.main_target.name, "Statfeed event");
+                let json = serde_json::to_string(&data).unwrap_or_default();
+                self.events.push(("StatfeedEvent".into(), json, Utc::now()));
             }
-            RlEvent::MatchEnded { winner_team_num } => {
-                if self.phase == MatchPhase::Active {
-                    info!(?winner_team_num, "Match ended");
-                    self.winner_team_num = *winner_team_num;
-                    self.phase = MatchPhase::Finished;
-                }
+            RlEvent::MatchEnded { winner_team_num } if self.phase == MatchPhase::Active => {
+                info!(?winner_team_num, "Match ended");
+                self.winner_team_num = *winner_team_num;
+                self.phase = MatchPhase::Finished;
             }
             RlEvent::MatchPaused => {
                 info!("Match paused");
@@ -177,12 +172,10 @@ impl SessionManager {
                     info!("Match destroyed / podium start");
                 }
             }
-            RlEvent::CrossbarHit { data } => {
-                if self.phase == MatchPhase::Active {
-                    info!(player = %data.player.name, "Crossbar hit");
-                    let json = serde_json::to_string(&data).unwrap_or_default();
-                    self.events.push(("CrossbarHit".into(), json, Utc::now()));
-                }
+            RlEvent::CrossbarHit { data } if self.phase == MatchPhase::Active => {
+                info!(player = %data.player.name, "Crossbar hit");
+                let json = serde_json::to_string(&data).unwrap_or_default();
+                self.events.push(("CrossbarHit".into(), json, Utc::now()));
             }
             _ => {}
         }
@@ -205,7 +198,7 @@ impl SessionManager {
         let duration = (end_time - start_time).num_seconds() as i32;
         let arena = self.arena.clone().unwrap_or_else(|| "Unknown".into());
 
-        let winner = self.winner_team_num.or_else(|| {
+        let winner = self.winner_team_num.or({
             if self.score_blue > self.score_orange {
                 Some(0)
             } else if self.score_orange > self.score_blue {
@@ -233,18 +226,22 @@ impl SessionManager {
             insert_match_player(
                 pool,
                 match_id,
-                player_id,
-                live.team,
-                live.score,
-                live.goals,
-                live.shots,
-                live.assists,
-                live.saves,
-                live.touches,
-                live.car_touches,
-                live.demos,
-                live.speed,
-                live.boost,
+                MatchPlayerRow {
+                    player_id,
+                    team_num: live.team,
+                    stats: PlayerStats {
+                        score: live.score,
+                        goals: live.goals,
+                        shots: live.shots,
+                        assists: live.assists,
+                        saves: live.saves,
+                        touches: live.touches,
+                        car_touches: live.car_touches,
+                        demos: live.demos,
+                        speed: live.speed,
+                        boost: live.boost,
+                    },
+                },
             )?;
 
             players_vec.push(Player {
@@ -270,12 +267,14 @@ impl SessionManager {
         finish_match(
             pool,
             match_id,
-            end_time,
-            self.score_blue,
-            self.score_orange,
-            winner,
-            self.is_overtime,
-            duration,
+            FinishMatchUpdate {
+                end_time,
+                score_blue: self.score_blue,
+                score_orange: self.score_orange,
+                winner,
+                is_overtime: self.is_overtime,
+                duration_seconds: duration,
+            },
         )?;
 
         for (event_type, event_data, occurred_at) in &self.events {
@@ -286,7 +285,8 @@ impl SessionManager {
         let local_identity = resolve_local_player_identity(self.players.values(), &settings);
 
         if let Some((local_primary_id, _)) = &local_identity {
-            let should_save = settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
+            let should_save =
+                settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
             if should_save {
                 settings.local_primary_id = Some(local_primary_id.clone());
                 if let Err(e) = set_settings(pool, &settings) {
@@ -381,7 +381,10 @@ impl SessionManager {
     }
 
     fn has_meaningful_match_data(&self) -> bool {
-        !self.players.is_empty() || !self.events.is_empty() || self.score_blue != 0 || self.score_orange != 0
+        !self.players.is_empty()
+            || !self.events.is_empty()
+            || self.score_blue != 0
+            || self.score_orange != 0
     }
 }
 
@@ -425,13 +428,19 @@ fn resolve_local_player_identity<'a>(
         }
     }
 
-    for candidate_name in [&settings.player_name, settings.tracker_username.as_deref().unwrap_or("")] {
+    for candidate_name in [
+        &settings.player_name,
+        settings.tracker_username.as_deref().unwrap_or(""),
+    ] {
         let candidate_name = candidate_name.trim();
         if candidate_name.is_empty() {
             continue;
         }
 
-        if let Some(player) = players.iter().find(|player| player.name.trim().eq_ignore_ascii_case(candidate_name)) {
+        if let Some(player) = players
+            .iter()
+            .find(|player| player.name.trim().eq_ignore_ascii_case(candidate_name))
+        {
             return Some((player.id.clone(), player.team));
         }
     }

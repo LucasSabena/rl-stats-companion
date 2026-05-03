@@ -2,12 +2,13 @@ import { NavLink } from "react-router-dom";
 import { useUIStore } from "@/stores/uiStore";
 import { useLiveStore } from "@/stores/liveStore";
 import { cn } from "@/lib/utils";
-import { Radio, List, BarChart3, Settings, User } from "lucide-react";
+import { Radio, List, BarChart3, Settings, User, Gamepad2 } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "En directo", icon: Radio },
   { path: "/history", label: "Historial", icon: List },
   { path: "/analytics", label: "Analisis", icon: BarChart3 },
+  { path: "/pro-configs", label: "Pro Configs", icon: Gamepad2 },
   { path: "/profile", label: "Perfil", icon: User },
   { path: "/settings", label: "Ajustes", icon: Settings },
 ];

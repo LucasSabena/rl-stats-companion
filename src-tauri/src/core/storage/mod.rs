@@ -11,6 +11,47 @@ pub mod migrations;
 
 pub type DbPool = Pool<SqliteConnectionManager>;
 
+pub struct FinishMatchUpdate {
+    pub end_time: DateTime<Utc>,
+    pub score_blue: i32,
+    pub score_orange: i32,
+    pub winner: Option<i32>,
+    pub is_overtime: bool,
+    pub duration_seconds: i32,
+}
+
+pub struct MatchPlayerRow {
+    pub player_id: i64,
+    pub team_num: i32,
+    pub stats: crate::core::models::PlayerStats,
+}
+
+pub struct MatchQuery<'a> {
+    pub limit: i64,
+    pub offset: i64,
+    pub arena: Option<&'a str>,
+    pub match_type: Option<&'a str>,
+    pub result: Option<&'a str>,
+    pub date_from: Option<&'a str>,
+    pub date_to: Option<&'a str>,
+    pub search: Option<&'a str>,
+}
+
+pub struct MatchUpsert<'a> {
+    pub guid: &'a str,
+    pub start_time: &'a str,
+    pub end_time: Option<&'a str>,
+    pub arena: Option<&'a str>,
+    pub score_blue: i32,
+    pub score_orange: i32,
+    pub winner: Option<i32>,
+    pub is_online: bool,
+    pub is_overtime: bool,
+    pub duration_seconds: i32,
+    pub match_type: Option<&'a str>,
+    pub playlist: Option<&'a str>,
+}
+
 /// Initialize the SQLite database pool and run versioned migrations.
 pub fn init_storage<P: AsRef<Path>>(db_path: P) -> AppResult<DbPool> {
     let manager = SqliteConnectionManager::file(db_path);
@@ -19,7 +60,9 @@ pub fn init_storage<P: AsRef<Path>>(db_path: P) -> AppResult<DbPool> {
         .build(manager)
         .map_err(|e| AppError::StorageError(e.to_string()))?;
 
-    let conn = pool.get().map_err(|e| AppError::StorageError(e.to_string()))?;
+    let conn = pool
+        .get()
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     // Enable WAL mode for better concurrency.
     conn.execute_batch(
@@ -36,7 +79,8 @@ pub fn init_storage<P: AsRef<Path>>(db_path: P) -> AppResult<DbPool> {
 }
 
 pub fn get_conn(pool: &DbPool) -> AppResult<PooledConnection<SqliteConnectionManager>> {
-    pool.get().map_err(|e| AppError::StorageError(e.to_string()))
+    pool.get()
+        .map_err(|e| AppError::StorageError(e.to_string()))
 }
 
 /// Insert a new match and return its ID.
@@ -63,26 +107,17 @@ pub fn insert_match(
 }
 
 /// Update match with end-of-game data.
-pub fn finish_match(
-    pool: &DbPool,
-    match_id: i64,
-    end_time: DateTime<Utc>,
-    score_blue: i32,
-    score_orange: i32,
-    winner: Option<i32>,
-    is_overtime: bool,
-    duration_seconds: i32,
-) -> AppResult<()> {
+pub fn finish_match(pool: &DbPool, match_id: i64, update: FinishMatchUpdate) -> AppResult<()> {
     let conn = get_conn(pool)?;
     conn.execute(
         "UPDATE matches SET end_time = ?1, score_blue = ?2, score_orange = ?3, winner = ?4, is_overtime = ?5, duration_seconds = ?6 WHERE id = ?7",
         params![
-            end_time.to_rfc3339(),
-            score_blue,
-            score_orange,
-            winner,
-            is_overtime as i32,
-            duration_seconds,
+            update.end_time.to_rfc3339(),
+            update.score_blue,
+            update.score_orange,
+            update.winner,
+            update.is_overtime as i32,
+            update.duration_seconds,
             match_id
         ],
     )
@@ -119,22 +154,7 @@ pub fn get_or_create_player(pool: &DbPool, primary_id: &str, name: &str) -> AppR
 }
 
 /// Link a player to a match with stats.
-pub fn insert_match_player(
-    pool: &DbPool,
-    match_id: i64,
-    player_id: i64,
-    team_num: i32,
-    score: i32,
-    goals: i32,
-    shots: i32,
-    assists: i32,
-    saves: i32,
-    touches: i32,
-    car_touches: i32,
-    demos: i32,
-    speed: f64,
-    boost: i32,
-) -> AppResult<()> {
+pub fn insert_match_player(pool: &DbPool, match_id: i64, player: MatchPlayerRow) -> AppResult<()> {
     let conn = get_conn(pool)?;
     conn.execute(
         "INSERT INTO match_players (match_id, player_id, team_num, score, goals, shots, assists, saves, touches, car_touches, demos, speed, boost)
@@ -151,8 +171,19 @@ pub fn insert_match_player(
          speed = excluded.speed,
          boost = excluded.boost",
         params![
-            match_id, player_id, team_num, score, goals, shots, assists, saves, touches,
-            car_touches, demos, speed, boost
+            match_id,
+            player.player_id,
+            player.team_num,
+            player.stats.score,
+            player.stats.goals,
+            player.stats.shots,
+            player.stats.assists,
+            player.stats.saves,
+            player.stats.touches,
+            player.stats.car_touches,
+            player.stats.demos,
+            player.stats.speed,
+            player.stats.boost
         ],
     )
     .map_err(|e| AppError::StorageError(e.to_string()))?;
@@ -248,17 +279,7 @@ fn map_match_row(row: &rusqlite::Row) -> rusqlite::Result<Match> {
 }
 
 /// Query matches with optional filters.
-pub fn get_matches(
-    pool: &DbPool,
-    limit: i64,
-    offset: i64,
-    arena_filter: Option<&str>,
-    match_type_filter: Option<&str>,
-    result_filter: Option<&str>,
-    date_from: Option<&str>,
-    date_to: Option<&str>,
-    search: Option<&str>,
-) -> AppResult<Vec<Match>> {
+pub fn get_matches(pool: &DbPool, filters: MatchQuery<'_>) -> AppResult<Vec<Match>> {
     let conn = get_conn(pool)?;
     let mut matches = Vec::new();
 
@@ -267,17 +288,17 @@ pub fn get_matches(
     );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
-    if let Some(arena) = arena_filter {
+    if let Some(arena) = filters.arena {
         sql.push_str(" AND arena = ?");
         args.push(Box::new(arena.to_string()));
     }
 
-    if let Some(mt) = match_type_filter {
+    if let Some(mt) = filters.match_type {
         sql.push_str(" AND match_type = ?");
         args.push(Box::new(mt.to_string()));
     }
 
-    if let Some(result) = result_filter {
+    if let Some(result) = filters.result {
         match result {
             "win" => sql.push_str(" AND winner = 0"),
             "loss" => sql.push_str(" AND winner = 1"),
@@ -285,17 +306,17 @@ pub fn get_matches(
         }
     }
 
-    if let Some(from) = date_from {
+    if let Some(from) = filters.date_from {
         sql.push_str(" AND start_time >= ?");
         args.push(Box::new(from.to_string()));
     }
 
-    if let Some(to) = date_to {
+    if let Some(to) = filters.date_to {
         sql.push_str(" AND start_time <= ?");
         args.push(Box::new(to.to_string()));
     }
 
-    if let Some(search) = search {
+    if let Some(search) = filters.search {
         sql.push_str(
             " AND id IN (SELECT match_id FROM match_players mp JOIN players p ON mp.player_id = p.id WHERE p.name LIKE ?)"
         );
@@ -304,8 +325,8 @@ pub fn get_matches(
     }
 
     sql.push_str(" ORDER BY start_time DESC LIMIT ? OFFSET ?");
-    args.push(Box::new(limit));
-    args.push(Box::new(offset));
+    args.push(Box::new(filters.limit));
+    args.push(Box::new(filters.offset));
 
     let params_refs: Vec<&dyn rusqlite::ToSql> = args.iter().map(|a| a.as_ref()).collect();
     let mut stmt = conn.prepare(&sql)?;
@@ -448,7 +469,11 @@ pub fn delete_match(pool: &DbPool, match_id: i64) -> AppResult<()> {
 }
 
 /// Get daily rollups for a date range.
-pub fn get_daily_rollups(pool: &DbPool, start_date: &str, end_date: &str) -> AppResult<Vec<DailyRollup>> {
+pub fn get_daily_rollups(
+    pool: &DbPool,
+    start_date: &str,
+    end_date: &str,
+) -> AppResult<Vec<DailyRollup>> {
     let conn = get_conn(pool)?;
     let mut stmt = conn.prepare(
         "SELECT date, matches_played, wins, losses, goals_scored, goals_conceded, total_shots, total_saves, avg_duration_seconds, total_demos, total_assists
@@ -511,12 +536,20 @@ pub fn rebuild_daily_rollups_for_identity(
         let (match_id, start_time, score_blue, score_orange, winner, duration_seconds) =
             row.map_err(|e| AppError::StorageError(e.to_string()))?;
 
-        let Some(my_team) = get_local_team_num_from_conn(&conn, match_id, local_primary_id, player_names)? else {
+        let Some(my_team) =
+            get_local_team_num_from_conn(&conn, match_id, local_primary_id, player_names)?
+        else {
             continue;
         };
 
-        let (my_goals, their_goals, total_shots, total_saves, total_demos, total_assists):
-            (i32, i32, i32, i32, i32, i32) = conn
+        let (my_goals, their_goals, total_shots, total_saves, total_demos, total_assists): (
+            i32,
+            i32,
+            i32,
+            i32,
+            i32,
+            i32,
+        ) = conn
             .query_row(
                 "SELECT
                     COALESCE(SUM(CASE WHEN team_num = ?1 THEN goals ELSE 0 END), 0),
@@ -550,14 +583,26 @@ pub fn rebuild_daily_rollups_for_identity(
             date,
             matches_played: 1,
             wins: if winner == Some(my_team) { 1 } else { 0 },
-            losses: if winner.is_some() && winner != Some(my_team) { 1 } else { 0 },
+            losses: if winner.is_some() && winner != Some(my_team) {
+                1
+            } else {
+                0
+            },
             goals_scored: if my_goals == 0 && their_goals == 0 {
-                if my_team == 0 { score_blue } else { score_orange }
+                if my_team == 0 {
+                    score_blue
+                } else {
+                    score_orange
+                }
             } else {
                 my_goals
             },
             goals_conceded: if my_goals == 0 && their_goals == 0 {
-                if my_team == 0 { score_orange } else { score_blue }
+                if my_team == 0 {
+                    score_orange
+                } else {
+                    score_blue
+                }
             } else {
                 their_goals
             },
@@ -671,15 +716,25 @@ pub fn get_storage_stats(pool: &DbPool) -> AppResult<serde_json::Value> {
         .query_row("SELECT COUNT(*) FROM match_events", [], |row| row.get(0))
         .map_err(|e| AppError::StorageError(e.to_string()))?;
     let database_size_bytes: i64 = conn
-        .query_row("SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()", [], |row| row.get(0))
+        .query_row(
+            "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()",
+            [],
+            |row| row.get(0),
+        )
         .map_err(|e| AppError::StorageError(e.to_string()))?;
     let oldest_match_date = conn
-        .query_row("SELECT MIN(start_time) FROM matches", [], |row| row.get::<_, Option<String>>(0))
+        .query_row("SELECT MIN(start_time) FROM matches", [], |row| {
+            row.get::<_, Option<String>>(0)
+        })
         .map_err(|e| AppError::StorageError(e.to_string()))?
         .and_then(|value| value.parse::<DateTime<Utc>>().ok())
         .map(|value| value.timestamp());
     let db_path = conn
-        .query_row("SELECT file FROM pragma_database_list WHERE name = 'main'", [], |row| row.get::<_, String>(0))
+        .query_row(
+            "SELECT file FROM pragma_database_list WHERE name = 'main'",
+            [],
+            |row| row.get::<_, String>(0),
+        )
         .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     Ok(serde_json::json!({
@@ -857,18 +912,7 @@ pub fn get_all_daily_rollups_all(pool: &DbPool) -> AppResult<Vec<DailyRollup>> {
 /// Upsert a match by its GUID. Returns the row id.
 pub fn upsert_match_by_guid(
     conn: &rusqlite::Connection,
-    guid: &str,
-    start_time: &str,
-    end_time: Option<&str>,
-    arena: Option<&str>,
-    score_blue: i32,
-    score_orange: i32,
-    winner: Option<i32>,
-    is_online: bool,
-    is_overtime: bool,
-    duration_seconds: i32,
-    match_type: Option<&str>,
-    playlist: Option<&str>,
+    record: MatchUpsert<'_>,
 ) -> AppResult<i64> {
     conn.execute(
         "INSERT INTO matches (guid, start_time, end_time, arena, score_blue, score_orange, winner, is_online, is_overtime, duration_seconds, match_type, playlist)
@@ -886,27 +930,29 @@ pub fn upsert_match_by_guid(
             match_type = coalesce(excluded.match_type, matches.match_type),
             playlist = coalesce(excluded.playlist, matches.playlist)",
         params![
-            guid,
-            start_time,
-            end_time,
-            arena,
-            score_blue,
-            score_orange,
-            winner,
-            is_online as i32,
-            is_overtime as i32,
-            duration_seconds,
-            match_type,
-            playlist,
+            record.guid,
+            record.start_time,
+            record.end_time,
+            record.arena,
+            record.score_blue,
+            record.score_orange,
+            record.winner,
+            record.is_online as i32,
+            record.is_overtime as i32,
+            record.duration_seconds,
+            record.match_type,
+            record.playlist,
         ],
     )
     .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     // Retrieve the actual id (inserted or existing).
     let id: i64 = conn
-        .query_row("SELECT id FROM matches WHERE guid = ?1", params![guid], |row| {
-            row.get(0)
-        })
+        .query_row(
+            "SELECT id FROM matches WHERE guid = ?1",
+            params![record.guid],
+            |row| row.get(0),
+        )
         .map_err(|e| AppError::StorageError(e.to_string()))?;
     Ok(id)
 }
@@ -938,18 +984,7 @@ pub fn upsert_player_by_primary_id(
 pub fn upsert_match_player_row(
     conn: &rusqlite::Connection,
     match_id: i64,
-    player_id: i64,
-    team_num: i32,
-    score: i32,
-    goals: i32,
-    shots: i32,
-    assists: i32,
-    saves: i32,
-    touches: i32,
-    car_touches: i32,
-    demos: i32,
-    speed: f64,
-    boost: i32,
+    player: MatchPlayerRow,
 ) -> AppResult<()> {
     conn.execute(
         "INSERT INTO match_players (match_id, player_id, team_num, score, goals, shots, assists, saves, touches, car_touches, demos, speed, boost)
@@ -967,8 +1002,19 @@ pub fn upsert_match_player_row(
             speed = excluded.speed,
             boost = excluded.boost",
         params![
-            match_id, player_id, team_num, score, goals, shots, assists, saves, touches,
-            car_touches, demos, speed, boost,
+            match_id,
+            player.player_id,
+            player.team_num,
+            player.stats.score,
+            player.stats.goals,
+            player.stats.shots,
+            player.stats.assists,
+            player.stats.saves,
+            player.stats.touches,
+            player.stats.car_touches,
+            player.stats.demos,
+            player.stats.speed,
+            player.stats.boost,
         ],
     )
     .map_err(|e| AppError::StorageError(e.to_string()))?;
@@ -1029,7 +1075,12 @@ pub fn insert_session_if_not_exists(
 
 // ─── Tracker Network cache helpers ───────────────────────────────────────────
 
-pub fn upsert_tracker_cache(pool: &DbPool, platform: &str, username: &str, profile_json: &str) -> AppResult<()> {
+pub fn upsert_tracker_cache(
+    pool: &DbPool,
+    platform: &str,
+    username: &str,
+    profile_json: &str,
+) -> AppResult<()> {
     let conn = get_conn(pool)?;
     conn.execute(
         "INSERT INTO tracker_cache (platform, username, profile_json, fetched_at)
@@ -1044,7 +1095,11 @@ pub fn upsert_tracker_cache(pool: &DbPool, platform: &str, username: &str, profi
     Ok(())
 }
 
-pub fn get_tracker_cache(pool: &DbPool, platform: &str, username: &str) -> AppResult<Option<(String, String)>> {
+pub fn get_tracker_cache(
+    pool: &DbPool,
+    platform: &str,
+    username: &str,
+) -> AppResult<Option<(String, String)>> {
     let conn = get_conn(pool)?;
     let result = conn
         .query_row(

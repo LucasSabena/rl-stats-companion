@@ -24,7 +24,10 @@ pub async fn fetch_tracker_profile(state: State<'_, AppState>) -> Result<Tracker
 
     let api_key = settings.tracker_api_key.clone();
     let client = TrackerClient::new(api_key).map_err(|e| e.to_string())?;
-    let profile = client.fetch_profile(&platform, &username).await.map_err(|e| e.to_string())?;
+    let profile = client
+        .fetch_profile(&platform, &username)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let profile_json =
         serde_json::to_string(&profile).map_err(|e| format!("Failed to serialize profile: {e}"))?;
@@ -37,7 +40,9 @@ pub async fn fetch_tracker_profile(state: State<'_, AppState>) -> Result<Tracker
 }
 
 #[tauri::command]
-pub async fn get_cached_profile(state: State<'_, AppState>) -> Result<Option<TrackerProfile>, String> {
+pub async fn get_cached_profile(
+    state: State<'_, AppState>,
+) -> Result<Option<TrackerProfile>, String> {
     let pool = &state.db_pool;
     let settings = get_settings(pool).map_err(|e| e.to_string())?;
 
@@ -51,12 +56,13 @@ pub async fn get_cached_profile(state: State<'_, AppState>) -> Result<Option<Tra
         None => return Ok(None),
     };
 
-    let cached = storage::get_tracker_cache(pool, &platform, &username).map_err(|e| e.to_string())?;
+    let cached =
+        storage::get_tracker_cache(pool, &platform, &username).map_err(|e| e.to_string())?;
 
     match cached {
         Some((profile_json, _fetched_at)) => {
-            let profile: TrackerProfile =
-                serde_json::from_str(&profile_json).map_err(|e| format!("Failed to deserialize cached profile: {e}"))?;
+            let profile: TrackerProfile = serde_json::from_str(&profile_json)
+                .map_err(|e| format!("Failed to deserialize cached profile: {e}"))?;
             Ok(Some(profile))
         }
         None => Ok(None),

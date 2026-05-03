@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Event Feed Overlay</title>
+<style>
+  :root {
+    --blue: #2277ff;
+    --blue-glow: rgba(34, 119, 255, 0.3);
+    --orange: #ff8822;
+    --yellow: #f5d442;
+    --yellow-glow: rgba(245, 212, 66, 0.25);
+    --red: #ff4444;
+    --red-glow: rgba(255, 68, 68, 0.25);
+    --green: #4ade80;
+    --green-glow: rgba(74, 222, 128, 0.2);
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --bg-event: rgba(8, 12, 20, 0.6);
+    --bg-banner: rgba(8, 12, 20, 0.75);
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    --radius: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font);
+    color: var(--text);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px 10px;
+  }
+
+  .feed {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+    width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+  }
+
+  .event {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-event);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    opacity: 1;
+    transition: opacity 0.5s ease;
+  }
+  .event.fading {
+    opacity: 0.4;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-14px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .event-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+  }
+
+  .event-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .event-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .event-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* Event type styles */
+  .event.goal {
+    border-left: 3px solid var(--yellow);
+    background: rgba(245, 212, 66, 0.1);
+  }
+  .event.save {
+    border-left: 3px solid var(--blue);
+    background: rgba(34, 119, 255, 0.08);
+  }
+  .event.assist {
+    border-left: 3px solid var(--green);
+    background: rgba(74, 222, 128, 0.06);
+  }
+  .event.demo {
+    border-left: 3px solid var(--red);
+    background: rgba(255, 68, 68, 0.08);
+  }
+  .event.banner {
+    border-left: 3px solid rgba(255,255,255,0.4);
+    background: var(--bg-banner);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    justify-content: center;
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+
+  .empty-feed {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: right;
+    padding: 8px 12px;
+    font-style: italic;
+  }
+
+  .disconnected {
+    position: fixed;
+    top: 8px;
+    right: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #ff4444;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+    display: none;
+  }
+  .disconnected.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="feed" id="feed">
+  <div class="empty-feed" id="emptyFeed">Esperando eventos...</div>
+</div>
+
+<div class="disconnected" id="disconnected">Sin conexion</div>
+
+<script>
+(function() {
+  var WS_URL = 'ws://127.0.0.1:9528/ws';
+  var ws;
+  var MAX_EVENTS = 10;
+  var prevPlayers = {}; // keyed by player id: {goals, assists, saves, demos}
+  var events = []; // {type, text, icon, time}
+  var prevOnline = false;
+  var prevMatchGuid = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = function() {
+      console.log('[EventFeed] Connected');
+      $('disconnected').classList.remove('visible');
+    };
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      if (msg.type === 'connected') {
+        $('disconnected').classList.remove('visible');
+      }
+      if (msg.type === 'state' && msg.data) {
+        $('disconnected').classList.remove('visible');
+        process(msg.data);
+      }
+    };
+    ws.onclose = function() {
+      console.log('[EventFeed] Disconnected, reconnecting...');
+      $('disconnected').classList.add('visible');
+      setTimeout(connect, 2000);
+    };
+    ws.onerror = function() { ws.close(); };
+  }
+
+  function fmtTime(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function addEvent(type, text, icon, timeStr) {
+    events.unshift({ type: type, text: text, icon: icon || '', time: timeStr });
+    if (events.length > MAX_EVENTS) events.length = MAX_EVENTS;
+    renderFeed();
+  }
+
+  function detectMatchStart(guid) {
+    if (guid && guid !== prevMatchGuid) {
+      prevMatchGuid = guid;
+      addEvent('banner', 'PARTIDO INICIADO', '', '0:00');
+      // Reset prevPlayers on new match
+      prevPlayers = {};
+    }
+  }
+
+  function process(d) {
+    var timeStr = fmtTime(d.timeRemaining);
+
+    // Detect match start
+    if (d.isOnline && d.matchGuid) {
+      detectMatchStart(d.matchGuid);
+    }
+
+    // Detect match end (online went from true to false while we had a guid)
+    if (!d.isOnline && prevOnline && prevMatchGuid) {
+      addEvent('banner', 'PARTIDO FINALIZADA', '', timeStr);
+      prevMatchGuid = null;
+    }
+    prevOnline = d.isOnline;
+
+    if (!d.players || !d.players.length) return;
+
+    // Build current snapshot
+    var current = {};
+    d.players.forEach(function(p) {
+      if (p.id == null || p.id === '') return;
+      current[p.id] = {
+        name: p.name || 'Unknown',
+        team: p.team,
+        goals: p.goals || 0,
+        assists: p.assists || 0,
+        saves: p.saves || 0,
+        demos: p.demos || 0,
+        shots: p.shots || 0,
+        score: p.score || 0
+      };
+    });
+
+    // Compare with previous
+    var playerIds = Object.keys(current);
+    playerIds.forEach(function(id) {
+      var cur = current[id];
+      var prev = prevPlayers[id];
+
+      if (!prev) {
+        // First time seeing this player — don't generate events
+        return;
+      }
+
+      if (cur.goals > prev.goals) {
+        addEvent('goal', cur.name + ' anoto un gol!', '\u26BD', timeStr);
+      }
+      if (cur.assists > prev.assists) {
+        // Find the scorer: check who's goals also went up
+        var scorer = '';
+        playerIds.forEach(function(sid) {
+          var sc = current[sid];
+          var sp = prevPlayers[sid];
+          if (sc.goals > (sp ? sp.goals : 0) && sid !== id) {
+            scorer = sc.name;
+          }
+        });
+        if (scorer) {
+          addEvent('assist', cur.name + ' asistio a ' + scorer, '\uD83D\uDC50', timeStr);
+        } else {
+          addEvent('assist', cur.name + ' dio una asistencia', '\uD83D\uDC50', timeStr);
+        }
+      }
+      if (cur.saves > prev.saves) {
+        addEvent('save', cur.name + ' salvo el gol!', '\uD83D\uDEE1\uFE0F', timeStr);
+      }
+      if (cur.demos > prev.demos) {
+        // Find the victim — anyone whose demos didn't change but is on the other team
+        var victim = '';
+        playerIds.forEach(function(vid) {
+          var vc = current[vid];
+          var vp = prevPlayers[vid];
+          var vicDemos = vp ? vp.demos : 0;
+          if (vc.demos === vicDemos && vc.team !== cur.team) {
+            victim = vc.name;
+          }
+        });
+        if (victim) {
+          addEvent('demo', cur.name + ' demolio a ' + victim + '!', '\uD83D\uDCA5', timeStr);
+        } else {
+          addEvent('demo', cur.name + ' hizo una demolicion!', '\uD83D\uDCA5', timeStr);
+        }
+      }
+    });
+
+    // Store current as previous for next comparison
+    prevPlayers = current;
+  }
+
+  function renderFeed() {
+    var feedEl = $('feed');
+    var emptyEl = $('emptyFeed');
+
+    if (events.length === 0) {
+      emptyEl.style.display = '';
+      // Remove event elements except empty span
+      var children = feedEl.children;
+      for (var i = children.length - 1; i >= 0; i--) {
+        if (children[i] !== emptyEl) {
+          feedEl.removeChild(children[i]);
+        }
+      }
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+
+    // Build all events
+    var html = '';
+    for (var i = 0; i < events.length; i++) {
+      var ev = events[i];
+      html +=
+        '<div class="event ' + ev.type + '" style="animation-delay:0s">' +
+          '<span class="event-icon">' + ev.icon + '</span>' +
+          '<span class="event-body"><span class="event-text">' + ev.text + '</span></span>' +
+          '<span class="event-time">' + ev.time + '</span>' +
+        '</div>';
+    }
+    html += '<div class="empty-feed" id="emptyFeedPlaceholder" style="display:none">Esperando eventos...</div>';
+    feedEl.innerHTML = html;
+
+    // Fade older events
+    var eventEls = feedEl.querySelectorAll('.event');
+    for (var j = 3; j < eventEls.length; j++) {
+      eventEls[j].classList.add('fading');
+    }
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

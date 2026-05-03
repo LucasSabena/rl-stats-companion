@@ -1,5 +1,5 @@
 export const APP_NAME = "RL Stats Companion";
-export const APP_VERSION = import.meta.env.PACKAGE_VERSION ?? "0.1.0";
+export const APP_VERSION = import.meta.env.PACKAGE_VERSION ?? "0.1.2";
 
 export const MAX_EVENT_FEED_ITEMS = 100;
 export const DEFAULT_DATA_RETENTION_DAYS = 90;
@@ -17,5 +17,6 @@ export const ROUTES = {
   history: "/history",
   matchDetail: "/history/:matchId",
   analytics: "/analytics",
+  proConfigs: "/pro-configs",
   settings: "/settings",
 } as const;

@@ -1,5 +1,5 @@
-use crate::error::{AppError, AppResult};
 use super::models::TrackerProfile;
+use crate::error::{AppError, AppResult};
 use tracing::{debug, info};
 
 const TRACKER_API_BASE: &str = "https://api.tracker.gg";
@@ -12,7 +12,9 @@ pub struct TrackerClient {
 impl TrackerClient {
     pub fn new(api_key: Option<String>) -> AppResult<Self> {
         let http = reqwest::Client::builder()
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0")
+            .user_agent(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+            )
             .default_headers({
                 let mut headers = reqwest::header::HeaderMap::new();
                 headers.insert(
@@ -23,18 +25,9 @@ impl TrackerClient {
                     reqwest::header::ACCEPT_LANGUAGE,
                     "es-ES,es;q=0.9,en;q=0.8".parse().unwrap(),
                 );
-                headers.insert(
-                    "Sec-Fetch-Dest",
-                    "empty".parse().unwrap(),
-                );
-                headers.insert(
-                    "Sec-Fetch-Mode",
-                    "cors".parse().unwrap(),
-                );
-                headers.insert(
-                    "Sec-Fetch-Site",
-                    "same-site".parse().unwrap(),
-                );
+                headers.insert("Sec-Fetch-Dest", "empty".parse().unwrap());
+                headers.insert("Sec-Fetch-Mode", "cors".parse().unwrap());
+                headers.insert("Sec-Fetch-Site", "same-site".parse().unwrap());
                 headers
             })
             .cookie_store(true)
@@ -67,19 +60,24 @@ impl TrackerClient {
             req = req.header("TRN-Api-Key", key);
         }
 
-        let response = req.send().await.map_err(|e| {
-            AppError::ConnectionError(format!("Error de red: {e}"))
-        })?;
+        let response = req
+            .send()
+            .await
+            .map_err(|e| AppError::ConnectionError(format!("Error de red: {e}")))?;
 
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
 
         debug!(status = %status.as_u16(), body_len = body.len(), "Response received");
 
-        if body.contains("You've Been Blocked") || body.contains("cf-browser-verify") || body.contains("_cf_chl_opt") {
+        if body.contains("You've Been Blocked")
+            || body.contains("cf-browser-verify")
+            || body.contains("_cf_chl_opt")
+        {
             return Err(AppError::ConnectionError(
                 "Tracker Network bloqueo la solicitud (proteccion Cloudflare).\n\n\
-                Abri el perfil en tu navegador desde Ajustes usando el boton 'Abrir en navegador'.".into(),
+                Abri el perfil en tu navegador desde Ajustes usando el boton 'Abrir en navegador'."
+                    .into(),
             ));
         }
 
@@ -110,7 +108,9 @@ impl TrackerClient {
         }
 
         if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-            return Err(AppError::ConnectionError("Demasiadas solicitudes. Espera unos minutos.".into()));
+            return Err(AppError::ConnectionError(
+                "Demasiadas solicitudes. Espera unos minutos.".into(),
+            ));
         }
 
         if !status.is_success() {

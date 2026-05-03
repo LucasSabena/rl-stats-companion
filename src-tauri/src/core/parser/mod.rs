@@ -1,4 +1,6 @@
-use crate::core::models::{CrossbarHitData, GameState, GoalScoredData, LivePlayer, RlEvent, StatfeedEventData};
+use crate::core::models::{
+    CrossbarHitData, GameState, GoalScoredData, LivePlayer, RlEvent, StatfeedEventData,
+};
 use crate::error::AppResult;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -22,9 +24,7 @@ pub fn parse_event(line: &str) -> AppResult<RlEvent> {
         .or_else(|| value.get("event"))
         .and_then(|v| v.as_str())
         .unwrap_or("Unknown");
-    let event_name = raw_event
-        .strip_prefix("game:")
-        .unwrap_or(raw_event);
+    let event_name = raw_event.strip_prefix("game:").unwrap_or(raw_event);
     // CRITICAL: The real Rocket League Stats API sends Data as a JSON-encoded
     // STRING, not a nested object (e.g., "Data":"{\"Players\":[...]}").
     // We must re-parse it. Fall back to the whole value if no Data key exists,
@@ -79,7 +79,7 @@ pub fn parse_event(line: &str) -> AppResult<RlEvent> {
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
             Ok(RlEvent::MatchEnded { winner_team_num })
-        },
+        }
         "MatchPaused" | "match_paused" => Ok(RlEvent::MatchPaused),
         "MatchUnpaused" | "match_unpaused" => Ok(RlEvent::MatchUnpaused),
         "RoundStarted" | "round_started" => Ok(RlEvent::RoundStarted),
@@ -98,7 +98,9 @@ pub fn parse_event(line: &str) -> AppResult<RlEvent> {
                 .or_else(|| data.get("player"))
                 .map(|value| parse_target(Some(value)))
                 .unwrap_or_default();
-            Ok(RlEvent::CrossbarHit { data: CrossbarHitData { player: ch_data } })
+            Ok(RlEvent::CrossbarHit {
+                data: CrossbarHitData { player: ch_data },
+            })
         }
         "GoalReplayStart" | "goal_replay_start" => Ok(RlEvent::GoalReplayStart),
         "GoalReplayEnd" | "goal_replay_end" => Ok(RlEvent::GoalReplayEnd),
@@ -106,9 +108,7 @@ pub fn parse_event(line: &str) -> AppResult<RlEvent> {
         "MatchDestroyed" | "match_destroyed" => Ok(RlEvent::MatchDestroyed),
         "PodiumStart" | "podium_start" => Ok(RlEvent::PodiumStart),
         "ReplayCreated" | "replay_created" => Ok(RlEvent::ReplayCreated),
-        "ReplayWillEnd" | "replay_will_end" => {
-            Ok(RlEvent::GoalReplayWillEnd)
-        }
+        "ReplayWillEnd" | "replay_will_end" => Ok(RlEvent::GoalReplayWillEnd),
         other => {
             warn!(event = %other, "Unknown RL event received");
             Ok(RlEvent::Unknown)
@@ -140,17 +140,17 @@ fn parse_game_state(data: &Value) -> GameState {
                 .collect()
         });
 
-    let ball = game
-        .get("Ball")
-        .or_else(|| game.get("ball"))
-        .map(|ball| crate::core::models::BallState {
-            location: ball.get("Location").and_then(parse_location),
-            speed: ball
-                .get("Speed")
-                .or_else(|| ball.get("speed"))
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.0),
-        });
+    let ball =
+        game.get("Ball")
+            .or_else(|| game.get("ball"))
+            .map(|ball| crate::core::models::BallState {
+                location: ball.get("Location").and_then(parse_location),
+                speed: ball
+                    .get("Speed")
+                    .or_else(|| ball.get("speed"))
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0),
+            });
 
     GameState {
         teams,
@@ -181,9 +181,7 @@ fn parse_game_state(data: &Value) -> GameState {
 
 fn parse_players(data: &Value) -> HashMap<String, LivePlayer> {
     // Try to extract players, handling both array and object formats.
-    let players_value = data
-        .get("Players")
-        .or_else(|| data.get("players"));
+    let players_value = data.get("Players").or_else(|| data.get("players"));
 
     // Format A: Array of player objects (old/wrapper format)
     if let Some(players_array) = players_value.and_then(|v| v.as_array()) {
@@ -305,10 +303,7 @@ fn extract_single_player(player: &Value) -> LivePlayer {
 
 fn parse_goal_scored(data: &Value) -> GoalScoredData {
     GoalScoredData {
-        scorer: parse_target(
-            data.get("Scorer")
-                .or_else(|| data.get("scorer")),
-        ),
+        scorer: parse_target(data.get("Scorer").or_else(|| data.get("scorer"))),
         assister: data
             .get("Assister")
             .or_else(|| data.get("assister"))
@@ -325,7 +320,9 @@ fn parse_statfeed_event(data: &Value) -> StatfeedEventData {
             .unwrap_or("Unknown")
             .to_string(),
         main_target: parse_target(data.get("MainTarget")),
-        secondary_target: data.get("SecondaryTarget").map(|value| parse_target(Some(value))),
+        secondary_target: data
+            .get("SecondaryTarget")
+            .map(|value| parse_target(Some(value))),
     }
 }
 
@@ -356,7 +353,9 @@ fn parse_location(value: &Value) -> Option<Vec<f64>> {
             location.get("Z").and_then(|v| v.as_f64()).unwrap_or(0.0),
         ]);
     }
-    value.as_array().map(|values| values.iter().filter_map(|v| v.as_f64()).collect())
+    value
+        .as_array()
+        .map(|values| values.iter().filter_map(|v| v.as_f64()).collect())
 }
 
 /// Clamp player values to valid ranges and ensure non-negative counts.
@@ -733,7 +732,12 @@ mod tests {
             }
         }"#;
         let ev = parse_event(json).unwrap();
-        if let RlEvent::UpdateState { match_guid, game, players } = ev {
+        if let RlEvent::UpdateState {
+            match_guid,
+            game,
+            players,
+        } = ev
+        {
             assert!(match_guid.is_none());
             assert_eq!(game.time, 300);
             assert!(!game.is_overtime);
@@ -762,7 +766,10 @@ mod tests {
         }"#;
         let ev = parse_event(json).unwrap();
         if let RlEvent::UpdateState { match_guid, .. } = ev {
-            assert_eq!(match_guid.as_deref(), Some("550e8400-e29b-41d4-a716-446655440000"));
+            assert_eq!(
+                match_guid.as_deref(),
+                Some("550e8400-e29b-41d4-a716-446655440000")
+            );
         } else {
             panic!("Expected UpdateState");
         }
@@ -818,7 +825,12 @@ mod tests {
             }
         }"#;
         let ev = parse_event(json).unwrap();
-        if let RlEvent::UpdateState { match_guid, game, players } = ev {
+        if let RlEvent::UpdateState {
+            match_guid,
+            game,
+            players,
+        } = ev
+        {
             assert_eq!(match_guid.as_deref(), Some("abc-123"));
             assert_eq!(game.time, 180);
             assert!(game.is_overtime);
@@ -1027,7 +1039,9 @@ mod tests {
         let ev = parse_event(json).unwrap();
         if let RlEvent::UpdateState { players, .. } = ev {
             // Fallback key is the player's name when id is empty
-            let p = players.get("NoID").expect("player with name-only key must exist");
+            let p = players
+                .get("NoID")
+                .expect("player with name-only key must exist");
             assert_eq!(p.id, "");
             assert_eq!(p.name, "NoID");
         } else {
@@ -1164,7 +1178,10 @@ mod tests {
         }"#;
         let ev = parse_event(json).unwrap();
         if let RlEvent::UpdateState { players, .. } = ev {
-            assert!(players.is_empty(), "empty players object should result in empty map");
+            assert!(
+                players.is_empty(),
+                "empty players object should result in empty map"
+            );
         } else {
             panic!("Expected UpdateState");
         }
@@ -1184,7 +1201,10 @@ mod tests {
         let ev = parse_event(json).unwrap();
         if let RlEvent::UpdateState { players, .. } = ev {
             // Object-format players are now properly extracted
-            assert!(!players.is_empty(), "object-format players should be extracted");
+            assert!(
+                !players.is_empty(),
+                "object-format players should be extracted"
+            );
             let p = players.get("0").expect("player keyed by '0' should exist");
             assert_eq!(p.name, "Alpha");
             assert_eq!(p.score, 100);

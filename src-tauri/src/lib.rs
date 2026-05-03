@@ -153,9 +153,12 @@ async fn process_events(
         // Emit match-started when a new match is created or initialized.
         match &event {
             RlEvent::MatchCreated | RlEvent::MatchInitialized => {
-                let _ = app_handle.emit("match-started", serde_json::json!({
-                    "timestamp": chrono::Utc::now().to_rfc3339()
-                }));
+                let _ = app_handle.emit(
+                    "match-started",
+                    serde_json::json!({
+                        "timestamp": chrono::Utc::now().to_rfc3339()
+                    }),
+                );
             }
             _ => {}
         }

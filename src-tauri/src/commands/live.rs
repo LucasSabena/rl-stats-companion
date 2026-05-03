@@ -16,9 +16,7 @@ pub async fn get_live_state(state: State<'_, AppState>) -> Result<Option<LiveMat
 }
 
 #[tauri::command]
-pub async fn get_connection_status(
-    state: State<'_, AppState>,
-) -> Result<ConnectionStatus, String> {
+pub async fn get_connection_status(state: State<'_, AppState>) -> Result<ConnectionStatus, String> {
     let mut status = state.ingestor_status.read().await.clone();
     status.game_running = state.game_running.load(Ordering::SeqCst);
     Ok(status)

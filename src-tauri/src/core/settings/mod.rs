@@ -4,7 +4,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::info;
 
 /// Application settings persisted in the database.
@@ -53,7 +53,10 @@ impl AppSettings {
     fn to_kv(&self) -> Vec<(&str, String)> {
         vec![
             ("player_name", self.player_name.clone()),
-            ("local_primary_id", self.local_primary_id.clone().unwrap_or_default()),
+            (
+                "local_primary_id",
+                self.local_primary_id.clone().unwrap_or_default(),
+            ),
             ("auto_start", self.auto_start.to_string()),
             ("port", self.port.to_string()),
             ("data_retention_days", self.data_retention_days.to_string()),
@@ -61,19 +64,39 @@ impl AppSettings {
             ("platform", self.platform.clone().unwrap_or_default()),
             ("theme", self.theme.clone()),
             ("language", self.language.clone()),
-            ("default_match_type", self.default_match_type.clone().unwrap_or_default()),
-            ("tracker_api_key", self.tracker_api_key.clone().unwrap_or_default()),
-            ("tracker_platform", self.tracker_platform.clone().unwrap_or_default()),
-            ("tracker_username", self.tracker_username.clone().unwrap_or_default()),
-            ("tracker_auto_refresh", self.tracker_auto_refresh.to_string()),
-            ("tracker_refresh_interval_min", self.tracker_refresh_interval_min.to_string()),
+            (
+                "default_match_type",
+                self.default_match_type.clone().unwrap_or_default(),
+            ),
+            (
+                "tracker_api_key",
+                self.tracker_api_key.clone().unwrap_or_default(),
+            ),
+            (
+                "tracker_platform",
+                self.tracker_platform.clone().unwrap_or_default(),
+            ),
+            (
+                "tracker_username",
+                self.tracker_username.clone().unwrap_or_default(),
+            ),
+            (
+                "tracker_auto_refresh",
+                self.tracker_auto_refresh.to_string(),
+            ),
+            (
+                "tracker_refresh_interval_min",
+                self.tracker_refresh_interval_min.to_string(),
+            ),
         ]
     }
 }
 
 /// Load settings from the database, returning defaults if none exist.
 pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
-    let conn = pool.get().map_err(|e| AppError::StorageError(e.to_string()))?;
+    let conn = pool
+        .get()
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     let mut settings = AppSettings::default();
 
@@ -120,7 +143,9 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
                 settings.tracker_username = if value.is_empty() { None } else { Some(value) };
             }
             "tracker_auto_refresh" => settings.tracker_auto_refresh = value.parse().unwrap_or(true),
-            "tracker_refresh_interval_min" => settings.tracker_refresh_interval_min = value.parse().unwrap_or(5),
+            "tracker_refresh_interval_min" => {
+                settings.tracker_refresh_interval_min = value.parse().unwrap_or(5)
+            }
             _ => {}
         }
     }
@@ -130,7 +155,9 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
 
 /// Save settings to the database.
 pub fn set_settings(pool: &DbPool, settings: &AppSettings) -> AppResult<()> {
-    let conn = pool.get().map_err(|e| AppError::StorageError(e.to_string()))?;
+    let conn = pool
+        .get()
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     for (key, value) in settings.to_kv() {
         conn.execute(
@@ -153,7 +180,8 @@ pub fn configure_rl_ini(port: u16) -> AppResult<()> {
     if candidates.is_empty() {
         return Err(AppError::ConfigError(
             "No se encontró la instalación de Rocket League. \
-Verificá que el juego esté instalado en Steam o Epic Games.".into(),
+Verificá que el juego esté instalado en Steam o Epic Games."
+                .into(),
         ));
     }
 
@@ -184,7 +212,10 @@ Verificá que el juego esté instalado en Steam o Epic Games.".into(),
     }
 
     if !written_paths.is_empty() {
-        info!(count = written_paths.len(), "Updated Rocket League Stats API INI files");
+        info!(
+            count = written_paths.len(),
+            "Updated Rocket League Stats API INI files"
+        );
         return Ok(());
     }
 
@@ -226,7 +257,9 @@ fn find_rl_ini_candidates() -> Vec<PathBuf> {
                 // Extract quoted paths from VDF (simple heuristic)
                 for line in text.lines() {
                     let trimmed = line.trim();
-                    if trimmed.starts_with('"') && (trimmed.contains(":/") || trimmed.contains(":\\")) {
+                    if trimmed.starts_with('"')
+                        && (trimmed.contains(":/") || trimmed.contains(":\\"))
+                    {
                         // Find quoted string content
                         if let Some(start) = trimmed.find('"') {
                             let after = &trimmed[start + 1..];
@@ -242,7 +275,9 @@ fn find_rl_ini_candidates() -> Vec<PathBuf> {
         }
 
         // Always include the default steamapps/common under this root
-        candidates.push(steam_root.join("steamapps/common/rocketleague/TAGame/Config/DefaultStatsAPI.ini"));
+        candidates.push(
+            steam_root.join("steamapps/common/rocketleague/TAGame/Config/DefaultStatsAPI.ini"),
+        );
     }
 
     // 4. Epic Games common paths
@@ -262,8 +297,8 @@ fn find_rl_ini_candidates() -> Vec<PathBuf> {
     candidates
 }
 
-fn collect_existing_rl_ini_files(root: &PathBuf, candidates: &mut Vec<PathBuf>) {
-    let mut stack = vec![root.clone()];
+fn collect_existing_rl_ini_files(root: &Path, candidates: &mut Vec<PathBuf>) {
+    let mut stack = vec![root.to_path_buf()];
 
     while let Some(dir) = stack.pop() {
         let entries = match fs::read_dir(&dir) {
@@ -327,8 +362,8 @@ pub fn get_rl_installation_paths() -> Vec<String> {
 
 /// Given a path like ".../rocketleague/TAGame/Config/DefaultStatsAPI.ini",
 /// return the game root directory (e.g., ".../rocketleague").
-fn extract_game_root(ini_path: &PathBuf) -> Option<PathBuf> {
-    let mut current = ini_path.clone();
+fn extract_game_root(ini_path: &Path) -> Option<PathBuf> {
+    let mut current = ini_path.to_path_buf();
 
     // Walk up 3 levels: file -> Config -> TAGame -> game root
     // First: remove DefaultStatsAPI.ini (file)

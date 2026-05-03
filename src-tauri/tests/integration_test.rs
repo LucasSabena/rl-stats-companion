@@ -1,6 +1,5 @@
 /// Integration tests for the RL Stats Companion.
 /// These tests cover parsing, session management, storage CRUD, and metrics.
-
 use rl_stats_companion_lib::core::metrics::{save_percentage, shots_to_goals_ratio};
 use rl_stats_companion_lib::core::models::{PlayerStats, RlEvent};
 use rl_stats_companion_lib::core::parser::parse_event;
@@ -145,30 +144,15 @@ mod fixture_tests {
             }
         }
 
-        assert!(
-            all_names.contains("AlphaStar"),
-            "must contain AlphaStar"
-        );
-        assert!(
-            all_names.contains("BetaKnight"),
-            "must contain BetaKnight"
-        );
-        assert!(
-            all_names.contains("GammaWing"),
-            "must contain GammaWing"
-        );
-        assert!(
-            all_names.contains("DeltaRush"),
-            "must contain DeltaRush"
-        );
+        assert!(all_names.contains("AlphaStar"), "must contain AlphaStar");
+        assert!(all_names.contains("BetaKnight"), "must contain BetaKnight");
+        assert!(all_names.contains("GammaWing"), "must contain GammaWing");
+        assert!(all_names.contains("DeltaRush"), "must contain DeltaRush");
         assert!(
             all_names.contains("EpsilonDrift"),
             "must contain EpsilonDrift"
         );
-        assert!(
-            all_names.contains("ZetaBoost"),
-            "must contain ZetaBoost"
-        );
+        assert!(all_names.contains("ZetaBoost"), "must contain ZetaBoost");
         assert_eq!(all_names.len(), 6);
     }
 
@@ -293,7 +277,20 @@ mod session_tests {
         assert_eq!(count, 1);
 
         // Verify match detail
-        let matches = storage::get_matches(&pool, 10, 0, None, None, None, None, None, None).unwrap();
+        let matches = storage::get_matches(
+            &pool,
+            storage::MatchQuery {
+                limit: 10,
+                offset: 0,
+                arena: None,
+                match_type: None,
+                result: None,
+                date_from: None,
+                date_to: None,
+                search: None,
+            },
+        )
+        .unwrap();
         assert_eq!(matches.len(), 1);
         let m = &matches[0];
         assert_eq!(m.guid, summary.match_guid);
@@ -346,8 +343,7 @@ mod session_tests {
         session.handle_event(RlEvent::MatchCreated);
         assert!(
             *session.phase() == rl_stats_companion_lib::core::session::MatchPhase::Active
-                || *session.phase()
-                    == rl_stats_companion_lib::core::session::MatchPhase::Waiting,
+                || *session.phase() == rl_stats_companion_lib::core::session::MatchPhase::Waiting,
             "double MatchCreated should not crash"
         );
     }
@@ -381,8 +377,8 @@ mod storage_crud_tests {
         .expect("insert_match must succeed");
         assert!(match_id > 0);
 
-        let (m, players) = storage::get_match_detail(&pool, match_id)
-            .expect("get_match_detail must succeed");
+        let (m, players) =
+            storage::get_match_detail(&pool, match_id).expect("get_match_detail must succeed");
         assert_eq!(m.guid, "test-guid-001");
         assert_eq!(m.arena.as_deref(), Some("DFHStadium"));
         assert!(!m.is_online);
@@ -395,10 +391,41 @@ mod storage_crud_tests {
     fn list_all_matches() {
         let (pool, path) = init_test_pool();
 
-        storage::insert_match(&pool, "guid-a", Utc::now(), Some("Arena A"), false, None, None).unwrap();
-        storage::insert_match(&pool, "guid-b", Utc::now(), Some("Arena B"), true, None, None).unwrap();
+        storage::insert_match(
+            &pool,
+            "guid-a",
+            Utc::now(),
+            Some("Arena A"),
+            false,
+            None,
+            None,
+        )
+        .unwrap();
+        storage::insert_match(
+            &pool,
+            "guid-b",
+            Utc::now(),
+            Some("Arena B"),
+            true,
+            None,
+            None,
+        )
+        .unwrap();
 
-        let matches = storage::get_matches(&pool, 10, 0, None, None, None, None, None, None).unwrap();
+        let matches = storage::get_matches(
+            &pool,
+            storage::MatchQuery {
+                limit: 10,
+                offset: 0,
+                arena: None,
+                match_type: None,
+                result: None,
+                date_from: None,
+                date_to: None,
+                search: None,
+            },
+        )
+        .unwrap();
         assert_eq!(matches.len(), 2);
 
         let _ = fs::remove_file(&path);
@@ -409,11 +436,36 @@ mod storage_crud_tests {
         let (pool, path) = init_test_pool();
 
         // Insert match + player + event
-        let match_id =
-            storage::insert_match(&pool, "guid-del", Utc::now(), Some("Arena"), false, None, None).unwrap();
+        let match_id = storage::insert_match(
+            &pool,
+            "guid-del",
+            Utc::now(),
+            Some("Arena"),
+            false,
+            None,
+            None,
+        )
+        .unwrap();
         let player_id = storage::get_or_create_player(&pool, "P1", "TestPlayer").unwrap();
         storage::insert_match_player(
-            &pool, match_id, player_id, 0, 100, 1, 2, 0, 1, 5, 3, 1, 1200.0, 50,
+            &pool,
+            match_id,
+            storage::MatchPlayerRow {
+                player_id,
+                team_num: 0,
+                stats: PlayerStats {
+                    score: 100,
+                    goals: 1,
+                    shots: 2,
+                    assists: 0,
+                    saves: 1,
+                    touches: 5,
+                    car_touches: 3,
+                    demos: 1,
+                    speed: 1200.0,
+                    boost: 50,
+                },
+            },
         )
         .unwrap();
         storage::insert_match_event(&pool, match_id, "GoalScored", r#"{"x":1}"#, Utc::now())
@@ -482,14 +534,67 @@ mod storage_crud_tests {
     fn get_matches_with_arena_filter() {
         let (pool, path) = init_test_pool();
 
-        storage::insert_match(&pool, "g1", Utc::now(), Some("Mannfield"), false, None, None).unwrap();
-        storage::insert_match(&pool, "g2", Utc::now(), Some("DFHStadium"), false, None, None).unwrap();
-        storage::insert_match(&pool, "g3", Utc::now(), Some("Mannfield"), false, None, None).unwrap();
+        storage::insert_match(
+            &pool,
+            "g1",
+            Utc::now(),
+            Some("Mannfield"),
+            false,
+            None,
+            None,
+        )
+        .unwrap();
+        storage::insert_match(
+            &pool,
+            "g2",
+            Utc::now(),
+            Some("DFHStadium"),
+            false,
+            None,
+            None,
+        )
+        .unwrap();
+        storage::insert_match(
+            &pool,
+            "g3",
+            Utc::now(),
+            Some("Mannfield"),
+            false,
+            None,
+            None,
+        )
+        .unwrap();
 
-        let filtered = storage::get_matches(&pool, 10, 0, Some("Mannfield"), None, None, None, None, None).unwrap();
+        let filtered = storage::get_matches(
+            &pool,
+            storage::MatchQuery {
+                limit: 10,
+                offset: 0,
+                arena: Some("Mannfield"),
+                match_type: None,
+                result: None,
+                date_from: None,
+                date_to: None,
+                search: None,
+            },
+        )
+        .unwrap();
         assert_eq!(filtered.len(), 2);
 
-        let none = storage::get_matches(&pool, 10, 0, Some("Nonexistent"), None, None, None, None, None).unwrap();
+        let none = storage::get_matches(
+            &pool,
+            storage::MatchQuery {
+                limit: 10,
+                offset: 0,
+                arena: Some("Nonexistent"),
+                match_type: None,
+                result: None,
+                date_from: None,
+                date_to: None,
+                search: None,
+            },
+        )
+        .unwrap();
         assert!(none.is_empty());
 
         let _ = fs::remove_file(&path);
@@ -529,12 +634,29 @@ mod storage_crud_tests {
     fn finish_match_updates_row() {
         let (pool, path) = init_test_pool();
 
-        let match_id =
-            storage::insert_match(&pool, "fm-guid", Utc::now(), Some("Arena"), false, None, None).unwrap();
+        let match_id = storage::insert_match(
+            &pool,
+            "fm-guid",
+            Utc::now(),
+            Some("Arena"),
+            false,
+            None,
+            None,
+        )
+        .unwrap();
         let end = Utc::now();
 
         storage::finish_match(
-            &pool, match_id, end, 3, 2, Some(0), true, 300,
+            &pool,
+            match_id,
+            storage::FinishMatchUpdate {
+                end_time: end,
+                score_blue: 3,
+                score_orange: 2,
+                winner: Some(0),
+                is_overtime: true,
+                duration_seconds: 300,
+            },
         )
         .unwrap();
 
@@ -565,7 +687,10 @@ mod storage_crud_tests {
         let rollup_count: i64 = conn
             .query_row("SELECT COUNT(*) FROM daily_rollups", [], |r| r.get(0))
             .unwrap();
-        assert!(rollup_count > 0, "daily_rollups must have at least one entry");
+        assert!(
+            rollup_count > 0,
+            "daily_rollups must have at least one entry"
+        );
 
         let _ = fs::remove_file(&path);
     }
@@ -645,7 +770,20 @@ fn full_match_lifecycle_persist_and_verify() {
 
     // Verify counts
     assert_eq!(storage::get_match_count(&pool).unwrap(), 1);
-    let matches = storage::get_matches(&pool, 10, 0, None, None, None, None, None, None).unwrap();
+    let matches = storage::get_matches(
+        &pool,
+        storage::MatchQuery {
+            limit: 10,
+            offset: 0,
+            arena: None,
+            match_type: None,
+            result: None,
+            date_from: None,
+            date_to: None,
+            search: None,
+        },
+    )
+    .unwrap();
     let stored_match = &matches[0];
 
     // Verify stored match data

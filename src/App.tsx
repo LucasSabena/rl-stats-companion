@@ -8,6 +8,7 @@ import { MatchDetailPage } from "@/pages/MatchDetailPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { ProConfigsPage } from "@/pages/ProConfigsPage";
 import OnboardingOverlay from "@/components/onboarding/OnboardingOverlay";
 import { useSettingsStore } from "@/stores/settingsStore";
 
@@ -48,6 +49,7 @@ function AppContent() {
             <Route path="/history/:matchId" element={<MatchDetailPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/pro-configs" element={<ProConfigsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

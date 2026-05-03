@@ -5,6 +5,18 @@ All notable changes to RL Stats Companion will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-05-03
+
+### Added
+- Minimal Vitest coverage setup so CI frontend tests run successfully
+- Basic frontend constants test to prevent empty-test-suite CI failures
+
+### Fixed
+- ESLint v9 flat config added so `pnpm lint` works in CI and locally
+- Rust `cargo clippy -- -D warnings` issues resolved without broad lint suppressions
+- Storage APIs refactored to use structured arguments instead of oversized parameter lists
+- Test coverage tooling aligned with Vitest v3 to satisfy the CI `--coverage` job
+
 ## [0.1.1] - 2026-05-03
 
 ### Added

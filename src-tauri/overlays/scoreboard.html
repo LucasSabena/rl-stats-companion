@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Scoreboard Overlay</title>
+<style>
+  :root {
+    --blue: #2277ff;
+    --blue-glow: rgba(34, 119, 255, 0.35);
+    --orange: #ff8822;
+    --orange-glow: rgba(255, 136, 34, 0.35);
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --bg-panel: rgba(8, 12, 20, 0.75);
+    --bg-panel-light: rgba(8, 12, 20, 0.45);
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    --transition-speed: 0.3s;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font);
+    color: var(--text);
+    /* Transparent background for OBS */
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scoreboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 32px;
+    min-width: 520px;
+    max-width: 700px;
+    width: 100%;
+  }
+
+  /* ---- Arena label ---- */
+  .arena {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--text-muted);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    margin-bottom: 2px;
+  }
+
+  /* ---- Main scores row ---- */
+  .scores-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .team-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 180px;
+  }
+
+  .team-block.blue { --team-color: var(--blue); --team-glow: var(--blue-glow); }
+  .team-block.orange { --team-color: var(--orange); --team-glow: var(--orange-glow); }
+
+  .team-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--team-color);
+    text-shadow: 0 0 12px var(--team-glow), 0 1px 3px rgba(0,0,0,0.8);
+    margin-bottom: 2px;
+  }
+
+  .team-score {
+    font-family: var(--font-mono);
+    font-size: 72px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--text);
+    text-shadow:
+      0 0 30px var(--team-glow),
+      0 0 60px var(--team-glow),
+      0 2px 6px rgba(0, 0, 0, 0.8);
+    transition: transform var(--transition-speed) cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .team-score.pulse {
+    animation: scorePulse 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes scorePulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+
+  .separator {
+    font-size: 48px;
+    font-weight: 200;
+    color: var(--text-muted);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    user-select: none;
+  }
+
+  /* ---- Clock row ---- */
+  .clock-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .clock {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    letter-spacing: 0.05em;
+  }
+
+  .ot-badge {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--orange);
+    background: rgba(255, 136, 34, 0.15);
+    border: 1px solid rgba(255, 136, 34, 0.35);
+    border-radius: 4px;
+    padding: 2px 8px;
+    text-shadow: 0 0 8px var(--orange-glow);
+    animation: otBlink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes otBlink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+
+  .match-type {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .partida {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: none;
+  }
+  .partida.visible { display: block; }
+
+  /* ---- Disconnected banner ---- */
+  .disconnected {
+    display: none;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #ff4444;
+    text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+    margin-top: 8px;
+    animation: otBlink 1s ease-in-out infinite;
+  }
+  .disconnected.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="scoreboard" id="scoreboard">
+  <div class="arena" id="arena">ARENA</div>
+
+  <div class="scores-row">
+    <div class="team-block blue">
+      <div class="team-label">BLUE</div>
+      <div class="team-score" id="scoreBlue">0</div>
+    </div>
+    <div class="separator">&mdash;</div>
+    <div class="team-block orange">
+      <div class="team-label">ORANGE</div>
+      <div class="team-score" id="scoreOrange">0</div>
+    </div>
+  </div>
+
+  <div class="clock-row">
+    <div class="clock" id="clock">5:00</div>
+    <div class="ot-badge" id="otBadge" style="display:none">OT</div>
+  </div>
+
+  <div class="match-type" id="matchType"></div>
+  <div class="partida" id="partida"></div>
+  <div class="disconnected" id="disconnected">Connecting...</div>
+</div>
+
+<script>
+(function() {
+  var WS_URL = 'ws://127.0.0.1:9528/ws';
+  var ws;
+  var prevBlue = -1;
+  var prevOrange = -1;
+
+  function $(id) { return document.getElementById(id); }
+
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = function() {
+      console.log('[Scoreboard] Connected');
+      $('disconnected').classList.remove('visible');
+    };
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      if (msg.type === 'connected') {
+        $('disconnected').classList.remove('visible');
+      }
+      if (msg.type === 'state' && msg.data) {
+        $('disconnected').classList.remove('visible');
+        render(msg.data);
+      }
+    };
+    ws.onclose = function() {
+      console.log('[Scoreboard] Disconnected, reconnecting...');
+      $('disconnected').classList.add('visible');
+      setTimeout(connect, 2000);
+    };
+    ws.onerror = function() { ws.close(); };
+  }
+
+  function fmtTime(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function render(d) {
+    // Arena
+    if (d.arena) {
+      $('arena').textContent = d.arena;
+    }
+
+    // Scores with pulse animation
+    var b = d.scoreBlue || 0;
+    var o = d.scoreOrange || 0;
+    if (b !== prevBlue) {
+      $('scoreBlue').textContent = b;
+      $('scoreBlue').classList.remove('pulse');
+      void $('scoreBlue').offsetWidth; // force reflow
+      $('scoreBlue').classList.add('pulse');
+      prevBlue = b;
+    }
+    if (o !== prevOrange) {
+      $('scoreOrange').textContent = o;
+      $('scoreOrange').classList.remove('pulse');
+      void $('scoreOrange').offsetWidth;
+      $('scoreOrange').classList.add('pulse');
+      prevOrange = o;
+    }
+
+    // Clock
+    $('clock').textContent = fmtTime(d.timeRemaining);
+
+    // Overtime
+    $('otBadge').style.display = d.isOvertime ? 'inline-block' : 'none';
+
+    // Match type
+    $('matchType').textContent = d.matchType || '';
+
+    // Partida (online indicator)
+    var partidaEl = $('partida');
+    if (d.isOnline) {
+      partidaEl.classList.add('visible');
+      partidaEl.textContent = 'PARTIDA EN JUEGO';
+    } else {
+      partidaEl.classList.remove('visible');
+    }
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

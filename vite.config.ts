@@ -17,6 +17,16 @@ export default defineConfig(async () => ({
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   clearScreen: false,
+  test: {
+    coverage: {
+      exclude: [
+        "dist/**",
+        "src-tauri/**",
+        "src-tauri/target/**",
+        "src-tauri/overlays/**",
+      ],
+    },
+  },
   server: {
     port: 1420,
     strictPort: true,

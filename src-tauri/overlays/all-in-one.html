@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL All-in-One Overlay</title>
+<style>
+  :root {
+    --blue: #2277ff;
+    --blue-glow: rgba(34,119,255,0.35);
+    --orange: #ff8822;
+    --orange-glow: rgba(255,136,34,0.35);
+    --yellow: #f5d442;
+    --red: #ff4444;
+    --green: #4ade80;
+    --text: #ffffff;
+    --text-muted: rgba(255,255,255,0.5);
+    --bg-panel: rgba(8,12,20,0.7);
+    --bg-panel-light: rgba(8,12,20,0.5);
+    --bg-row: rgba(8,12,20,0.45);
+    --bg-row-alt: rgba(8,12,20,0.28);
+    --bg-event: rgba(8,12,20,0.55);
+    --font: system-ui, -apple-system, sans-serif;
+    --font-mono: Consolas, monospace;
+    --radius: 6px;
+    --transition-speed: 0.3s;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    width:100%; height:100%; overflow:hidden;
+    font-family:var(--font); color:var(--text);
+  }
+
+  body {
+    display:grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr 300px;
+    gap:6px; padding:8px 12px;
+  }
+
+  /* ------- TOP BAR ------- */
+  .top-bar {
+    grid-column:1 / -1;
+    display:flex; align-items:center; justify-content:center;
+    gap:18px; padding:6px 20px;
+    background:var(--bg-panel); border-radius:var(--radius);
+  }
+
+  .arena {
+    font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.22em; color:var(--text-muted);
+    text-shadow:0 1px 2px rgba(0,0,0,0.6); white-space:nowrap;
+  }
+
+  .scores-compact { display:flex; align-items:center; gap:10px; }
+
+  .score-block { display:flex; align-items:center; gap:5px; }
+  .score-block .lbl {
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
+  }
+  .score-block.blue .lbl { color:var(--blue); }
+  .score-block.orange .lbl { color:var(--orange); }
+
+  .score-block .val {
+    font-family:var(--font-mono); font-size:26px; font-weight:900;
+    text-shadow:0 0 12px var(--blue-glow), 0 1px 4px rgba(0,0,0,0.8);
+    transition:transform var(--transition-speed) cubic-bezier(0.34,1.56,0.64,1);
+    min-width:26px; text-align:center;
+  }
+  .score-block.orange .val { text-shadow:0 0 12px var(--orange-glow), 0 1px 4px rgba(0,0,0,0.8); }
+
+  .val.pulse { animation:scorePulse 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+
+  @keyframes scorePulse {
+    0% { transform:scale(1); }
+    40% { transform:scale(1.35); }
+    100% { transform:scale(1); }
+  }
+
+  .sep { font-size:16px; color:var(--text-muted); user-select:none; }
+
+  .clock {
+    font-family:var(--font-mono); font-size:17px; font-weight:700;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6); min-width:44px; text-align:center;
+  }
+
+  .ot-badge {
+    font-size:9px; font-weight:800; text-transform:uppercase;
+    letter-spacing:0.1em; color:var(--orange);
+    background:rgba(255,136,34,0.15); border:1px solid rgba(255,136,34,0.35);
+    border-radius:3px; padding:1px 5px; display:none;
+    animation:otBlink 1.5s ease-in-out infinite;
+  }
+  @keyframes otBlink {
+    0%,100% { opacity:1; }
+    50% { opacity:0.55; }
+  }
+
+  /* ------- MAIN AREA: Player Stats ------- */
+  .main-area { display:flex; gap:8px; min-height:0; }
+
+  .team-panel {
+    flex:1; display:flex; flex-direction:column; gap:2px; min-width:0;
+    background:var(--bg-panel-light); border-radius:var(--radius);
+    padding:5px 7px;
+  }
+
+  .team-header {
+    display:flex; align-items:center; gap:5px; padding:1px 6px 3px;
+  }
+  .team-dot {
+    width:7px; height:7px; border-radius:50%; flex-shrink:0;
+  }
+  .team-panel.blue .team-dot { background:var(--blue); box-shadow:0 0 5px var(--blue); }
+  .team-panel.orange .team-dot { background:var(--orange); box-shadow:0 0 5px var(--orange); }
+
+  .team-name {
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em;
+  }
+  .team-panel.blue .team-name { color:var(--blue); }
+  .team-panel.orange .team-name { color:var(--orange); }
+
+  .team-count {
+    font-size:9px; font-weight:600; color:var(--text-muted);
+    margin-left:auto; font-family:var(--font-mono);
+  }
+
+  .col-labels {
+    display:grid;
+    grid-template-columns:1fr 32px 22px 22px 22px 22px;
+    gap:1px; padding:0 6px 2px;
+    font-size:7px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.05em; color:var(--text-muted);
+  }
+
+  .players-list {
+    overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:2px;
+  }
+  .players-list::-webkit-scrollbar { display:none; }
+  .players-list { scrollbar-width:none; }
+
+  .player-row {
+    display:grid;
+    grid-template-columns:1fr 32px 22px 22px 22px 22px;
+    gap:1px; align-items:center; padding:2px 6px;
+    background:var(--bg-row); border-radius:4px;
+    font-size:10px; transition:background 0.25s ease;
+  }
+  .player-row:nth-child(odd) { background:var(--bg-row-alt); }
+
+  .player-name {
+    font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  }
+  .stat-val {
+    font-family:var(--font-mono); font-size:9px; font-weight:600; text-align:center;
+  }
+  .stat-val.pts { color:#ffe066; }
+  .no-players {
+    font-size:9px; color:var(--text-muted); text-align:center;
+    padding:10px 6px; font-style:italic;
+  }
+
+  /* ------- SIDEBAR: Event Feed ------- */
+  .sidebar {
+    background:var(--bg-panel-light); border-radius:var(--radius);
+    padding:5px 7px; display:flex; flex-direction:column; min-height:0; overflow:hidden;
+  }
+  .sidebar-title {
+    font-size:9px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.12em; color:var(--text-muted);
+    padding:1px 6px 5px; text-align:center;
+  }
+  .feed {
+    display:flex; flex-direction:column-reverse; gap:3px;
+    flex:1; overflow:hidden;
+  }
+  .event {
+    display:flex; align-items:center; gap:4px; padding:3px 7px;
+    background:var(--bg-event); border-radius:4px;
+    font-size:9px; font-weight:500;
+    text-shadow:0 1px 2px rgba(0,0,0,0.6);
+    animation:slideIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    opacity:1;
+  }
+  .event.fading { opacity:0.35; }
+
+  @keyframes slideIn {
+    from { transform:translateY(-8px); opacity:0; }
+    to { transform:translateY(0); opacity:1; }
+  }
+
+  .event-icon { font-size:12px; flex-shrink:0; width:16px; text-align:center; }
+  .event-body { flex:1; min-width:0; }
+  .event-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .event-time {
+    font-family:var(--font-mono); font-size:7px; font-weight:600;
+    color:var(--text-muted); flex-shrink:0;
+  }
+
+  .event.goal { border-left:2px solid var(--yellow); background:rgba(245,212,66,0.1); }
+  .event.save { border-left:2px solid var(--blue); background:rgba(34,119,255,0.08); }
+  .event.assist { border-left:2px solid var(--green); background:rgba(74,222,128,0.06); }
+  .event.demo { border-left:2px solid var(--red); background:rgba(255,68,68,0.08); }
+  .event.banner {
+    border-left:2px solid rgba(255,255,255,0.4);
+    font-weight:700; text-transform:uppercase; letter-spacing:0.05em;
+    justify-content:center; font-size:8px; padding:3px 7px;
+  }
+
+  .empty-feed {
+    font-size:8px; color:var(--text-muted); text-align:center;
+    padding:6px; font-style:italic;
+  }
+
+  .disconnected {
+    display:none; font-size:9px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.12em; color:#ff4444;
+    text-shadow:0 0 8px rgba(255,68,68,0.5); text-align:center;
+  }
+  .disconnected.visible { display:block; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar" id="topBar">
+  <div class="arena" id="arena">---</div>
+  <div class="scores-compact">
+    <div class="score-block blue">
+      <span class="lbl">BLUE</span>
+      <span class="val" id="scoreBlue">0</span>
+    </div>
+    <span class="sep">-</span>
+    <div class="score-block orange">
+      <span class="lbl">ORANGE</span>
+      <span class="val" id="scoreOrange">0</span>
+    </div>
+  </div>
+  <div class="clock" id="clock">5:00</div>
+  <div class="ot-badge" id="otBadge">OT</div>
+  <div class="disconnected" id="discTop">Sin conexion</div>
+</div>
+
+<!-- MAIN: Player Stats -->
+<div class="main-area" id="mainArea">
+  <div class="team-panel blue" id="panelBlue">
+    <div class="team-header">
+      <div class="team-dot"></div>
+      <div class="team-name">BLUE</div>
+      <div class="team-count" id="blueCount">0</div>
+    </div>
+    <div class="col-labels">
+      <span></span><span>Pts</span><span>G</span><span>A</span><span>S</span><span>Sh</span>
+    </div>
+    <div class="players-list" id="bluePlayers"></div>
+  </div>
+  <div class="team-panel orange" id="panelOrange">
+    <div class="team-header">
+      <div class="team-dot"></div>
+      <div class="team-name">ORANGE</div>
+      <div class="team-count" id="orangeCount">0</div>
+    </div>
+    <div class="col-labels">
+      <span></span><span>Pts</span><span>G</span><span>A</span><span>S</span><span>Sh</span>
+    </div>
+    <div class="players-list" id="orangePlayers"></div>
+  </div>
+</div>
+
+<!-- RIGHT SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-title">Eventos</div>
+  <div class="feed" id="feed">
+    <div class="empty-feed" id="emptyFeed">Esperando eventos...</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var WS_URL = 'ws://127.0.0.1:9528/ws';
+  var ws;
+  var MAX_EVENTS = 8;
+  var prevBlue = -1;
+  var prevOrange = -1;
+  var prevPlayers = {};
+  var events = [];
+  var prevOnline = false;
+  var prevMatchGuid = null;
+
+  function q(id) { return document.getElementById(id); }
+
+  function fmtTime(s) {
+    s = Math.max(0, Math.floor(s||0));
+    var m = Math.floor(s/60);
+    var sec = s % 60;
+    return m + ':' + (sec < 10 ? '0':'') + sec;
+  }
+
+  function truncate(n, max) {
+    if (!n) return '---';
+    return n.length > max ? n.slice(0,max-1)+'...' : n;
+  }
+
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = function() {
+      console.log('[AllInOne] Connected');
+      q('discTop').classList.remove('visible');
+    };
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      if (msg.type === 'connected') {
+        q('discTop').classList.remove('visible');
+      }
+      if (msg.type === 'state' && msg.data) {
+        q('discTop').classList.remove('visible');
+        process(msg.data);
+      }
+    };
+    ws.onclose = function() {
+      q('discTop').classList.add('visible');
+      setTimeout(connect, 2000);
+    };
+    ws.onerror = function() { ws.close(); };
+  }
+
+  // ---- Scoreboard ----
+  function renderScoreboard(d) {
+    q('arena').textContent = d.arena || '---';
+    var b = d.scoreBlue||0, o = d.scoreOrange||0;
+    if (b !== prevBlue) {
+      q('scoreBlue').textContent = b;
+      q('scoreBlue').classList.remove('pulse');
+      void q('scoreBlue').offsetWidth;
+      q('scoreBlue').classList.add('pulse');
+      prevBlue = b;
+    }
+    if (o !== prevOrange) {
+      q('scoreOrange').textContent = o;
+      q('scoreOrange').classList.remove('pulse');
+      void q('scoreOrange').offsetWidth;
+      q('scoreOrange').classList.add('pulse');
+      prevOrange = o;
+    }
+    q('clock').textContent = fmtTime(d.timeRemaining);
+    q('otBadge').style.display = d.isOvertime ? 'inline-block' : 'none';
+  }
+
+  // ---- Player Stats ----
+  function playerRow(p) {
+    return (
+      '<div class="player-row">'+
+        '<span class="player-name" title="'+ (p.name||'') +'">'+ truncate(p.name,14) +'</span>'+
+        '<span class="stat-val pts">'+ (p.score||0) +'</span>'+
+        '<span class="stat-val">'+ (p.goals||0) +'</span>'+
+        '<span class="stat-val">'+ (p.assists||0) +'</span>'+
+        '<span class="stat-val">'+ (p.saves||0) +'</span>'+
+        '<span class="stat-val">'+ (p.shots||0) +'</span>'+
+      '</div>'
+    );
+  }
+
+  function renderPlayerStats(d) {
+    var all = d.players || [];
+    var blue = all.filter(function(p){return p.team===0}).sort(function(a,b){return (b.score||0)-(a.score||0);});
+    var orange = all.filter(function(p){return p.team===1}).sort(function(a,b){return (b.score||0)-(a.score||0);});
+
+    q('blueCount').textContent = blue.length;
+    q('orangeCount').textContent = orange.length;
+
+    q('bluePlayers').innerHTML = blue.length
+      ? blue.map(playerRow).join('')
+      : '<div class="no-players">Sin jugadores</div>';
+    q('orangePlayers').innerHTML = orange.length
+      ? orange.map(playerRow).join('')
+      : '<div class="no-players">Sin jugadores</div>';
+  }
+
+  // ---- Event Feed ----
+  function addEvent(type, text, icon, timeStr) {
+    events.unshift({t:type, x:text, i:icon||'', tm:timeStr});
+    if (events.length > MAX_EVENTS) events.length = MAX_EVENTS;
+    renderFeed();
+  }
+
+  function renderFeed() {
+    var f = q('feed');
+    var ef = q('emptyFeed');
+    if (events.length === 0) {
+      ef.style.display = '';
+      f.querySelectorAll('.event').forEach(function(el){el.remove();});
+      return;
+    }
+    ef.style.display = 'none';
+    var h = '';
+    for (var i = 0; i < events.length; i++) {
+      var ev = events[i];
+      h += '<div class="event '+ev.t+'">'+
+        '<span class="event-icon">'+ev.i+'</span>'+
+        '<span class="event-body"><span class="event-text">'+ev.x+'</span></span>'+
+        '<span class="event-time">'+ev.tm+'</span></div>';
+    }
+    f.innerHTML = h + '<div class="empty-feed" id="emptyFeed2" style="display:none">Esperando eventos...</div>';
+    f.querySelectorAll('.event').forEach(function(el,i){
+      if (i >= 3) el.classList.add('fading');
+    });
+  }
+
+  function detectMatchStart(guid) {
+    if (guid && guid !== prevMatchGuid) {
+      prevMatchGuid = guid;
+      addEvent('banner','PARTIDO INICIADO','','0:00');
+      prevPlayers = {};
+    }
+  }
+
+  function detectEvents(d) {
+    var t = fmtTime(d.timeRemaining);
+    if (d.isOnline && d.matchGuid) detectMatchStart(d.matchGuid);
+    if (!d.isOnline && prevOnline && prevMatchGuid) {
+      addEvent('banner','PARTIDO FINALIZADA','',t);
+      prevMatchGuid = null;
+    }
+    prevOnline = d.isOnline;
+    if (!d.players || !d.players.length) return;
+
+    var cur = {};
+    d.players.forEach(function(p) {
+      if (p.id == null || p.id === '') return;
+      cur[p.id] = { name:p.name||'Desconocido', team:p.team, goals:p.goals||0, assists:p.assists||0, saves:p.saves||0, demos:p.demos||0 };
+    });
+
+    var ids = Object.keys(cur);
+    ids.forEach(function(id) {
+      var c = cur[id];
+      var pr = prevPlayers[id];
+      if (!pr) return;
+      if (c.goals > pr.goals) addEvent('goal', c.name + ' anoto un gol!', '\u26BD', t);
+      if (c.assists > pr.assists) {
+        var scorer = '';
+        ids.forEach(function(sid) {
+          var sc = cur[sid];
+          var sp = prevPlayers[sid];
+          if (sc.goals > (sp?sp.goals:0) && sid !== id) scorer = sc.name;
+        });
+        addEvent('assist', scorer ? c.name+' asistio a '+scorer : c.name+' dio una asistencia', '\uD83D\uDC50', t);
+      }
+      if (c.saves > pr.saves) addEvent('save', c.name + ' salvo el gol!', '\uD83D\uDEE1', t);
+      if (c.demos > pr.demos) {
+        var victim = '';
+        ids.forEach(function(vid) {
+          var vc = cur[vid];
+          var vp = prevPlayers[vid];
+          if (vc.demos === (vp?vp.demos:0) && vc.team !== c.team) victim = vc.name;
+        });
+        addEvent('demo', victim ? c.name+' demolio a '+victim+'!' : c.name+' hizo una demolicion!', '\uD83D\uDCA5', t);
+      }
+    });
+    prevPlayers = cur;
+  }
+
+  function process(d) {
+    renderScoreboard(d);
+    renderPlayerStats(d);
+    detectEvents(d);
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>
