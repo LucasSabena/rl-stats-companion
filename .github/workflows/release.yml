@@ -188,54 +188,18 @@ jobs:
           echo "files=$(($artifacts | ForEach-Object { $_.FullName }) -join ',')" >> "$env:GITHUB_OUTPUT"
         shell: pwsh
 
-      - name: Prepare artifact list
-        id: artifacts
-        run: |
-          $files = Get-ChildItem -Path "src-tauri/target" -Recurse -Include "*.msi","*.exe","*.zip","latest.json" | Select-Object -ExpandProperty FullName
-          if (-not $files) { $files = @() }
-          $json = ($files | ConvertTo-Json -Compress)
-          "list=$json" >> "$env:GITHUB_OUTPUT"
-        shell: pwsh
-
       - name: Upload artifacts to release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            const releaseId = ${{ needs.create-release.outputs.release_id }};
-            let files = [];
-            try {
-              files = JSON.parse('${{ steps.artifacts.outputs.list }}');
-              if (!Array.isArray(files)) files = [files];
-            } catch {
-              console.log('No bundle artifacts found.');
-            }
-
-            for (const file of files) {
-              const name = path.basename(file);
-              console.log(`Uploading ${name}...`);
-              const data = fs.readFileSync(file);
-              await github.rest.repos.uploadReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: releaseId,
-                name: name,
-                data: data,
-              });
-            }
-
-            // Upload checksums
-            if (fs.existsSync('checksums.txt')) {
-              await github.rest.repos.uploadReleaseAsset({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: releaseId,
-                name: 'checksums.txt',
-                data: fs.readFileSync('checksums.txt'),
-              });
-            }
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $bundleFiles = Get-ChildItem -Path "src-tauri/target/*/release/bundle" -Recurse -Include "*.msi","*.exe","*.zip","latest.json"
+          foreach ($file in $bundleFiles) {
+            gh release upload "${{ github.ref_name }}" "$($file.FullName)" --clobber
+          }
+          if (Test-Path "checksums.txt") {
+            gh release upload "${{ github.ref_name }}" "checksums.txt" --clobber
+          }
+        shell: pwsh
 
       - name: Upload build artifacts for debugging
         if: always()
