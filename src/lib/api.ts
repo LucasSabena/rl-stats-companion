@@ -15,11 +15,12 @@ import {
   type AnalyticsPeriod,
   type DailyRollup,
   type MatchSession,
+  type SessionMatch,
+  type InsightsData,
   type OverlayServerStatus,
   type OverlayUrl,
   type OverlayWindowState,
   type AppSettings,
-
   type StorageStats,
   type TrackerProfile,
 } from "./types";
@@ -413,8 +414,8 @@ export async function getMatches(filters?: MatchFilters): Promise<MatchSummary[]
     filters: {
       limit: filters?.limit,
       offset: filters?.offset,
-      arena: filters?.mode ?? undefined,
       match_type: filters?.matchType ?? undefined,
+      playlist: filters?.mode ?? undefined,
       result: filters?.result ?? undefined,
       date_from: filters?.dateFrom ? new Date(filters.dateFrom * 1000).toISOString().slice(0, 10) : undefined,
       date_to: filters?.dateTo ? new Date(filters.dateTo * 1000).toISOString().slice(0, 10) : undefined,
@@ -485,6 +486,23 @@ export async function getDailyRollups(period: AnalyticsPeriod): Promise<DailyRol
     endDate: end.toISOString().slice(0, 10),
   });
   return response.rollups.map(mapRollup);
+}
+
+export async function getSessionMatches(
+  startTime: string,
+  endTime: string
+): Promise<SessionMatch[]> {
+  return invokeCommand<SessionMatch[]>("get_session_matches", {
+    startTime,
+    endTime,
+  });
+}
+
+export async function getInsights(period: AnalyticsPeriod): Promise<InsightsData> {
+  const days = periodToDays(period);
+  return invokeCommand<InsightsData>("get_insights", {
+    period: { days },
+  });
 }
 
 // Settings

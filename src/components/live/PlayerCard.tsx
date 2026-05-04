@@ -9,40 +9,50 @@ interface PlayerCardProps {
 }
 
 export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser }: PlayerCardProps) {
+  const isBlue = player.team === 0;
+
   return (
     <div
       className={cn(
-        "rounded-lg border p-3 transition-all duration-150",
+        "rounded-xl border p-4 transition-all duration-200",
         isCurrentUser
-          ? "border-accent-primary/30 bg-accent-primary/5"
-          : "border-border-subtle bg-bg-secondary"
+          ? "border-accent-primary/30 bg-accent-primary-muted glow-blue"
+          : "border-border-subtle bg-bg-secondary hover:border-border-default"
       )}
     >
       {/* Header: name + score */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
-              player.team === 0 ? "bg-team-blue/20 text-team-blue" : "bg-team-orange/20 text-team-orange"
+              "flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold",
+              isBlue
+                ? "bg-team-blue-bg text-team-blue"
+                : "bg-team-orange-bg text-team-orange"
             )}
           >
             {player.name.charAt(0).toUpperCase()}
           </div>
-          <span className="text-sm font-semibold text-text-primary">{player.name}</span>
+          <div>
+            <span className="text-sm font-semibold text-text-primary">{player.name}</span>
+            {isCurrentUser && (
+              <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-accent-primary">
+                Tu
+              </span>
+            )}
+          </div>
         </div>
-        <span className="font-mono text-sm font-bold text-text-primary">{player.score}</span>
+        <span className="font-mono text-lg font-bold text-text-primary">{player.score}</span>
       </div>
 
-      {/* Row 1: Goles | Asistencias | Tiros | Salvadas */}
-      <div className="mt-2 grid grid-cols-4 gap-2 text-center">
+      {/* Stats grid */}
+      <div className="mt-3 grid grid-cols-4 gap-2 text-center">
         <Stat label="Goles" value={player.goals} />
         <Stat label="Asist." value={player.assists} />
         <Stat label="Tiros" value={player.shots} />
         <Stat label="Paradas" value={player.saves} />
       </div>
 
-      {/* Row 2: Toques | Demos | Velocidad | Boost */}
       <div className="mt-2 grid grid-cols-4 gap-2 text-center">
         <Stat label="Toques" value={player.touches} />
         <Stat label="Demos" value={player.demos} />
@@ -59,9 +69,9 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser }: Pl
       </div>
 
       {/* Boost bar */}
-      <div className="mt-2">
+      <div className="mt-3">
         <div
-          className="h-2 w-full overflow-hidden rounded-full bg-bg-tertiary"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-bg-tertiary"
           role="progressbar"
           aria-valuenow={Math.round(player.boostAmount)}
           aria-valuemin={0}
@@ -70,9 +80,9 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser }: Pl
         >
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-300",
+              "h-full rounded-full transition-all duration-500 ease-out",
               player.boostAmount > 60
-                ? "bg-accent-secondary"
+                ? "bg-accent-success shadow-[0_0_8px_var(--color-accent-success)]"
                 : player.boostAmount > 30
                   ? "bg-accent-warning"
                   : "bg-accent-danger"
@@ -96,8 +106,8 @@ function Stat({
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</p>
-      <p className="font-mono text-sm font-semibold text-text-primary">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">{label}</p>
+      <p className="mt-0.5 font-mono text-sm font-bold text-text-primary">
         {displayValue ?? value}
       </p>
     </div>

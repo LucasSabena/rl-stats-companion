@@ -14,15 +14,27 @@ export const TeamPanel = memo(function TeamPanel({ team, players }: TeamPanelPro
   return (
     <div
       className={cn(
-        "rounded-lg border p-4",
+        "rounded-xl border p-4 transition-all duration-200",
         isBlue
-          ? "border-team-blue/30 bg-team-blue/5"
-          : "border-team-orange/30 bg-team-orange/5"
+          ? "border-team-blue/20 bg-team-blue-bg"
+          : "border-team-orange/20 bg-team-orange-bg"
       )}
     >
-      <div className="mb-3 flex items-center gap-2">
-        <div className={cn("h-3 w-3 rounded-full", isBlue ? "bg-team-blue" : "bg-team-orange")} />
-        <h3 className={cn("text-sm font-bold uppercase tracking-wide", isBlue ? "text-team-blue" : "text-team-orange")}>
+      <div className="mb-3 flex items-center gap-2.5">
+        <div
+          className={cn(
+            "h-3 w-3 rounded-full",
+            isBlue
+              ? "bg-team-blue shadow-[0_0_8px_var(--color-team-blue-glow)]"
+              : "bg-team-orange shadow-[0_0_8px_var(--color-team-orange-glow)]"
+          )}
+        />
+        <h3
+          className={cn(
+            "font-display text-sm font-bold uppercase tracking-wide",
+            isBlue ? "text-team-blue" : "text-team-orange"
+          )}
+        >
           {isBlue ? "Equipo Azul" : "Equipo Naranja"}
         </h3>
         <span className="ml-auto font-mono text-lg font-bold text-text-primary">

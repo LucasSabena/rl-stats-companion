@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
-export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "icon";
+export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "icon" | "accent";
 export type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -29,24 +29,26 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+      "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] disabled:opacity-50 disabled:pointer-events-none active:scale-[0.97] select-none";
 
     const variants: Record<ButtonVariant, string> = {
       primary:
-        "bg-accent-primary text-white hover:bg-accent-primary-hover shadow-level-1",
+        "bg-accent-primary text-white hover:bg-accent-primary-hover shadow-level-1 hover:shadow-glow-blue",
+      accent:
+        "bg-gradient-to-r from-accent-primary to-accent-secondary text-white shadow-level-1 hover:shadow-level-2 hover:brightness-110",
       secondary:
-        "border border-border-strong bg-transparent text-text-primary hover:bg-surface-hover",
+        "border border-border-default bg-bg-tertiary text-text-primary hover:bg-surface-hover hover:border-border-strong",
       danger:
-        "border border-accent-danger/30 bg-accent-danger/10 text-accent-danger hover:bg-accent-danger/20",
+        "border border-accent-danger/30 bg-accent-danger-subtle text-accent-danger hover:bg-accent-danger/20",
       ghost:
         "bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text-primary",
-      icon: "h-8 w-8 rounded-md bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+      icon: "h-9 w-9 rounded-lg bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text-primary",
     };
 
     const sizes: Record<ButtonSize, string> = {
       sm: "px-3 py-1.5 text-xs",
       md: "px-4 py-2 text-sm",
-      lg: "px-6 py-3 text-base",
+      lg: "px-6 py-2.5 text-base",
     };
 
     return (

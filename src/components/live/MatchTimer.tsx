@@ -11,15 +11,15 @@ export const MatchTimer = memo(function MatchTimer({ timeRemaining, isOvertime }
   return (
     <div className="flex items-center gap-2">
       {isOvertime && (
-        <span className="rounded-full bg-accent-warning/20 px-2 py-0.5 text-xs font-bold text-accent-warning">
-          PRÓRROGA
+        <span className="rounded-full bg-accent-warning-subtle border border-accent-warning/20 px-2.5 py-0.5 text-xs font-bold text-accent-warning">
+          PRORROGA
         </span>
       )}
       <div
         className={cn(
-          "rounded-lg border px-4 py-2 font-mono text-2xl font-bold tracking-wider",
+          "rounded-xl border px-4 py-2 font-mono text-xl font-bold tracking-wider",
           isOvertime
-            ? "border-accent-warning/30 bg-accent-warning/10 text-accent-warning"
+            ? "border-accent-warning/30 bg-accent-warning-subtle text-accent-warning"
             : "border-border-subtle bg-bg-secondary text-text-primary"
         )}
       >

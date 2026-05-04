@@ -1,6 +1,6 @@
 use crate::core::models::{DailyRollup, Match, MatchEvent, Player, SessionSummary};
 use crate::error::{AppError, AppResult};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{params, OptionalExtension};
@@ -32,6 +32,7 @@ pub struct MatchQuery<'a> {
     pub offset: i64,
     pub arena: Option<&'a str>,
     pub match_type: Option<&'a str>,
+    pub playlist: Option<&'a str>,
     pub result: Option<&'a str>,
     pub date_from: Option<&'a str>,
     pub date_to: Option<&'a str>,
@@ -297,6 +298,11 @@ pub fn get_matches(pool: &DbPool, filters: MatchQuery<'_>) -> AppResult<Vec<Matc
     if let Some(mt) = filters.match_type {
         sql.push_str(" AND match_type = ?");
         args.push(Box::new(mt.to_string()));
+    }
+
+    if let Some(playlist) = filters.playlist {
+        sql.push_str(" AND playlist = ?");
+        args.push(Box::new(playlist.to_string()));
     }
 
     if let Some(result) = filters.result {
@@ -1117,6 +1123,8 @@ pub struct MatchSession {
     pub wins: i32,
     /// Losses in this session.
     pub losses: i32,
+    /// Matches where local team could not be determined (wins+losses+unknown = match_count).
+    pub unknown: i32,
     /// Goals scored by local player in this session.
     pub goals_scored: i32,
     /// Goals conceded by local player in this session.
@@ -1193,18 +1201,17 @@ pub fn get_match_sessions(
         let match_count = group.len() as i32;
         let mut wins = 0i32;
         let mut losses = 0i32;
+        let mut unknown = 0i32;
         let mut goals_scored = 0i32;
         let mut goals_conceded = 0i32;
         let mut total_shots = 0i32;
         let mut total_saves = 0i32;
 
-        // Get local player identity for W/L and goals.
         let settings = crate::core::settings::get_settings(pool)
             .unwrap_or_default();
         let local_id = settings.local_primary_id.clone();
 
         for m in group.iter() {
-            // Winner: 0 = blue, 1 = orange
             let local_team = if let Some(ref lid) = local_id {
                 get_local_team_num(pool, m.id, Some(lid), &[]).unwrap_or(None)
             } else {
@@ -1214,40 +1221,30 @@ pub fn get_match_sessions(
             if let Some(lt) = local_team {
                 if m.winner == Some(lt) {
                     wins += 1;
-                } else if m.winner.is_some() {
+                } else {
                     losses += 1;
                 }
-            }
 
-            // Aggregate goals per match
-            if let Some(_lt) = local_team {
-                goals_scored += if local_team == Some(0) {
-                    m.score_blue
-                } else {
-                    m.score_orange
-                };
-                goals_conceded += if local_team == Some(0) {
-                    m.score_orange
-                } else {
-                    m.score_blue
-                };
+                goals_scored += if lt == 0 { m.score_blue } else { m.score_orange };
+                goals_conceded += if lt == 0 { m.score_orange } else { m.score_blue };
+            } else {
+                unknown += 1;
             }
-
-            // Aggregate shots/saves from match_players
-            let mut mp_stmt = conn.prepare(
-                "SELECT mp.shots, mp.saves
-                 FROM match_players mp
-                 JOIN players p ON mp.player_id = p.id
-                 WHERE mp.match_id = ?1 AND p.primary_id = ?2"
-            ).map_err(|e| AppError::StorageError(e.to_string()))?;
 
             if let Some(ref lid) = local_id {
-                if let Ok(iter) = mp_stmt.query_map(params![m.id, lid], |row| {
-                    Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
-                }) {
-                    for row in iter.flatten() {
-                        total_shots += row.0;
-                        total_saves += row.1;
+                if let Ok(mut mp_stmt) = conn.prepare(
+                    "SELECT mp.shots, mp.saves
+                     FROM match_players mp
+                     JOIN players p ON mp.player_id = p.id
+                     WHERE mp.match_id = ?1 AND p.primary_id = ?2"
+                ) {
+                    if let Ok(iter) = mp_stmt.query_map(params![m.id, lid], |row| {
+                        Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?))
+                    }) {
+                        for row in iter.flatten() {
+                            total_shots += row.0;
+                            total_saves += row.1;
+                        }
                     }
                 }
             }
@@ -1261,6 +1258,7 @@ pub fn get_match_sessions(
             match_count,
             wins,
             losses,
+            unknown,
             goals_scored,
             goals_conceded,
             total_shots,
@@ -1308,4 +1306,183 @@ pub fn get_tracker_cache(
         .optional()
         .map_err(|e| AppError::StorageError(e.to_string()))?;
     Ok(result)
+}
+
+// ─── Insights ──────────────────────────────────────────────────────────────
+
+pub fn get_insights(
+    pool: &DbPool,
+    local_primary_id: &str,
+    start_date: &str,
+    end_date: &str,
+) -> AppResult<serde_json::Value> {
+    let conn = get_conn(pool)?;
+
+    let mut stmt = conn.prepare(
+        "SELECT m.winner, mp.team_num, m.playlist, m.start_time,
+                m.is_overtime, m.score_blue, m.score_orange,
+                mp.score, mp.goals, mp.assists, mp.saves, mp.shots, mp.demos
+         FROM matches m
+         JOIN match_players mp ON m.id = mp.match_id
+         JOIN players p ON mp.player_id = p.id
+         WHERE p.primary_id = ?1
+           AND m.winner IS NOT NULL
+           AND m.start_time >= ?2
+           AND m.start_time < date(?3, '+1 day')
+         ORDER BY m.start_time ASC",
+    )?;
+
+    let rows: Vec<(Option<i32>, i32, Option<String>, String, i32, i32, i32, i32, i32, i32, i32, i32, i32)> = stmt
+        .query_map(
+            rusqlite::params![local_primary_id, start_date, end_date],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                    row.get(9)?,
+                    row.get(10)?,
+                    row.get(11)?,
+                    row.get(12)?,
+                ))
+            },
+        )?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if rows.is_empty() {
+        return Ok(serde_json::json!({ "available": false, "totalMatches": 0 }));
+    }
+
+    let mut by_playlist: std::collections::HashMap<String, (i32, i32)> = std::collections::HashMap::new();
+    let mut by_hour: std::collections::HashMap<u32, (i32, i32)> = std::collections::HashMap::new();
+    let mut ot_games = 0i32;
+    let mut ot_wins = 0i32;
+    let mut close_games = 0i32;
+    let mut close_wins = 0i32;
+    let mut blowout_games = 0i32;
+    let mut blowout_wins = 0i32;
+    let mut total_team_goals = 0i32;
+    let mut total_my_goals = 0i32;
+    let mut total_my_assists = 0i32;
+    let mut total_my_saves = 0i32;
+    let mut total_my_shots = 0i32;
+    let mut total_my_demos = 0i32;
+
+    for row in &rows {
+        let (_winner, _team, playlist, start_time, is_overtime, score_blue, score_orange, _score, goals, assists, saves, shots, demos) = row;
+        let playlist_key = playlist.clone().unwrap_or_else(|| "Desconocido".into());
+        let entry = by_playlist.entry(playlist_key).or_insert((0, 0));
+        entry.0 += 1;
+
+        if let (Some(winner), team) = (_winner, _team) {
+            let is_win = *winner == *team;
+            if is_win { entry.1 += 1; }
+
+            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(start_time) {
+                let hour = dt.hour();
+                let he = by_hour.entry(hour).or_insert((0, 0));
+                he.0 += 1;
+                if is_win { he.1 += 1; }
+            }
+
+            if *is_overtime != 0 {
+                ot_games += 1;
+                if is_win { ot_wins += 1; }
+            }
+
+            let my_score = if *team == 0 { *score_blue } else { *score_orange };
+            let their_score = if *team == 0 { *score_orange } else { *score_blue };
+            let diff = my_score - their_score;
+            if diff.abs() == 1 {
+                close_games += 1;
+                if is_win { close_wins += 1; }
+            }
+            if diff.abs() >= 4 {
+                blowout_games += 1;
+                if is_win { blowout_wins += 1; }
+            }
+        }
+
+        total_team_goals += if *_team == 0 { *score_blue } else { *score_orange };
+        total_my_goals += goals;
+        total_my_assists += assists;
+        total_my_saves += saves;
+        total_my_shots += shots;
+        total_my_demos += demos;
+    }
+
+    let mut team_stmt = conn.prepare(
+        "SELECT SUM(assists), SUM(saves), SUM(shots), SUM(demos)
+         FROM match_players mp
+         JOIN matches m ON mp.match_id = m.id
+         WHERE m.start_time >= ?1 AND m.start_time < date(?2, '+1 day')",
+    )?;
+    let (total_team_assists, total_team_saves, total_team_shots, total_team_demos): (i32, i32, i32, i32) = team_stmt.query_row(
+        rusqlite::params![start_date, end_date],
+        |row| Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?, row.get::<_, i32>(3)?)),
+    ).unwrap_or((0, 0, 0, 0));
+
+    let mut best_playlist = String::new();
+    let mut best_playlist_wr = 0f64;
+    let mut playlist_stats = Vec::new();
+    for (name, (played, won)) in &by_playlist {
+        let wr = if *played > 0 { (*won as f64 / *played as f64) * 100.0 } else { 0.0 };
+        if *played >= 3 && wr > best_playlist_wr {
+            best_playlist_wr = wr;
+            best_playlist = name.clone();
+        }
+        playlist_stats.push(serde_json::json!({
+            "name": name, "played": played, "won": won,
+            "winRate": wr.round() as i32,
+        }));
+    }
+    playlist_stats.sort_by(|a, b| b["played"].as_i64().unwrap().cmp(&a["played"].as_i64().unwrap()));
+
+    let mut best_hour = 0u32;
+    let mut best_hour_wr = 0f64;
+    let mut hour_stats = Vec::new();
+    for (&hour, (played, won)) in &by_hour {
+        let wr = if *played > 0 { (*won as f64 / *played as f64) * 100.0 } else { 0.0 };
+        if *played >= 2 && wr > best_hour_wr {
+            best_hour_wr = wr;
+            best_hour = hour;
+        }
+        hour_stats.push(serde_json::json!({
+            "hour": hour, "played": played, "won": won,
+            "winRate": wr.round() as i32,
+        }));
+    }
+    hour_stats.sort_by_key(|h| h["hour"].as_u64().unwrap());
+
+    let total_matches = rows.len() as i32;
+
+    Ok(serde_json::json!({
+        "available": true,
+        "totalMatches": total_matches,
+        "playlists": playlist_stats,
+        "bestPlaylist": if best_playlist.is_empty() { "N/A" } else { &best_playlist },
+        "bestPlaylistWR": best_playlist_wr.round() as i32,
+        "byHour": hour_stats,
+        "bestHour": best_hour,
+        "bestHourWR": best_hour_wr.round() as i32,
+        "otGames": ot_games,
+        "otWinRate": if ot_games > 0 { ((ot_wins as f64 / ot_games as f64) * 100.0).round() as i32 } else { 0 },
+        "closeGames": close_games,
+        "closeWinRate": if close_games > 0 { ((close_wins as f64 / close_games as f64) * 100.0).round() as i32 } else { 0 },
+        "blowoutGames": blowout_games,
+        "blowoutWinRate": if blowout_games > 0 { ((blowout_wins as f64 / blowout_games as f64) * 100.0).round() as i32 } else { 0 },
+        "contrib": {
+            "goalsPct": if total_team_goals > 0 { ((total_my_goals as f64 / total_team_goals as f64) * 100.0).round() as i32 } else { 0 },
+            "assistsPct": if total_team_assists > 0 { ((total_my_assists as f64 / total_team_assists as f64) * 100.0).round() as i32 } else { 0 },
+            "savesPct": if total_team_saves > 0 { ((total_my_saves as f64 / total_team_saves as f64) * 100.0).round() as i32 } else { 0 },
+            "shotsPct": if total_team_shots > 0 { ((total_my_shots as f64 / total_team_shots as f64) * 100.0).round() as i32 } else { 0 },
+            "demosPct": if total_team_demos > 0 { ((total_my_demos as f64 / total_team_demos as f64) * 100.0).round() as i32 } else { 0 },
+        },
+    }))
 }

@@ -59,6 +59,8 @@ pub fn run() {
             commands::analytics::get_analytics,
             commands::analytics::get_sessions,
             commands::analytics::get_daily_rollups,
+            commands::analytics::get_session_matches,
+            commands::analytics::get_insights,
             commands::settings::get_settings_cmd,
             commands::settings::set_settings_cmd,
             commands::settings::configure_rl_ini_cmd,

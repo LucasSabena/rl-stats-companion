@@ -25,14 +25,12 @@ function MatchEndBanner() {
   const clearMatchSummary = useLiveStore((state) => state.clearMatchSummary);
   const [visible, setVisible] = useState(false);
 
-  // Show banner when summary arrives
   useEffect(() => {
     if (lastMatchSummary) {
       setVisible(true);
     }
   }, [lastMatchSummary]);
 
-  // Auto-dismiss after 15 seconds
   useEffect(() => {
     if (!visible || !summaryTimestamp) return;
     const elapsed = Date.now() - summaryTimestamp;
@@ -52,7 +50,6 @@ function MatchEndBanner() {
     return () => clearTimeout(timer);
   }, [visible, summaryTimestamp, clearMatchSummary]);
 
-  // Auto-dismiss if older than 10 seconds when component mounts
   useEffect(() => {
     if (lastMatchSummary && summaryTimestamp) {
       const elapsed = Date.now() - summaryTimestamp;
@@ -79,11 +76,11 @@ function MatchEndBanner() {
     label = `Empate ${score_blue} - ${score_orange}`;
     bgClass = "border-border-subtle bg-bg-secondary";
   } else if (winner === 0) {
-    label = `¡Victoria! ${score_blue} - ${score_orange}`;
-    bgClass = "border-accent-secondary/30 bg-accent-secondary/10";
+    label = `Victoria! ${score_blue} - ${score_orange}`;
+    bgClass = "border-accent-success/30 bg-accent-success-subtle";
   } else {
     label = `Derrota ${score_blue} - ${score_orange}`;
-    bgClass = "border-accent-danger/30 bg-accent-danger/10";
+    bgClass = "border-accent-danger/30 bg-accent-danger-subtle";
   }
 
   const mins = Math.floor(duration_seconds / 60);
@@ -93,7 +90,7 @@ function MatchEndBanner() {
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between rounded-lg border px-4 py-3",
+        "relative flex items-center justify-between rounded-xl border px-4 py-3 animate-slide-down",
         bgClass
       )}
       role="alert"
@@ -101,13 +98,13 @@ function MatchEndBanner() {
       <div className="flex items-center gap-3">
         <span className="text-base font-bold text-text-primary">{label}</span>
         <span className="text-xs text-text-tertiary">
-          Duración: {durationStr} | {players.length} jugadores
+          Duracion: {durationStr} | {players.length} jugadores
         </span>
       </div>
       <button
         onClick={handleDismiss}
-        className="flex h-6 w-6 items-center justify-center rounded-full text-text-muted hover:bg-surface-hover hover:text-text-secondary"
-        aria-label="Cerrar notificación"
+        className="flex h-6 w-6 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-hover hover:text-text-secondary"
+        aria-label="Cerrar notificacion"
       >
         <X size={14} />
       </button>
@@ -138,36 +135,21 @@ export function LiveDashboard() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Match end notification */}
+    <div className="space-y-5">
       <MatchEndBanner />
 
       <div className="flex items-center justify-between">
         <ConnectionStatus status={connectionStatus} />
-        <div className="flex items-center gap-3">
-          {/* Match type badge */}
+        <div className="flex items-center gap-2">
           {currentMatch.matchType && (
             <Badge
-              variant={currentMatch.matchType === "online" ? "live" : "default"}
-              className={
-                currentMatch.matchType === "online"
-                  ? "bg-accent-info/20 text-accent-info"
-                  : "bg-accent-warning/20 text-accent-warning"
-              }
+              variant={currentMatch.matchType === "online" ? "info" : "default"}
             >
               {currentMatch.matchType === "online" ? "Online" : "Local"}
             </Badge>
           )}
-          {/* Player count */}
           {currentMatch.playerCount !== undefined && (
-            <Badge
-              variant={currentMatch.matchType === "online" ? "live" : "default"}
-              className={
-                currentMatch.matchType === "online"
-                  ? "bg-accent-info/20 text-accent-info"
-                  : "bg-accent-warning/20 text-accent-warning"
-              }
-            >
+            <Badge variant="accent">
               {getMatchSizeLabel(currentMatch.playerCount)}
             </Badge>
           )}

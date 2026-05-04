@@ -19,16 +19,16 @@ const eventIcons: Record<RlEventType, typeof Goal> = {
 };
 
 const eventLabels: Record<RlEventType, string> = {
-  UpdateState: "Actualización",
+  UpdateState: "Actualizacion",
   BallHit: "Pelota golpeada",
-  GoalScored: "¡Gol!",
-  StatfeedEvent: "Estadística",
+  GoalScored: "Gol!",
+  StatfeedEvent: "Estadistica",
   MatchCreated: "Partida creada",
   MatchEnded: "Partida finalizada",
-  ReplayStart: "Repetición",
-  ReplayEnd: "Fin repetición",
+  ReplayStart: "Repeticion",
+  ReplayEnd: "Fin repeticion",
   PlayerJoined: "Jugador unido",
-  PlayerLeft: "Jugador salió",
+  PlayerLeft: "Jugador salio",
 };
 
 const eventColors: Record<RlEventType, string> = {
@@ -48,15 +48,15 @@ export const EventFeed = memo(function EventFeed() {
   const events = useLiveStore((state) => state.events);
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary">
+    <div className="rounded-xl border border-border-subtle bg-bg-secondary">
       <div className="border-b border-border-subtle px-4 py-3">
-        <h3 className="text-sm font-semibold text-text-primary">Eventos recientes</h3>
+        <h3 className="font-display text-sm font-semibold text-text-primary">Eventos recientes</h3>
       </div>
       <div className="h-48 overflow-y-auto p-2">
         {events.length === 0 ? (
-          <p className="py-8 text-center text-sm text-text-tertiary">Sin eventos aún</p>
+          <p className="py-8 text-center text-sm text-text-tertiary">Sin eventos aun</p>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {events.slice(0, 50).map((event) => (
               <EventItem key={event.id} event={event} />
             ))}
@@ -70,10 +70,10 @@ export const EventFeed = memo(function EventFeed() {
 function EventItem({ event }: { event: RlEvent }) {
   const Icon = eventIcons[event.type];
   return (
-    <div className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-surface-hover">
+    <div className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:bg-surface-hover/50">
       <Icon size={14} className={cn("shrink-0", eventColors[event.type])} />
       <span className="text-text-secondary">{eventLabels[event.type]}</span>
-      <span className="ml-auto text-xs text-text-muted">{formatDateTime(event.timestamp * 1000)}</span>
+      <span className="ml-auto text-[11px] text-text-muted">{formatDateTime(event.timestamp * 1000)}</span>
     </div>
   );
 }

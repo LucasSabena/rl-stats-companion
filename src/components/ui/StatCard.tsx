@@ -9,11 +9,28 @@ interface StatCardProps {
   trend?: "up" | "down" | "flat";
   trendValue?: string;
   className?: string;
+  accent?: "blue" | "orange" | "green" | "purple" | "default";
 }
 
-export function StatCard({ label, value, icon: Icon, trend, trendValue, className }: StatCardProps) {
+const accentStyles = {
+  blue: "border-l-accent-primary",
+  orange: "border-l-accent-secondary",
+  green: "border-l-accent-success",
+  purple: "border-l-accent-purple",
+  default: "border-l-transparent",
+};
+
+const accentIconStyles = {
+  blue: "text-accent-primary bg-accent-primary-subtle",
+  orange: "text-accent-secondary bg-accent-secondary-subtle",
+  green: "text-accent-success bg-accent-success-subtle",
+  purple: "text-accent-purple bg-accent-purple-subtle",
+  default: "text-text-tertiary bg-bg-tertiary",
+};
+
+export function StatCard({ label, value, icon: Icon, trend, trendValue, className, accent = "default" }: StatCardProps) {
   const trendColors = {
-    up: "text-accent-secondary",
+    up: "text-accent-success",
     down: "text-accent-danger",
     flat: "text-text-tertiary",
   };
@@ -23,21 +40,30 @@ export function StatCard({ label, value, icon: Icon, trend, trendValue, classNam
   return (
     <div
       className={cn(
-        "rounded-lg bg-bg-secondary p-4 transition-all duration-150 ease-out hover:shadow-level-2",
+        "rounded-xl border border-border-subtle bg-bg-secondary p-4 transition-all duration-200 ease-out",
+        "hover:border-border-default hover:shadow-level-2",
+        "border-l-[3px]",
+        accentStyles[accent],
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
             {label}
           </p>
-          <p className="mt-1 font-mono text-2xl font-bold text-text-primary">{displayValue}</p>
+          <p className="mt-1.5 font-mono text-2xl font-bold tracking-tight text-text-primary">
+            {displayValue}
+          </p>
         </div>
-        {Icon && <Icon size={20} className="text-text-tertiary" />}
+        {Icon && (
+          <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", accentIconStyles[accent])}>
+            <Icon size={18} />
+          </div>
+        )}
       </div>
       {trend && (
-        <div className={cn("mt-2 flex items-center gap-1 text-xs", trendColors[trend])}>
+        <div className={cn("mt-2.5 flex items-center gap-1 text-xs font-medium", trendColors[trend])}>
           <span>{trend === "up" ? "↑" : trend === "down" ? "↓" : "—"}</span>
           <span>{trendValue}</span>
         </div>

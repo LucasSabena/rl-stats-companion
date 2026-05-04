@@ -7,7 +7,7 @@ interface PageContainerProps {
 
 export function PageContainer({ children, className }: PageContainerProps) {
   return (
-    <div className={cn("space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-200", className)}>
+    <div className={cn("space-y-6 animate-slide-up", className)}>
       {children}
     </div>
   );

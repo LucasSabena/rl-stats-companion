@@ -31,8 +31,8 @@ import {
 import type { OverlayWindowState, OverlayConfigForm, OverlayPositionPreset } from "@/lib/types";
 
 const inputClass = cn(
-  "rounded-md border bg-bg-secondary px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted",
-  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50",
+  "rounded-lg border bg-bg-secondary px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors",
+  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)]",
   "w-full"
 );
 
@@ -110,7 +110,7 @@ export function OverlayConfig() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [addToast, reset]);
 
   const handlePresetChange = (preset: OverlayPositionPreset) => {
     setValue("positionPreset", preset);

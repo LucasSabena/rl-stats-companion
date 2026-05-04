@@ -11,10 +11,10 @@ const icons = {
 };
 
 const styles = {
-  success: "border-accent-secondary/30 bg-accent-secondary/10 text-accent-secondary",
-  error: "border-accent-danger/30 bg-accent-danger/10 text-accent-danger",
-  warning: "border-accent-warning/30 bg-accent-warning/10 text-accent-warning",
-  info: "border-accent-info/30 bg-accent-info/10 text-accent-info",
+  success: "border-accent-success/30 bg-accent-success-subtle text-accent-success",
+  error: "border-accent-danger/30 bg-accent-danger-subtle text-accent-danger",
+  warning: "border-accent-warning/30 bg-accent-warning-subtle text-accent-warning",
+  info: "border-accent-info/30 bg-accent-info-subtle text-accent-info",
 };
 
 export function ToastContainer() {
@@ -52,19 +52,19 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
   return (
     <div
       className={cn(
-        "flex w-80 items-start gap-3 rounded-lg border p-4 shadow-level-3 transition-all",
+        "flex w-80 items-start gap-3 rounded-xl border p-4 shadow-level-3 animate-slide-in-right",
         styles[toast.type]
       )}
       role="alert"
     >
       <Icon size={18} className="mt-0.5 shrink-0" />
       <div className="flex-1">
-        <p className="text-sm font-medium text-text-primary">{toast.title}</p>
+        <p className="text-sm font-semibold text-text-primary">{toast.title}</p>
         {toast.message && <p className="mt-1 text-xs text-text-secondary">{toast.message}</p>}
       </div>
       <button
         onClick={onClose}
-        className="shrink-0 rounded p-1 text-text-tertiary hover:bg-white/10 hover:text-text-primary"
+        className="shrink-0 rounded-md p-1 text-text-tertiary transition-colors hover:bg-white/10 hover:text-text-primary"
         aria-label="Close"
       >
         <X size={14} />

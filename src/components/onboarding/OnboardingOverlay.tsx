@@ -1,30 +1,35 @@
-import { useState } from 'react'
-import { cn } from '@/lib/utils'
-import Step1 from './Step1_Welcome'
-import Step2 from './Step2_PlayerIdentity'
-import Step3 from './Step2_FindGame'
-import Step4 from './Step2_Connection'
-import Step5 from './Step3_Features'
-import Step6 from './OnboardingComplete'
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import Step1 from "./Step1_Welcome";
+import Step2 from "./Step2_PlayerIdentity";
+import Step3 from "./Step2_FindGame";
+import Step4 from "./Step2_Connection";
+import Step5 from "./Step3_Features";
+import Step6 from "./OnboardingComplete";
 
 interface OnboardingOverlayProps {
-  onComplete: () => void
+  onComplete: () => void;
 }
 
 export default function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
-  const [step, setStep] = useState(1)
-  const totalSteps = 6
+  const [step, setStep] = useState(1);
+  const totalSteps = 6;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0f] flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "var(--color-bg-base)" }}>
       <div className="w-full max-w-2xl px-8">
         {/* Step indicator dots */}
         <div className="flex justify-center gap-2 mb-12">
           {Array.from({ length: totalSteps }, (_, i) => (
-            <div key={i} className={cn(
-              'w-2.5 h-2.5 rounded-full transition-colors duration-300',
-              i + 1 === step ? 'bg-blue-500' : 'bg-gray-700'
-            )} />
+            <div
+              key={i}
+              className={cn(
+                "h-2.5 w-2.5 rounded-full transition-all duration-300",
+                i + 1 === step
+                  ? "bg-accent-primary w-6"
+                  : "bg-border-strong"
+              )}
+            />
           ))}
         </div>
 
@@ -39,5 +44,5 @@ export default function OnboardingOverlay({ onComplete }: OnboardingOverlayProps
         </div>
       </div>
     </div>
-  )
+  );
 }

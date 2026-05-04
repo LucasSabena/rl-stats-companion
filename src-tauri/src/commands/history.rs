@@ -12,6 +12,7 @@ pub struct MatchFilters {
     pub offset: Option<i64>,
     pub arena: Option<String>,
     pub match_type: Option<String>,
+    pub playlist: Option<String>,
     pub result: Option<String>,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
@@ -28,7 +29,8 @@ pub async fn get_matches(
     let offset = filters.offset.unwrap_or(0);
     let arena = filters.arena.as_deref();
     let match_type = filters.match_type.as_deref();
-    let result = filters.result.as_deref();
+    let playlist = filters.playlist.as_deref();
+    let result_filter = filters.result.as_deref();
     let date_from = filters.date_from.as_deref();
     let date_to = filters.date_to.as_deref();
     let search = filters.search.as_deref();
@@ -44,30 +46,53 @@ pub async fn get_matches(
             offset,
             arena,
             match_type,
-            result,
+            playlist,
+            result: None,
             date_from,
             date_to,
             search,
         },
     ) {
-        Ok(matches) => Ok(serde_json::json!({
-            "matches": matches.into_iter().map(|m| serde_json::json!({
-                "id": m.id,
-                "guid": m.guid,
-                "start_time": m.start_time,
-                "end_time": m.end_time,
-                "arena": m.arena,
-                "score_blue": m.score_blue,
-                "score_orange": m.score_orange,
-                "winner": m.winner,
-                "local_team_num": storage::get_local_team_num(pool, m.id, local_primary_id, &player_names).ok().flatten(),
-                "is_online": m.is_online,
-                "is_overtime": m.is_overtime,
-                "duration_seconds": m.duration_seconds,
-                "match_type": m.match_type,
-                "playlist": m.playlist,
-            })).collect::<Vec<_>>()
-        })),
+        Ok(matches) => {
+            let mut result: Vec<serde_json::Value> = Vec::new();
+            for m in matches {
+                let local_team = storage::get_local_team_num(pool, m.id, local_primary_id, &player_names).ok().flatten();
+
+                if let Some(rf) = result_filter {
+                    match rf {
+                        "win" => {
+                            if m.winner.is_none() || local_team.is_none() || m.winner != local_team {
+                                continue;
+                            }
+                        }
+                        "loss" => {
+                            if m.winner.is_none() || local_team.is_none() || m.winner == local_team {
+                                continue;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                result.push(serde_json::json!({
+                    "id": m.id,
+                    "guid": m.guid,
+                    "start_time": m.start_time,
+                    "end_time": m.end_time,
+                    "arena": m.arena,
+                    "score_blue": m.score_blue,
+                    "score_orange": m.score_orange,
+                    "winner": m.winner,
+                    "local_team_num": local_team,
+                    "is_online": m.is_online,
+                    "is_overtime": m.is_overtime,
+                    "duration_seconds": m.duration_seconds,
+                    "match_type": m.match_type,
+                    "playlist": m.playlist,
+                }));
+            }
+            Ok(serde_json::json!({ "matches": result }))
+        }
         Err(e) => {
             error!(error = %e, "Failed to get matches");
             Err(e.to_string())
@@ -177,21 +202,28 @@ fn map_match_events(
 fn build_goals_from_events(events: &[Value]) -> Vec<Value> {
     events
         .iter()
-        .filter_map(|event| {
+        .enumerate()
+        .filter_map(|(idx, event)| {
             if event.get("type").and_then(|v| v.as_str()) != Some("GoalScored") {
                 return None;
             }
 
             let data = event.get("data")?;
+            let ball_speed = data
+                .get("ball_speed")
+                .and_then(|v| v.as_f64())
+                .or_else(|| data.get("ballSpeed").and_then(|v| v.as_f64()))
+                .unwrap_or(0.0);
+
             Some(serde_json::json!({
-                "id": event.get("id").and_then(|v| v.as_str()).unwrap_or_default(),
+                "id": event.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| idx.to_string()),
                 "scorerId": data.get("scorer_id").and_then(|v| v.as_str()).unwrap_or_default(),
                 "scorerName": data.get("scorer_name").and_then(|v| v.as_str()).unwrap_or("Desconocido"),
                 "scorerTeam": data.get("team").and_then(|v| v.as_i64()).unwrap_or(0),
                 "assisterId": data.get("assister_id").and_then(|v| v.as_str()),
                 "assisterName": data.get("assister_name").and_then(|v| v.as_str()),
                 "time": event.get("timestamp").and_then(|v| v.as_i64()).unwrap_or(0),
-                "ballSpeed": 0,
+                "ballSpeed": ball_speed,
             }))
         })
         .collect()

@@ -73,7 +73,7 @@ export function ContextMenu({ children, items, onOpenChange }: ContextMenuProps)
           data-context-menu
           style={{ left: pos.x, top: pos.y }}
           className={cn(
-            "fixed z-50 min-w-[10rem] overflow-hidden rounded-lg border border-border-strong bg-bg-secondary py-1 shadow-level-3"
+            "fixed z-50 min-w-[10rem] overflow-hidden rounded-xl border border-border-strong bg-bg-elevated py-1.5 shadow-level-3 animate-scale-in"
           )}
         >
           {items.map((item, index) => {
@@ -87,11 +87,11 @@ export function ContextMenu({ children, items, onOpenChange }: ContextMenuProps)
                   close();
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 text-sm text-text-primary transition-colors hover:bg-surface-hover",
-                  item.variant === "danger" && "text-accent-danger hover:bg-accent-danger/10"
+                  "flex w-full items-center gap-2.5 px-3 py-2 text-sm text-text-primary transition-colors hover:bg-surface-hover",
+                  item.variant === "danger" && "text-accent-danger hover:bg-accent-danger-subtle"
                 )}
               >
-                {Icon && <Icon size={16} />}
+                {Icon && <Icon size={15} />}
                 <span>{item.label}</span>
               </button>
             );

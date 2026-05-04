@@ -102,6 +102,7 @@ fn export_data_json_internal(pool: &storage::DbPool) -> Result<String, String> {
             offset: 0,
             arena: None,
             match_type: None,
+            playlist: None,
             result: None,
             date_from: None,
             date_to: None,

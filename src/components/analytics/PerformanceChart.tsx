@@ -22,9 +22,9 @@ interface PerformanceChartProps {
 }
 
 const METRICS: { key: ChartMetric; label: string; color: string }[] = [
-  { key: "winRate", label: "Win Rate", color: "#3B82F6" },
-  { key: "avgScore", label: "Puntuación", color: "#10B981" },
-  { key: "matchesPlayed", label: "Partidas", color: "#8B5CF6" },
+  { key: "winRate", label: "Win Rate", color: "var(--color-accent-primary)" },
+  { key: "avgScore", label: "Puntuacion", color: "var(--color-accent-success)" },
+  { key: "matchesPlayed", label: "Partidas", color: "var(--color-accent-purple)" },
 ];
 
 export const PerformanceChart = memo(function PerformanceChart({
@@ -51,26 +51,26 @@ export const PerformanceChart = memo(function PerformanceChart({
   if (chartData.length === 0) {
     return (
       <Card className="flex h-64 items-center justify-center">
-        <p className="text-sm text-text-secondary">No hay datos para este período</p>
+        <p className="text-sm text-text-secondary">No hay datos para este periodo</p>
       </Card>
     );
   }
 
-  const currentColor = METRICS.find((m) => m.key === metric)?.color ?? "#3B82F6";
+  const currentColor = METRICS.find((m) => m.key === metric)?.color ?? "var(--color-accent-primary)";
 
   return (
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-text-primary">Evolución</h3>
+        <h3 className="font-display text-sm font-semibold text-text-primary">Evolucion</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 rounded-lg border border-border-subtle bg-bg-tertiary p-0.5">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-tertiary p-0.5">
             {METRICS.map((m) => (
               <button
                 key={m.key}
                 onClick={() => { setMetric(m.key); setShowCombo(false); }}
-                className={`rounded px-3 py-1 text-xs font-medium transition-all ${
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                   metric === m.key && !showCombo
-                    ? "bg-accent-primary text-white"
+                    ? "bg-accent-primary text-white shadow-sm"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
@@ -79,9 +79,9 @@ export const PerformanceChart = memo(function PerformanceChart({
             ))}
             <button
               onClick={() => setShowCombo(!showCombo)}
-              className={`rounded px-3 py-1 text-xs font-medium transition-all ${
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                 showCombo
-                  ? "bg-accent-primary text-white"
+                  ? "bg-accent-primary text-white shadow-sm"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -97,21 +97,21 @@ export const PerformanceChart = memo(function PerformanceChart({
             <ComposedChart data={chartData}>
               <defs>
                 <linearGradient id="gradient-winRate" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--color-accent-primary)" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="var(--color-accent-primary)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" />
               <XAxis
                 dataKey="date"
-                tick={{ fill: "#64748B", fontSize: 11 }}
-                axisLine={{ stroke: "#1E293B" }}
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
+                axisLine={{ stroke: "var(--color-border-subtle)" }}
                 tickLine={false}
               />
               <YAxis
                 yAxisId="left"
                 domain={[0, 100]}
-                tick={{ fill: "#64748B", fontSize: 11 }}
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
@@ -119,17 +119,18 @@ export const PerformanceChart = memo(function PerformanceChart({
                 yAxisId="right"
                 orientation="right"
                 allowDecimals={false}
-                tick={{ fill: "#64748B", fontSize: 11 }}
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#111827",
-                  border: "1px solid #1E293B",
-                  borderRadius: "8px",
+                  backgroundColor: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border-strong)",
+                  borderRadius: "10px",
+                  color: "var(--color-text-primary)",
                 }}
-                labelStyle={{ color: "#F8FAFC" }}
+                labelStyle={{ color: "var(--color-text-primary)" }}
               />
               <Legend />
               <Area
@@ -137,7 +138,7 @@ export const PerformanceChart = memo(function PerformanceChart({
                 type="monotone"
                 dataKey="winRate"
                 name="Win Rate (%)"
-                stroke="#3B82F6"
+                stroke="var(--color-accent-primary)"
                 strokeWidth={2}
                 fill="url(#gradient-winRate)"
               />
@@ -145,9 +146,9 @@ export const PerformanceChart = memo(function PerformanceChart({
                 yAxisId="right"
                 dataKey="matchesPlayed"
                 name="Partidas"
-                fill="#8B5CF6"
+                fill="var(--color-accent-purple)"
                 fillOpacity={0.6}
-                radius={[2, 2, 0, 0]}
+                radius={[4, 4, 0, 0]}
               />
             </ComposedChart>
           ) : (
@@ -158,26 +159,27 @@ export const PerformanceChart = memo(function PerformanceChart({
                   <stop offset="95%" stopColor={currentColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" />
               <XAxis
                 dataKey="date"
-                tick={{ fill: "#64748B", fontSize: 11 }}
-                axisLine={{ stroke: "#1E293B" }}
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
+                axisLine={{ stroke: "var(--color-border-subtle)" }}
                 tickLine={false}
               />
               <YAxis
                 domain={yDomain}
-                tick={{ fill: "#64748B", fontSize: 11 }}
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#111827",
-                  border: "1px solid #1E293B",
-                  borderRadius: "8px",
+                  backgroundColor: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border-strong)",
+                  borderRadius: "10px",
+                  color: "var(--color-text-primary)",
                 }}
-                labelStyle={{ color: "#F8FAFC" }}
+                labelStyle={{ color: "var(--color-text-primary)" }}
               />
               <Area
                 type="monotone"

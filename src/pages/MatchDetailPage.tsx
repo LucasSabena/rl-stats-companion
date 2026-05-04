@@ -25,12 +25,12 @@ export function MatchDetailPage() {
           <Skeleton className="h-8 w-32" />
         </div>
         <Skeleton className="mb-6 h-48 w-full" />
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
         <div className="mt-6">
-          <Skeleton className="h-56 w-full" />
+          <Skeleton className="h-80 w-full" />
         </div>
       </PageContainer>
     );
@@ -70,64 +70,67 @@ export function MatchDetailPage() {
     );
   }
 
+  const hasGoals = data.goals.length > 0;
+  const goalsExist = data.events.some((e) => e.type === "GoalScored");
+
   return (
     <PageContainer>
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          leftIcon={ArrowLeft}
-          onClick={() => navigate("/history")}
-        >
-          Volver al historial
-        </Button>
-      </div>
+      <Button
+        variant="ghost"
+        leftIcon={ArrowLeft}
+        onClick={() => navigate("/history")}
+      >
+        Volver al historial
+      </Button>
 
-      {/* Fila 1: Header */}
+      {/* Sección 1: Header — marcador grande + metadata */}
       <div className="mt-4">
         <MatchHeader match={data} />
       </div>
 
-      {/* Fila 2: Grid de 2 columnas en desktop */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {/* Izquierda */}
-        <div className="space-y-6">
-          <MatchInfoPanel match={data} />
-          <TeamRoster
-            players={data.players}
-            teamNum={0}
-            teamName="Equipo Azul"
-            teamColorClass="blue"
-          />
-        </div>
+      {/* Sección 2: Grid principal — info + rosters lado a lado */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        {/* Panel de info */}
+        <MatchInfoPanel match={data} />
 
-        {/* Derecha */}
-        <div className="space-y-6">
-          <TeamRoster
-            players={data.players}
-            teamNum={1}
-            teamName="Equipo Naranja"
-            teamColorClass="orange"
-          />
-        </div>
-      </div>
+        {/* Roster Azul */}
+        <TeamRoster
+          players={data.players}
+          teamNum={0}
+          teamName="Equipo Azul"
+          teamColorClass="blue"
+        />
 
-      {/* Fila 3: Timeline */}
-      <div className="mt-6">
-        <ScoreTimeline
-          events={data.events}
-          team0Name="Azul"
-          team1Name="Naranja"
+        {/* Roster Naranja */}
+        <TeamRoster
+          players={data.players}
+          teamNum={1}
+          teamName="Equipo Naranja"
+          teamColorClass="orange"
         />
       </div>
 
-      {/* Fila 4: Player Stats */}
+      {/* Sección 3: Goles — tarjetas detalladas de cada gol */}
+      {hasGoals && (
+        <div className="mt-6">
+          <GoalDetail goals={data.goals} />
+        </div>
+      )}
+
+      {/* Sección 4: Cronología de eventos */}
+      {goalsExist && (
+        <div className="mt-6">
+          <ScoreTimeline
+            events={data.events}
+            team0Name="Azul"
+            team1Name="Naranja"
+          />
+        </div>
+      )}
+
+      {/* Sección 5: Stats de jugadores */}
       <div className="mt-6">
         <PlayerStatsTable players={data.players} />
-      </div>
-
-      {/* Fila 5: Goals */}
-      <div className="mt-6">
-        <GoalDetail goals={data.goals} />
       </div>
     </PageContainer>
   );

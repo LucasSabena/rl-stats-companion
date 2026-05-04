@@ -1,7 +1,7 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/utils";
-import { Goal, Shield, ShieldAlert, Crosshair } from "lucide-react";
+import { Shield, ShieldAlert, Crosshair } from "lucide-react";
 import type { RlEvent } from "@/lib/types";
 
 interface ScoreTimelineProps {
@@ -20,8 +20,6 @@ function getStatfeedLabel(data: Record<string, unknown>): string | null {
       return "Parada Épica";
     case "Shot":
       return "Tiro";
-    case "Goal":
-      return "Gol";
     case "Assist":
       return "Asistencia";
     case "Demolish":
@@ -40,8 +38,6 @@ function getStatfeedColor(data: Record<string, unknown>): string {
       return "text-purple-400";
     case "Shot":
       return "text-yellow-400";
-    case "Goal":
-      return "text-orange-400";
     case "Assist":
       return "text-green-400";
     case "Demolish":
@@ -57,7 +53,6 @@ function getStatfeedIcon(data: Record<string, unknown>) {
     case "EpicSave":
       return ShieldAlert;
     case "Shot":
-    case "Goal":
       return Crosshair;
     case "Save":
     default:
@@ -88,43 +83,31 @@ export const ScoreTimeline = memo(function ScoreTimeline({
     setTeam1Score(t1);
   }, [events]);
 
-  if (events.length === 0) {
-    return (
-      <div className="rounded-xl border border-border-subtle bg-bg-secondary p-12">
-        <p className="text-center text-sm text-text-secondary">
-          No hay eventos registrados
-        </p>
-      </div>
-    );
-  }
+  const displayEvents = events.filter((e) => {
+    if (e.type === "GoalScored") return true;
+    if (e.type === "StatfeedEvent") {
+      const eventType = (e.data as Record<string, unknown>).event_type as string;
+      if (eventType === "Goal") return false;
+      return true;
+    }
+    return false;
+  });
 
-  // Sort events by timestamp
-  const displayEvents = events.filter(
-    (e) => e.type === "GoalScored" || e.type === "StatfeedEvent"
-  );
-
-  if (displayEvents.length === 0) {
-    return (
-      <div className="rounded-xl border border-border-subtle bg-bg-secondary p-12">
-        <p className="text-center text-sm text-text-secondary">
-          No hay eventos registrados
-        </p>
-      </div>
-    );
-  }
+  if (displayEvents.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-bg-secondary p-6">
+    <div className="rounded-xl border border-border-subtle bg-bg-secondary p-6 shadow-level-1">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-sm font-semibold text-text-primary">
-          Línea de Eventos
+          Cronología de eventos
         </h3>
-        <div className="flex items-center gap-3 font-mono text-sm text-text-secondary">
-          <span className="text-blue-400">{team0Name}</span>
-          <span className="font-bold text-text-primary tabular-nums">{team0Score}</span>
-          <span className="text-text-tertiary">-</span>
-          <span className="font-bold text-text-primary tabular-nums">{team1Score}</span>
-          <span className="text-orange-400">{team1Name}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-tertiary mr-1">Goles:</span>
+          <span className="text-xs font-mono font-bold text-team-blue tabular-nums">{team0Score}</span>
+          <span className="text-xs text-text-tertiary">{team0Name}</span>
+          <span className="text-xs text-text-tertiary">—</span>
+          <span className="text-xs text-text-tertiary">{team1Name}</span>
+          <span className="text-xs font-mono font-bold text-team-orange tabular-nums">{team1Score}</span>
         </div>
       </div>
 
@@ -138,102 +121,80 @@ export const ScoreTimeline = memo(function ScoreTimeline({
           const team = (data.team as number) ?? 0;
 
           if (event.type === "GoalScored") {
-            const scorerName = (data.scorer_name as string) ?? (data.player as string) ?? "Desconocido";
+            const scorerName = (data.scorer_name as string) ?? "Desconocido";
             const assisterName = data.assister_name as string | undefined;
-            const teamColor = team === 0 ? "bg-blue-500" : "bg-orange-500";
-            const teamLabel = team === 0 ? team0Name : team1Name;
-            // Calculate running score at this event
-            const goalsBefore = displayEvents.slice(0, idx + 1).filter(
-              (e) => e.type === "GoalScored"
-            ).reduce(
-              (acc, e) => {
-                const t = (e.data.team as number) ?? 0;
-                if (t === 0) acc[0]++;
-                else acc[1]++;
-                return acc;
-              },
-              [0, 0]
-            );
+            const teamColor = team === 0 ? "bg-team-blue" : "bg-team-orange";
+            const goalsBefore = displayEvents
+              .slice(0, idx + 1)
+              .filter((e) => e.type === "GoalScored")
+              .reduce(
+                (acc, e) => {
+                  const t = (e.data.team as number) ?? 0;
+                  if (t === 0) acc[0]++;
+                  else acc[1]++;
+                  return acc;
+                },
+                [0, 0]
+              );
 
             return (
-              <div key={event.id} className="relative mb-6 last:mb-0">
-                {/* Timeline dot */}
+              <div key={event.id} className="relative mb-5 last:mb-0">
                 <div
                   className={cn(
-                    "absolute -left-[42px] top-1 w-3 h-3 rounded-full ring-2 ring-bg-secondary",
+                    "absolute -left-[42px] top-1 mt-0.5 w-3 h-3 rounded-full ring-2 ring-bg-secondary",
                     teamColor
                   )}
                 />
-
-                {/* Time badge */}
-                <div className="flex items-center gap-3 mb-1.5">
-                  <span className="text-xs font-mono text-text-tertiary">
-                    {time}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-xs font-medium px-2 py-0.5 rounded-full",
-                      team === 0
-                        ? "bg-blue-500/10 text-blue-400"
-                        : "bg-orange-500/10 text-orange-400"
-                    )}
-                  >
-                    {teamLabel}
-                  </span>
-                </div>
-
-                {/* Goal detail */}
-                <div className="flex items-start gap-3">
-                  <Goal size={14} className="mt-0.5 text-yellow-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm text-text-primary font-medium truncate">
-                      {scorerName}
-                    </p>
-                    {assisterName && (
-                      <p className="text-xs text-text-tertiary mt-0.5">
-                        Asistencia: {assisterName}
-                      </p>
-                    )}
-                  </div>
-                  <div className="ml-auto flex-shrink-0">
-                    <span className="font-mono text-sm font-bold text-text-primary tabular-nums">
-                      {goalsBefore[0]} - {goalsBefore[1]}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs font-mono text-text-tertiary shrink-0">
+                      {time}
                     </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-text-primary truncate">
+                        {scorerName}
+                      </p>
+                      {assisterName && (
+                        <p className="text-xs text-text-tertiary truncate">
+                          + {assisterName}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  <span className="font-mono text-sm font-bold text-text-primary tabular-nums shrink-0">
+                    {goalsBefore[0]} – {goalsBefore[1]}
+                  </span>
                 </div>
               </div>
             );
           }
 
-          // Statfeed events — smaller entries
           const label = getStatfeedLabel(data);
           const iconColorClass = getStatfeedColor(data);
-          const playerName = (data.player_name as string) ?? (data.player as string) ?? "Jugador";
+          const playerName = (data.player_name as string) ?? "Jugador";
           const Icon = getStatfeedIcon(data);
 
           if (!label) return null;
 
           return (
-            <div key={event.id} className="relative mb-4 last:mb-0">
-              {/* Timeline dot — smaller */}
+            <div key={event.id} className="relative mb-3 last:mb-0">
               <div
                 className={cn(
-                  "absolute -left-[41px] top-1.5 w-2 h-2 rounded-full ring-2 ring-bg-secondary",
-                  team === 0 ? "bg-blue-500" : "bg-orange-500"
+                  "absolute -left-[41px] top-2 w-2 h-2 rounded-full ring-2 ring-bg-secondary",
+                  team === 0 ? "bg-team-blue/70" : "bg-team-orange/70"
                 )}
               />
-
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-text-tertiary w-10 flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-mono text-text-tertiary w-10 shrink-0">
                   {time}
                 </span>
-                <Icon size={12} className={cn("flex-shrink-0", iconColorClass)} />
-                <span className="text-xs text-text-secondary truncate">
+                <Icon size={11} className={cn("shrink-0", iconColorClass)} />
+                <span className="text-xs text-text-secondary truncate min-w-0">
                   {playerName}
                 </span>
                 <span
                   className={cn(
-                    "text-xs font-medium ml-auto flex-shrink-0",
+                    "text-xs font-medium ml-auto shrink-0",
                     iconColorClass
                   )}
                 >

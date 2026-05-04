@@ -20,7 +20,6 @@ function getInitials(name: string): string {
 }
 
 function detectParty(players: PlayerStats[], current: PlayerStats): boolean {
-  // Simple heuristic: same prefix before a common separator
   const prefixes = players.map((p) => {
     const idx = Math.max(p.name.indexOf(" "), p.name.indexOf("_"), p.name.indexOf("|"));
     return idx > 0 ? p.name.slice(0, idx).toLowerCase() : "";
@@ -28,7 +27,6 @@ function detectParty(players: PlayerStats[], current: PlayerStats): boolean {
   const currentPrefix = prefixes.find((_, i) => players[i].id === current.id) ?? "";
   if (currentPrefix && prefixes.filter((p) => p === currentPrefix).length > 1) return true;
 
-  // Fallback heuristic: winning team + >100 points
   const teamScores = players.filter((p) => p.team === current.team).map((p) => p.score);
   const maxTeamScore = teamScores.length ? Math.max(...teamScores) : 0;
   if (current.score === maxTeamScore && current.score > 100) return true;
@@ -50,8 +48,7 @@ export const TeamRoster = memo(function TeamRoster({
   const isBlue = teamColorClass === "blue";
   const colorText = isBlue ? "text-team-blue" : "text-team-orange";
   const colorBg = isBlue ? "bg-team-blue" : "bg-team-orange";
-  const colorBgSoft = isBlue ? "bg-blue-500/10" : "bg-orange-500/10";
-  const colorTextSoft = isBlue ? "text-blue-400" : "text-orange-400";
+  const colorBgSoft = isBlue ? "bg-team-blue-bg" : "bg-team-orange-bg";
 
   if (teamPlayers.length === 0) return null;
 
@@ -59,7 +56,7 @@ export const TeamRoster = memo(function TeamRoster({
     <div className="rounded-xl border border-border-subtle bg-bg-secondary p-5 shadow-level-1">
       <div className="mb-4 flex items-center gap-2">
         <div className={cn("h-3 w-3 rounded-full", colorBg)} />
-        <h3 className={cn("text-sm font-bold uppercase tracking-wider", colorText)}>
+        <h3 className={cn("font-display text-sm font-bold uppercase tracking-wider", colorText)}>
           {teamName}
         </h3>
         <span className="ml-auto text-xs text-text-tertiary">
@@ -73,30 +70,28 @@ export const TeamRoster = memo(function TeamRoster({
           return (
             <div
               key={player.id}
-              className="flex items-center gap-3 rounded-lg bg-bg-tertiary p-3 transition-colors hover:bg-surface-hover"
+              className="flex items-center gap-3 rounded-lg bg-bg-tertiary/80 p-3 transition-colors hover:bg-surface-hover/80"
             >
-              {/* Avatar placeholder */}
               <div
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
                   colorBgSoft,
-                  colorTextSoft
+                  colorText
                 )}
               >
                 {getInitials(player.name)}
               </div>
 
-              {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-medium text-text-primary">
                     {player.name}
                   </span>
                   {player.mvp && (
-                    <Crown size={12} className="shrink-0 text-yellow-400" />
+                    <Crown size={12} className="shrink-0 text-accent-warning" />
                   )}
                   {isParty && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent-purple/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent-purple">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-accent-purple-subtle border border-accent-purple/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent-purple">
                       <Users size={10} />
                       Party
                     </span>

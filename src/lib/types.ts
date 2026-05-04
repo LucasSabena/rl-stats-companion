@@ -175,10 +175,70 @@ export interface MatchSession {
   match_count: number;
   wins: number;
   losses: number;
+  unknown: number;
   goals_scored: number;
   goals_conceded: number;
   total_shots: number;
   total_saves: number;
+}
+
+export interface SessionMatchPlayer {
+  team_num: number;
+  score: number;
+  goals: number;
+  shots: number;
+  assists: number;
+  saves: number;
+  demos: number;
+  speed: number;
+  boost: number;
+  touches: number;
+  name: string;
+  primary_id: string;
+}
+
+export interface SessionMatch {
+  id: number;
+  guid: string;
+  start_time: string;
+  end_time: string | null;
+  arena: string | null;
+  score_blue: number;
+  score_orange: number;
+  winner: number | null;
+  is_online: boolean;
+  is_overtime: boolean;
+  duration_seconds: number;
+  match_type: string | null;
+  playlist: string | null;
+  players: SessionMatchPlayer[];
+  local_team: number | null;
+  is_win: boolean;
+  goal_diff: number | null;
+}
+
+export interface InsightsData {
+  available: boolean;
+  totalMatches?: number;
+  playlists?: { name: string; played: number; won: number; winRate: number }[];
+  bestPlaylist?: string;
+  bestPlaylistWR?: number;
+  byHour?: { hour: number; played: number; won: number; winRate: number }[];
+  bestHour?: number;
+  bestHourWR?: number;
+  otGames?: number;
+  otWinRate?: number;
+  closeGames?: number;
+  closeWinRate?: number;
+  blowoutGames?: number;
+  blowoutWinRate?: number;
+  contrib?: {
+    goalsPct: number;
+    assistsPct: number;
+    savesPct: number;
+    shotsPct: number;
+    demosPct: number;
+  };
 }
 
 export interface OverlayServerStatus {

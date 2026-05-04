@@ -59,14 +59,14 @@ export function DataTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border-subtle text-sm text-text-secondary">
+      <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border-default text-sm text-text-secondary">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className={cn("overflow-x-auto rounded-lg border border-border-subtle", className)}>
+    <div className={cn("overflow-x-auto rounded-xl border border-border-subtle", className)}>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border-subtle bg-bg-secondary">
@@ -74,8 +74,8 @@ export function DataTable<T>({
               <th
                 key={col.key}
                 className={cn(
-                  "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-text-secondary",
-                  col.sortable && "cursor-pointer select-none hover:text-text-primary",
+                  "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-text-tertiary",
+                  col.sortable && "cursor-pointer select-none hover:text-text-primary transition-colors",
                   col.className
                 )}
                 onClick={() => handleSort(col.key, col.sortable)}
@@ -83,7 +83,7 @@ export function DataTable<T>({
                 <div className="flex items-center gap-1">
                   {col.header}
                   {col.sortable && sortKey === col.key && (
-                    <span className="text-text-primary">
+                    <span className="text-accent-primary">
                       {sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </span>
                   )}
@@ -97,7 +97,7 @@ export function DataTable<T>({
             <tr
               key={keyExtractor(row)}
               className={cn(
-                "border-b border-border-subtle/50 transition-colors hover:bg-surface-hover",
+                "border-b border-border-subtle/50 transition-colors hover:bg-surface-hover/50",
                 rowClassName?.(row)
               )}
             >

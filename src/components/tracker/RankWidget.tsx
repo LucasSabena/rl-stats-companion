@@ -12,12 +12,12 @@ export function RankWidget() {
 
   return (
     <div className={cn(
-      "rounded-lg border border-border-subtle bg-bg-secondary/80 p-3",
+      "rounded-xl border border-border-subtle bg-bg-secondary/80 p-4",
       "backdrop-blur-sm"
     )}>
-      <div className="flex items-center gap-2 mb-2">
-        <TrendingUp size={14} className="text-accent-secondary" />
-        <span className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp size={14} className="text-accent-primary" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
           Rangos
         </span>
       </div>
@@ -25,19 +25,19 @@ export function RankWidget() {
       <div className="flex flex-wrap gap-2">
         {ranked.standard && (
           <div className="min-w-0">
-            <p className="text-[10px] text-text-tertiary mb-0.5">3v3</p>
+            <p className="mb-0.5 text-[10px] font-medium text-text-tertiary">3v3</p>
             <RankBadge rank={ranked.standard.rank} mmr={ranked.standard.mmr} size="sm" />
           </div>
         )}
         {ranked.double && (
           <div className="min-w-0">
-            <p className="text-[10px] text-text-tertiary mb-0.5">2v2</p>
+            <p className="mb-0.5 text-[10px] font-medium text-text-tertiary">2v2</p>
             <RankBadge rank={ranked.double.rank} mmr={ranked.double.mmr} size="sm" />
           </div>
         )}
         {ranked.duel && (
           <div className="min-w-0">
-            <p className="text-[10px] text-text-tertiary mb-0.5">1v1</p>
+            <p className="mb-0.5 text-[10px] font-medium text-text-tertiary">1v1</p>
             <RankBadge rank={ranked.duel.rank} mmr={ranked.duel.mmr} size="sm" />
           </div>
         )}

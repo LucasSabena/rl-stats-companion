@@ -8,28 +8,44 @@ interface ConnectionStatusProps {
 }
 
 export const ConnectionStatus = memo(function ConnectionStatus({ status }: ConnectionStatusProps) {
-  const config: Record<ConnStatus, { label: string; color: string }> = {
-    connected: { label: "Conectado", color: "bg-accent-secondary" },
-    connecting: { label: "Conectando...", color: "bg-accent-warning" },
-    disconnected: { label: "Desconectado", color: "bg-accent-danger" },
-    game_not_running: { label: "Juego cerrado", color: "bg-amber-500" },
+  const config: Record<ConnStatus, { label: string; dotClass: string; wrapperClass: string }> = {
+    connected: {
+      label: "Conectado",
+      dotClass: "bg-accent-success shadow-[0_0_6px_var(--color-accent-success)]",
+      wrapperClass: "bg-accent-success-subtle border-accent-success/20",
+    },
+    connecting: {
+      label: "Conectando...",
+      dotClass: "bg-accent-warning animate-pulse",
+      wrapperClass: "bg-accent-warning-subtle border-accent-warning/20",
+    },
+    disconnected: {
+      label: "Desconectado",
+      dotClass: "bg-accent-danger",
+      wrapperClass: "bg-accent-danger-subtle border-accent-danger/20",
+    },
+    game_not_running: {
+      label: "Juego cerrado",
+      dotClass: "bg-accent-warning",
+      wrapperClass: "bg-accent-warning-subtle border-accent-warning/20",
+    },
   };
 
-  const { label, color } = config[status];
+  const { label, dotClass, wrapperClass } = config[status];
 
   if (status === "game_not_running") {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-sm">
-        <MonitorOff className="h-3.5 w-3.5 text-amber-400" />
-        <span className="text-amber-400">{label}</span>
+      <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", wrapperClass)}>
+        <MonitorOff className="h-3.5 w-3.5 text-accent-warning" />
+        <span className="text-accent-warning font-medium">{label}</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-md bg-bg-secondary px-3 py-1.5 text-sm">
-      <span className={cn("h-2 w-2 rounded-full", color, status === "connecting" && "animate-pulse")} />
-      <span className="text-text-secondary">{label}</span>
+    <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm", wrapperClass)}>
+      <span className={cn("h-2 w-2 rounded-full", dotClass)} />
+      <span className="text-text-secondary font-medium">{label}</span>
     </div>
   );
 });

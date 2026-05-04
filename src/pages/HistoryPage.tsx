@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMatchHistory } from "@/hooks/useMatchHistory";
 import { useDeleteMatch } from "@/hooks/useDeleteMatch";
 import { useUpdateMatch } from "@/hooks/useUpdateMatch";
@@ -11,6 +12,36 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import type { MatchFilters, MatchSummary } from "@/lib/types";
 import { Gamepad2 } from "lucide-react";
+
+function filtersToParams(filters: MatchFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("search", filters.search);
+  if (filters.result) params.set("result", filters.result);
+  if (filters.matchType) params.set("type", filters.matchType);
+  if (filters.mode) params.set("mode", filters.mode);
+  if (filters.dateFrom) params.set("from", String(filters.dateFrom));
+  if (filters.dateTo) params.set("to", String(filters.dateTo));
+  return params;
+}
+
+function paramsToFilters(params: URLSearchParams): MatchFilters {
+  const filters: MatchFilters = {};
+  const search = params.get("search");
+  const result = params.get("result") as "win" | "loss" | null;
+  const type = params.get("type");
+  const mode = params.get("mode");
+  const from = params.get("from");
+  const to = params.get("to");
+
+  if (search) filters.search = search;
+  if (result === "win" || result === "loss") filters.result = result;
+  if (type) filters.matchType = type as MatchFilters["matchType"];
+  if (mode) filters.mode = mode;
+  if (from) filters.dateFrom = Number(from);
+  if (to) filters.dateTo = Number(to);
+
+  return filters;
+}
 
 const matchTypeOptions: { value: string; label: string }[] = [
   { value: "ranked", label: "Ranked" },
@@ -28,7 +59,10 @@ const playlistOptions: { value: string; label: string }[] = [
 ];
 
 export function HistoryPage() {
-  const [filters, setFilters] = useState<MatchFilters>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilters = paramsToFilters(searchParams);
+  const [filters, setFilters] = useState<MatchFilters>(initialFilters);
+
   const { data, isLoading, isError } = useMatchHistory(filters);
 
   const [editingMatch, setEditingMatch] = useState<MatchSummary | null>(null);
@@ -39,6 +73,15 @@ export function HistoryPage() {
 
   const deleteMutation = useDeleteMatch();
   const updateMutation = useUpdateMatch();
+
+  const handleFiltersChange = useCallback(
+    (newFilters: MatchFilters) => {
+      setFilters(newFilters);
+      const newParams = filtersToParams(newFilters);
+      setSearchParams(newParams, { replace: true });
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
     if (editingMatch) {
@@ -74,7 +117,7 @@ export function HistoryPage() {
         <h2 className="text-2xl font-bold text-text-primary">Historial de partidas</h2>
       </div>
 
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={handleFiltersChange} />
 
       {isLoading && (
         <div className="space-y-3">

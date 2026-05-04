@@ -31,7 +31,7 @@ export function ProfilePage() {
         <div className="mt-6">
           <EmptyState
             icon={User}
-            title="Perfil no configurado"
+            title="Perfil no configurado — Próximamente"
             description="Para ver tu MMR y estadisticas, configura tu plataforma y nombre de usuario en Ajustes. Despues hace clic en 'Conectar' para cargar tus datos."
           />
           <div className="mt-4 flex justify-center">
@@ -63,7 +63,12 @@ export function ProfilePage() {
     <PageContainer>
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-text-primary">Perfil</h2>
+      <h2 className="text-2xl font-bold text-text-primary">
+        Perfil
+        <span className="ml-2 inline-block rounded-md bg-accent-warning/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-warning">
+          Próximamente
+        </span>
+      </h2>
           <div className="mt-1 flex items-center gap-2">
             <span className="text-sm text-text-secondary">{profile.username}</span>
             <span className="text-xs rounded bg-surface-elevated px-1.5 py-0.5 text-text-tertiary uppercase">

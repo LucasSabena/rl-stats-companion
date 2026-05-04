@@ -24,16 +24,16 @@ export function PlaylistCard({ name, stats, className }: PlaylistCardProps) {
 
   if (!stats || (!stats.rank && stats.mmr == null)) {
     return (
-      <div className={cn("rounded-lg border border-border-subtle bg-bg-secondary p-3", className)}>
-        <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary mb-1">{label}</p>
+      <div className={cn("rounded-xl border border-border-subtle bg-bg-secondary p-3", className)}>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</p>
         <span className="text-sm text-text-tertiary italic">Sin datos</span>
       </div>
     );
   }
 
   return (
-    <div className={cn("rounded-lg border border-border-subtle bg-bg-secondary p-3", className)}>
-      <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary mb-2">{label}</p>
+    <div className={cn("rounded-xl border border-border-subtle bg-bg-secondary p-3 transition-all duration-200 hover:border-border-default", className)}>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</p>
 
       <RankBadge rank={stats.rank} mmr={stats.mmr} size="sm" />
 
@@ -42,10 +42,10 @@ export function PlaylistCard({ name, stats, className }: PlaylistCardProps) {
           <span>{stats.matchesPlayed} part.</span>
         )}
         {stats.winStreak != null && stats.winStreak > 0 && (
-          <span className="text-accent-secondary">W{stats.winStreak}</span>
+          <span className="text-accent-success font-medium">W{stats.winStreak}</span>
         )}
         {stats.loseStreak != null && stats.loseStreak > 0 && (
-          <span className="text-accent-danger">L{stats.loseStreak}</span>
+          <span className="text-accent-danger font-medium">L{stats.loseStreak}</span>
         )}
       </div>
     </div>

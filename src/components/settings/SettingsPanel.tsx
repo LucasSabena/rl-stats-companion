@@ -12,8 +12,8 @@ import { AlertTriangle, FolderSearch, MonitorUp } from "lucide-react";
 import { settingsSchema, type SettingsFormInput, type SettingsFormValues } from "@/lib/schemas";
 
 const inputClass = cn(
-  "w-full rounded-md border bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
-  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
+  "w-full rounded-lg border bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-colors",
+  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)]"
 );
 
 export function SettingsPanel() {

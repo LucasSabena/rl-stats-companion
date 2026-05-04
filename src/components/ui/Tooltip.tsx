@@ -30,7 +30,7 @@ export function Tooltip({ content, children, position = "top", className }: Tool
       {visible && (
         <div
           className={cn(
-            "pointer-events-none absolute z-30 whitespace-nowrap rounded-md border border-border-strong bg-bg-secondary px-2 py-1 text-xs text-text-primary shadow-level-2",
+            "pointer-events-none absolute z-30 whitespace-nowrap rounded-lg border border-border-strong bg-bg-elevated px-2.5 py-1.5 text-xs font-medium text-text-primary shadow-level-2 animate-fade-in",
             positions[position]
           )}
           role="tooltip"

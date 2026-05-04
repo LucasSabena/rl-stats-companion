@@ -12,14 +12,16 @@ export function Header() {
   const isLive = connectionStatus === "connected" && currentMatch !== null;
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border-subtle bg-bg-primary px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-bg-primary/80 px-6 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <h1 className="text-base font-bold text-text-primary">RL Stats Companion</h1>
+        <h1 className="font-display text-base font-bold tracking-tight text-text-primary">
+          RL Stats Companion
+        </h1>
         {isLive ? (
           <Badge variant="live">
             <span className="relative mr-1.5 flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-secondary opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-secondary" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-success opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-success" />
             </span>
             En directo
           </Badge>
@@ -31,12 +33,12 @@ export function Header() {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <button
           onClick={() => navigate("/settings")}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors",
-            "hover:bg-surface-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50"
+            "flex h-9 w-9 items-center justify-center rounded-lg text-text-secondary transition-all duration-200",
+            "hover:bg-surface-hover hover:text-text-primary"
           )}
           aria-label="Ajustes"
         >

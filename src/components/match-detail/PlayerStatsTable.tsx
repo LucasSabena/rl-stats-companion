@@ -30,8 +30,7 @@ const STAT_KEYS: { key: StatKey; label: string }[] = [
 ];
 
 function getTeamBarColor(team: 0 | 1): string {
-  if (team === 0) return "rgba(96,165,250,1)"; // blue-400
-  return "rgba(251,146,60,1)"; // orange-400
+  return team === 0 ? "var(--color-team-blue)" : "var(--color-team-orange)";
 }
 
 export const PlayerStatsTable = memo(function PlayerStatsTable({
@@ -52,7 +51,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
       sortable: true,
       render: (p: PlayerStats) => (
         <div className="flex items-center gap-2">
-          {p.mvp && <Crown size={14} className="shrink-0 text-yellow-400" />}
+          {p.mvp && <Crown size={14} className="shrink-0 text-accent-warning" />}
           <span className="font-medium text-text-primary">{p.name}</span>
         </div>
       ),
@@ -63,11 +62,11 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
       sortable: true,
       render: (p: PlayerStats) =>
         p.team === 0 ? (
-          <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400">
+          <span className="rounded-full bg-team-blue-bg px-2 py-0.5 text-xs font-medium text-team-blue">
             Azul
           </span>
         ) : (
-          <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-medium text-orange-400">
+          <span className="rounded-full bg-team-orange-bg px-2 py-0.5 text-xs font-medium text-team-orange">
             Naranja
           </span>
         ),
@@ -90,7 +89,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
           type="checkbox"
           checked={selectedIds.has(p.id)}
           onChange={() => toggleSelect(p.id)}
-          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/30"
+          className="h-4 w-4 rounded border-border-strong bg-bg-tertiary text-accent-primary focus:ring-accent-primary/30"
         />
       ),
     },
@@ -127,17 +126,17 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary">
-          Estadísticas de jugadores
+        <h3 className="font-display text-sm font-semibold text-text-primary">
+          Estadisticas de jugadores
         </h3>
 
         <div className="flex rounded-lg border border-border-subtle bg-bg-tertiary p-0.5">
           <button
             onClick={() => setTab("table")}
             className={cn(
-              "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200",
               tab === "table"
-                ? "bg-accent-primary text-white"
+                ? "bg-accent-primary text-white shadow-sm"
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
@@ -146,9 +145,9 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
           <button
             onClick={() => setTab("compare")}
             className={cn(
-              "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+              "rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200",
               tab === "compare"
-                ? "bg-accent-primary text-white"
+                ? "bg-accent-primary text-white shadow-sm"
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
@@ -164,7 +163,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
           keyExtractor={(p) => p.id}
           emptyMessage="No hay datos de jugadores"
           rowClassName={(p: PlayerStats) =>
-            p.score === bestScore ? "bg-accent-primary/5" : undefined
+            p.score === bestScore ? "bg-accent-primary-muted" : undefined
           }
         />
       ) : (
@@ -176,7 +175,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
             emptyMessage="No hay datos de jugadores"
           />
 
-          <div className="mt-6 rounded-lg border border-border-subtle bg-bg-secondary p-4">
+          <div className="mt-6 rounded-xl border border-border-subtle bg-bg-secondary p-4">
             {selectedPlayers.length >= 2 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -186,30 +185,31 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
                   >
                     <XAxis
                       dataKey="stat"
-                      tick={{ fill: "#64748B", fontSize: 11 }}
-                      axisLine={{ stroke: "#1E293B" }}
+                      tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
+                      axisLine={{ stroke: "var(--color-border-subtle)" }}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fill: "#64748B", fontSize: 11 }}
+                      tick={{ fill: "var(--color-text-tertiary)", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
                       allowDecimals={false}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#111827",
-                        border: "1px solid #1E293B",
-                        borderRadius: "8px",
+                        backgroundColor: "var(--color-bg-elevated)",
+                        border: "1px solid var(--color-border-strong)",
+                        borderRadius: "10px",
+                        color: "var(--color-text-primary)",
                       }}
-                      labelStyle={{ color: "#F8FAFC" }}
+                      labelStyle={{ color: "var(--color-text-primary)" }}
                     />
                     {selectedPlayers.map((player) => (
                       <Bar
                         key={player.id}
                         dataKey={player.name}
                         fill={getTeamBarColor(player.team)}
-                        radius={[3, 3, 0, 0]}
+                        radius={[4, 4, 0, 0]}
                         maxBarSize={40}
                       />
                     ))}
