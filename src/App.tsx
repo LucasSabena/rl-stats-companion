@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AppShell } from "@/components/layout/AppShell";
-import { OverlayView } from "@/components/overlay/OverlayView";
-import { LivePage } from "@/pages/LivePage";
-import { HistoryPage } from "@/pages/HistoryPage";
-import { MatchDetailPage } from "@/pages/MatchDetailPage";
-import { AnalyticsPage } from "@/pages/AnalyticsPage";
-import { SettingsPage } from "@/pages/SettingsPage";
-import { ProfilePage } from "@/pages/ProfilePage";
-import { ProConfigsPage } from "@/pages/ProConfigsPage";
-import OnboardingOverlay from "@/components/onboarding/OnboardingOverlay";
 import { useSettingsStore } from "@/stores/settingsStore";
+
+const OverlayView = lazy(() => import("@/components/overlay/OverlayView").then((module) => ({ default: module.OverlayView })));
+const LivePage = lazy(() => import("@/pages/LivePage").then((module) => ({ default: module.LivePage })));
+const HistoryPage = lazy(() => import("@/pages/HistoryPage").then((module) => ({ default: module.HistoryPage })));
+const MatchDetailPage = lazy(() => import("@/pages/MatchDetailPage").then((module) => ({ default: module.MatchDetailPage })));
+const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage").then((module) => ({ default: module.AnalyticsPage })));
+const SettingsPage = lazy(() => import("@/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
+const ProConfigsPage = lazy(() => import("@/pages/ProConfigsPage").then((module) => ({ default: module.ProConfigsPage })));
+const OnboardingOverlay = lazy(() => import("@/components/onboarding/OnboardingOverlay"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,10 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function AppFallback() {
+  return <div className="min-h-screen bg-bg-primary" />;
+}
 
 function AppContent() {
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
@@ -47,28 +52,36 @@ function AppContent() {
 
   // Overlay window: render only the overlay widget (no sidebar, no routing)
   if (isOverlayWindow) {
-    return <OverlayView />;
+    return (
+      <Suspense fallback={<AppFallback />}>
+        <OverlayView />
+      </Suspense>
+    );
   }
 
   return (
     <>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppShell><Outlet /></AppShell>}>
-            <Route path="/" element={<LivePage />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/history/:matchId" element={<MatchDetailPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/pro-configs" element={<ProConfigsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <Suspense fallback={<AppFallback />}>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppShell><Outlet /></AppShell>}>
+              <Route path="/" element={<LivePage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/history/:matchId" element={<MatchDetailPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/pro-configs" element={<ProConfigsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </Suspense>
 
       {!hasCompletedOnboarding && (
-        <OnboardingOverlay onComplete={completeOnboarding} />
+        <Suspense fallback={null}>
+          <OnboardingOverlay onComplete={completeOnboarding} />
+        </Suspense>
       )}
     </>
   );

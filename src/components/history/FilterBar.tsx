@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import type { MatchFilters, MatchType } from "@/lib/types";
+import { formatLocalDateFromUnix, parseLocalDateToUnix } from "@/lib/utils";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 
 interface FilterBarProps {
@@ -42,12 +43,25 @@ const dateInputClasses = cn(
 export function FilterBar({ filters, onChange }: FilterBarProps) {
   const [search, setSearch] = useState(filters.search ?? "");
 
+  useEffect(() => {
+    setSearch(filters.search ?? "");
+  }, [filters.search]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      if (search !== (filters.search ?? "")) {
+        onChange({ ...filters, search: search || undefined });
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [filters, onChange, search]);
+
   const handleSearch = useCallback(
     (value: string) => {
       setSearch(value);
-      onChange({ ...filters, search: value || undefined });
     },
-    [filters, onChange]
+    []
   );
 
   const handleResult = useCallback(
@@ -83,7 +97,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   const handleDateFrom = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
-      const timestamp = value ? new Date(value + "T00:00:00").getTime() / 1000 : null;
+      const timestamp = value ? parseLocalDateToUnix(value) : null;
       onChange({ ...filters, dateFrom: timestamp });
     },
     [filters, onChange]
@@ -92,7 +106,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   const handleDateTo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
-      const timestamp = value ? new Date(value + "T23:59:59").getTime() / 1000 : null;
+      const timestamp = value ? parseLocalDateToUnix(value, true) : null;
       onChange({ ...filters, dateTo: timestamp });
     },
     [filters, onChange]
@@ -112,11 +126,11 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
     filters.mode;
 
   const dateFromValue = filters.dateFrom
-    ? new Date(filters.dateFrom * 1000).toISOString().slice(0, 10)
+    ? formatLocalDateFromUnix(filters.dateFrom)
     : "";
 
   const dateToValue = filters.dateTo
-    ? new Date(filters.dateTo * 1000).toISOString().slice(0, 10)
+    ? formatLocalDateFromUnix(filters.dateTo)
     : "";
 
   return (

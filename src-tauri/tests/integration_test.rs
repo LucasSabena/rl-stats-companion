@@ -227,6 +227,8 @@ mod malformed_tests {
 
 mod session_tests {
     use super::*;
+    use rl_stats_companion_lib::core::models::{GameState, LivePlayer};
+    use std::collections::HashMap;
 
     #[test]
     fn session_state_transitions_from_fixture() {
@@ -330,6 +332,60 @@ mod session_tests {
         assert_eq!(alpha.goals, 1);
         assert!(alpha.shots >= 3); // accumulated across state updates
         assert!(alpha.score >= 200);
+    }
+
+    #[test]
+    fn session_drops_players_missing_from_new_snapshot() {
+        let mut session = SessionManager::new();
+
+        let mut initial_players = HashMap::new();
+        initial_players.insert(
+            "P1".to_string(),
+            LivePlayer {
+                id: "P1".to_string(),
+                name: "Alpha".to_string(),
+                team: 0,
+                ..Default::default()
+            },
+        );
+        initial_players.insert(
+            "P2".to_string(),
+            LivePlayer {
+                id: "P2".to_string(),
+                name: "Bravo".to_string(),
+                team: 1,
+                ..Default::default()
+            },
+        );
+
+        session.handle_event(RlEvent::UpdateState {
+            match_guid: Some("guid-1".to_string()),
+            game: GameState::default(),
+            players: initial_players,
+        });
+
+        let mut updated_players = HashMap::new();
+        updated_players.insert(
+            "P1".to_string(),
+            LivePlayer {
+                id: "P1".to_string(),
+                name: "Alpha".to_string(),
+                team: 0,
+                score: 150,
+                ..Default::default()
+            },
+        );
+
+        session.handle_event(RlEvent::UpdateState {
+            match_guid: Some("guid-1".to_string()),
+            game: GameState::default(),
+            players: updated_players,
+        });
+
+        let live = session.live_state();
+        assert_eq!(live.players.len(), 1);
+        assert_eq!(live.players[0].name, "Alpha");
+        assert_eq!(live.players[0].score, 150);
     }
 
     #[test]

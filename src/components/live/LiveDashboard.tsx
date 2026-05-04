@@ -50,16 +50,6 @@ function MatchEndBanner() {
     return () => clearTimeout(timer);
   }, [visible, summaryTimestamp, clearMatchSummary]);
 
-  useEffect(() => {
-    if (lastMatchSummary && summaryTimestamp) {
-      const elapsed = Date.now() - summaryTimestamp;
-      if (elapsed > 10000) {
-        clearMatchSummary();
-        setVisible(false);
-      }
-    }
-  }, [lastMatchSummary, summaryTimestamp, clearMatchSummary]);
-
   const handleDismiss = useCallback(() => {
     clearMatchSummary();
     setVisible(false);
@@ -116,6 +106,9 @@ export function LiveDashboard() {
   const currentMatch = useLiveStore((state) => state.currentMatch);
   const connectionStatus = useLiveStore((state) => state.connectionStatus);
 
+  const bluePlayers = currentMatch?.players.filter((player) => player.team === 0) ?? [];
+  const orangePlayers = currentMatch?.players.filter((player) => player.team === 1) ?? [];
+
   if (!currentMatch) {
     return (
       <div className="space-y-4">
@@ -169,8 +162,8 @@ export function LiveDashboard() {
       <RankWidget />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <TeamPanel team="blue" players={currentMatch.players.filter((p) => p.team === 0)} />
-        <TeamPanel team="orange" players={currentMatch.players.filter((p) => p.team === 1)} />
+        <TeamPanel team="blue" players={bluePlayers} />
+        <TeamPanel team="orange" players={orangePlayers} />
       </div>
 
       <EventFeed />

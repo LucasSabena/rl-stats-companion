@@ -48,7 +48,7 @@ export function OverlayStreaming() {
   const [isToggling, setIsToggling] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRunning = status?.running ?? false;
@@ -93,32 +93,43 @@ export function OverlayStreaming() {
     init();
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (isRunning && initialLoadDone) {
-      // Start polling while server is running
-      pollRef.current = setInterval(async () => {
+      const poll = async () => {
+        if (cancelled) return;
         const current = await fetchStatus();
+        if (cancelled) return;
         if (current?.running) {
           await fetchUrls();
+          if (!cancelled) {
+            pollTimeoutRef.current = setTimeout(() => {
+              void poll();
+            }, POLL_INTERVAL_MS);
+          }
         }
-      }, POLL_INTERVAL_MS);
+      };
+
+      void poll();
     } else {
       // Stop polling when server is stopped
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
       }
     }
 
     return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
+      cancelled = true;
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
       }
     };
   }, [isRunning, initialLoadDone, fetchStatus, fetchUrls]);
@@ -127,6 +138,7 @@ export function OverlayStreaming() {
   useEffect(() => {
     return () => {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
     };
   }, []);
 

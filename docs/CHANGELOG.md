@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.0] - 2026-05-04
+- Fixed updater releases so GitHub publishes the signed `latest.json` manifest and installer signature required by Tauri updater.
+- Improved persistence, query performance, live-state handling, polling behavior, and frontend bundle splitting without removing features.
+
 ## [0.1.7] - 2026-05-03
 - Simplified CI and release flow.
 - Release assets now publish only the Windows setup installer.

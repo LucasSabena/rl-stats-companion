@@ -24,6 +24,7 @@ import {
   type StorageStats,
   type TrackerProfile,
 } from "./types";
+import { formatLocalDateFromUnix } from "./utils";
 
 export class ApiError extends Error {
   constructor(
@@ -417,8 +418,8 @@ export async function getMatches(filters?: MatchFilters): Promise<MatchSummary[]
       match_type: filters?.matchType ?? undefined,
       playlist: filters?.mode ?? undefined,
       result: filters?.result ?? undefined,
-      date_from: filters?.dateFrom ? new Date(filters.dateFrom * 1000).toISOString().slice(0, 10) : undefined,
-      date_to: filters?.dateTo ? new Date(filters.dateTo * 1000).toISOString().slice(0, 10) : undefined,
+      date_from: filters?.dateFrom ? formatLocalDateFromUnix(filters.dateFrom) : undefined,
+      date_to: filters?.dateTo ? formatLocalDateFromUnix(filters.dateTo) : undefined,
       search: filters?.search ?? undefined,
     },
   });

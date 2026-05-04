@@ -3,9 +3,10 @@ use crate::core::models::{
 };
 use crate::core::settings::{get_settings, set_settings, AppSettings};
 use crate::core::storage::{
-    finish_match, get_or_create_player, insert_match, insert_match_event, insert_match_player,
-    insert_session, rebuild_daily_rollups_for_identity, upsert_daily_rollup, DbPool,
-    FinishMatchUpdate, MatchPlayerRow,
+    finish_match_conn, get_conn, get_or_create_player_conn, insert_match_conn,
+    insert_match_event_conn, insert_match_player_conn, insert_session_conn,
+    rebuild_daily_rollups_for_identity, upsert_daily_rollup_conn, DbPool, FinishMatchUpdate,
+    MatchPlayerRow,
 };
 use crate::error::AppResult;
 use chrono::Utc;
@@ -123,9 +124,9 @@ impl SessionManager {
                         }
                     }
                     self.max_player_count = self.max_player_count.max(players.len());
-                    for (id, player) in players.iter() {
-                        self.players.insert(id.clone(), player.clone());
-                    }
+                    // UpdateState is a full snapshot of the current lobby state.
+                    // Replacing the map avoids keeping players that already left.
+                    self.players = players.clone();
                     info!(
                         player_count = players.len(),
                         time = game.time,
@@ -222,47 +223,24 @@ impl SessionManager {
             infer_playlist(self.players.values())
         };
 
-        let match_id = insert_match(
-            pool,
-            &guid,
-            start_time,
-            Some(&arena),
-            self.is_online,
-            effective_match_type,
-            playlist.as_deref(),
-        )?;
-        self.match_id = Some(match_id);
+        let conn = get_conn(pool)?;
+        conn.execute("BEGIN IMMEDIATE", [])
+            .map_err(|e| crate::error::AppError::StorageError(format!("BEGIN failed: {e}")))?;
 
-        let mut players_vec = Vec::new();
-        for (primary_id, live) in &self.players {
-            let player_id = get_or_create_player(pool, primary_id, &live.name)?;
-            insert_match_player(
-                pool,
-                match_id,
-                MatchPlayerRow {
-                    player_id,
-                    team_num: live.team,
-                    stats: PlayerStats {
-                        score: live.score,
-                        goals: live.goals,
-                        shots: live.shots,
-                        assists: live.assists,
-                        saves: live.saves,
-                        touches: live.touches,
-                        car_touches: live.car_touches,
-                        demos: live.demos,
-                        speed: live.speed,
-                        boost: live.boost,
-                    },
-                },
+        let persist_result = (|| -> AppResult<(i64, Vec<Player>)> {
+            let match_id = insert_match_conn(
+                &conn,
+                &guid,
+                start_time,
+                Some(&arena),
+                self.is_online,
+                effective_match_type,
+                playlist.as_deref(),
             )?;
 
-            players_vec.push(Player {
-                id: player_id,
-                primary_id: primary_id.clone(),
-                name: live.name.clone(),
-                team_num: live.team,
-                stats: PlayerStats {
+            let mut players_vec = Vec::new();
+            for (primary_id, live) in &self.players {
+                let player_stats = PlayerStats {
                     score: live.score,
                     goals: live.goals,
                     shots: live.shots,
@@ -273,48 +251,61 @@ impl SessionManager {
                     demos: live.demos,
                     speed: live.speed,
                     boost: live.boost,
+                };
+
+                let player_id = get_or_create_player_conn(&conn, primary_id, &live.name)?;
+                insert_match_player_conn(
+                    &conn,
+                    match_id,
+                    MatchPlayerRow {
+                        player_id,
+                        team_num: live.team,
+                        stats: player_stats.clone(),
+                    },
+                )?;
+
+                players_vec.push(Player {
+                    id: player_id,
+                    primary_id: primary_id.clone(),
+                    name: live.name.clone(),
+                    team_num: live.team,
+                    stats: player_stats,
+                });
+            }
+
+            finish_match_conn(
+                &conn,
+                match_id,
+                FinishMatchUpdate {
+                    end_time,
+                    score_blue: self.score_blue,
+                    score_orange: self.score_orange,
+                    winner,
+                    is_overtime: self.is_overtime,
+                    duration_seconds: duration,
                 },
-            });
-        }
+            )?;
 
-        finish_match(
-            pool,
-            match_id,
-            FinishMatchUpdate {
-                end_time,
-                score_blue: self.score_blue,
-                score_orange: self.score_orange,
-                winner,
-                is_overtime: self.is_overtime,
-                duration_seconds: duration,
-            },
-        )?;
+            for (event_type, event_data, occurred_at) in &self.events {
+                insert_match_event_conn(&conn, match_id, event_type, event_data, *occurred_at)?;
+            }
 
-        for (event_type, event_data, occurred_at) in &self.events {
-            insert_match_event(pool, match_id, event_type, event_data, *occurred_at)?;
-        }
+            Ok((match_id, players_vec))
+        })();
+
+        let (match_id, players_vec) = match persist_result {
+            Ok(result) => result,
+            Err(error) => {
+                let _ = conn.execute("ROLLBACK", []);
+                return Err(error);
+            }
+        };
+        self.match_id = Some(match_id);
 
         let mut settings = get_settings(pool).unwrap_or_else(|_| AppSettings::default());
         let local_identity = resolve_local_player_identity(self.players.values(), &settings);
 
-        if let Some((local_primary_id, _)) = &local_identity {
-            let should_save =
-                settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
-            if should_save {
-                settings.local_primary_id = Some(local_primary_id.clone());
-                if let Err(e) = set_settings(pool, &settings) {
-                    warn!(error = %e, "Failed to persist local primary id");
-                } else if let Err(e) = rebuild_daily_rollups_for_identity(
-                    pool,
-                    settings.local_primary_id.as_deref(),
-                    &identity_candidate_names(&settings),
-                ) {
-                    warn!(error = %e, "Failed to rebuild daily rollups after learning local primary id");
-                }
-            }
-        }
-
-        let my_team = local_identity.map(|(_, team_num)| team_num);
+        let my_team = local_identity.as_ref().map(|(_, team_num)| *team_num);
 
         let is_win = matches!((winner, my_team), (Some(winner_team), Some(my_team)) if winner_team == my_team);
         let is_loss = matches!((winner, my_team), (Some(winner_team), Some(my_team)) if winner_team != my_team);
@@ -352,7 +343,10 @@ impl SessionManager {
             match_type: self.match_type.clone(),
         };
 
-        insert_session(pool, match_id, &summary)?;
+        if let Err(error) = insert_session_conn(&conn, match_id, &summary) {
+            let _ = conn.execute("ROLLBACK", []);
+            return Err(error);
+        }
 
         // Update daily rollup — skip for training matches
         if !is_training {
@@ -371,7 +365,29 @@ impl SessionManager {
                 total_demos,
                 total_assists,
             };
-            upsert_daily_rollup(pool, &rollup)?;
+            if let Err(error) = upsert_daily_rollup_conn(&conn, &rollup) {
+                let _ = conn.execute("ROLLBACK", []);
+                return Err(error);
+            }
+        }
+
+        conn.execute("COMMIT", [])
+            .map_err(|e| crate::error::AppError::StorageError(format!("COMMIT failed: {e}")))?;
+
+        if let Some((local_primary_id, _)) = &local_identity {
+            let should_save = settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
+            if should_save {
+                settings.local_primary_id = Some(local_primary_id.clone());
+                if let Err(e) = set_settings(pool, &settings) {
+                    warn!(error = %e, "Failed to persist local primary id");
+                } else if let Err(e) = rebuild_daily_rollups_for_identity(
+                    pool,
+                    settings.local_primary_id.as_deref(),
+                    &identity_candidate_names(&settings),
+                ) {
+                    warn!(error = %e, "Failed to rebuild daily rollups after learning local primary id");
+                }
+            }
         }
 
         info!(match_id, "Match persisted successfully");

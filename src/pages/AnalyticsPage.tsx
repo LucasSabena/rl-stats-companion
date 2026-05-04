@@ -204,6 +204,10 @@ function InsightsPanel({
   period: AnalyticsPeriod;
 }) {
   const { data: insights, isLoading } = useInsights(period);
+  const maxHourPlayed = useMemo(
+    () => (insights?.byHour?.length ? Math.max(...insights.byHour.map((hour) => hour.played)) : 0),
+    [insights?.byHour]
+  );
 
   if (isLoading) {
     return (
@@ -272,12 +276,9 @@ function InsightsPanel({
             </p>
             <div className="flex h-28 items-end gap-1">
               {insights.byHour.map((h) => {
-                const maxPlayed = Math.max(
-                  ...insights.byHour!.map((hh) => hh.played)
-                );
                 const height =
-                  maxPlayed > 0
-                    ? (h.played / maxPlayed) * 100
+                  maxHourPlayed > 0
+                    ? (h.played / maxHourPlayed) * 100
                     : 0;
                 return (
                   <div

@@ -25,6 +25,25 @@ export function formatDateTime(timestamp: number | string | Date): string {
   });
 }
 
+export function formatLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function formatLocalDateFromUnix(timestampSeconds: number): string {
+  return formatLocalDateKey(new Date(timestampSeconds * 1000));
+}
+
+export function parseLocalDateToUnix(date: string, endOfDay = false): number | null {
+  if (!date) return null;
+  const suffix = endOfDay ? "T23:59:59" : "T00:00:00";
+  const parsed = new Date(`${date}${suffix}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return Math.floor(parsed.getTime() / 1000);
+}
+
 export function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;

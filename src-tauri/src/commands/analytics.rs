@@ -3,6 +3,7 @@ use crate::core::settings::get_settings;
 use crate::core::storage::{self, get_conn, MatchSession};
 use crate::AppState;
 use serde::Deserialize;
+use std::collections::HashMap;
 use tauri::State;
 use tracing::error;
 
@@ -188,39 +189,65 @@ pub async fn get_session_matches(
     .collect::<Result<Vec<_>, _>>()
     .map_err(|e| e.to_string())?;
 
-    let mut result = Vec::new();
-    for m in matches {
-        let match_id = m["id"].as_i64().unwrap();
-        let mut player_stmt = conn.prepare(
-            "SELECT mp.team_num, mp.score, mp.goals, mp.shots, mp.assists,
+    let match_ids: Vec<i64> = matches
+        .iter()
+        .filter_map(|m| m.get("id").and_then(|value| value.as_i64()))
+        .collect();
+
+    let mut players_by_match = if match_ids.is_empty() {
+        HashMap::new()
+    } else {
+        let placeholders = vec!["?"; match_ids.len()].join(", ");
+        let sql = format!(
+            "SELECT mp.match_id, mp.team_num, mp.score, mp.goals, mp.shots, mp.assists,
                     mp.saves, mp.demos, mp.speed, mp.boost,
                     mp.touches, p.name, p.primary_id
              FROM match_players mp
              JOIN players p ON mp.player_id = p.id
-             WHERE mp.match_id = ?1"
-        ).map_err(|e| e.to_string())?;
+             WHERE mp.match_id IN ({})",
+            placeholders
+        );
+        let params_refs: Vec<&dyn rusqlite::ToSql> = match_ids
+            .iter()
+            .map(|match_id| match_id as &dyn rusqlite::ToSql)
+            .collect();
+        let mut player_stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+        let rows = player_stmt
+            .query_map(&*params_refs, |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    serde_json::json!({
+                        "team_num": row.get::<_, i32>(1)?,
+                        "score": row.get::<_, i32>(2)?,
+                        "goals": row.get::<_, i32>(3)?,
+                        "shots": row.get::<_, i32>(4)?,
+                        "assists": row.get::<_, i32>(5)?,
+                        "saves": row.get::<_, i32>(6)?,
+                        "demos": row.get::<_, i32>(7)?,
+                        "speed": row.get::<_, f64>(8)?,
+                        "boost": row.get::<_, i32>(9)?,
+                        "touches": row.get::<_, i32>(10)?,
+                        "name": row.get::<_, String>(11)?,
+                        "primary_id": row.get::<_, String>(12)?,
+                    }),
+                ))
+            })
+            .map_err(|e| e.to_string())?;
 
-        let players: Vec<serde_json::Value> = player_stmt.query_map(
-            rusqlite::params![match_id],
-            |row| {
-                Ok(serde_json::json!({
-                    "team_num": row.get::<_, i32>(0)?,
-                    "score": row.get::<_, i32>(1)?,
-                    "goals": row.get::<_, i32>(2)?,
-                    "shots": row.get::<_, i32>(3)?,
-                    "assists": row.get::<_, i32>(4)?,
-                    "saves": row.get::<_, i32>(5)?,
-                    "demos": row.get::<_, i32>(6)?,
-                    "speed": row.get::<_, f64>(7)?,
-                    "boost": row.get::<_, i32>(8)?,
-                    "touches": row.get::<_, i32>(9)?,
-                    "name": row.get::<_, String>(10)?,
-                    "primary_id": row.get::<_, String>(11)?,
-                }))
-            },
-        ).map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
+        let mut grouped: HashMap<i64, Vec<serde_json::Value>> = HashMap::new();
+        for row in rows {
+            let (match_id, player) = row.map_err(|e| e.to_string())?;
+            grouped.entry(match_id).or_default().push(player);
+        }
+        grouped
+    };
+
+    let mut result = Vec::new();
+    for m in matches {
+        let Some(match_id) = m["id"].as_i64() else {
+            continue;
+        };
+        let players = players_by_match.remove(&match_id).unwrap_or_default();
 
         let local_team = if let Some(ref lid) = settings.local_primary_id {
             players.iter()

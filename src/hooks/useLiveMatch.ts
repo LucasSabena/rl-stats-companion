@@ -108,6 +108,7 @@ export function useLiveMatch() {
     let unlisten: UnlistenFn | null = null;
     let unlisten2: UnlistenFn | null = null;
     let unlisten3: UnlistenFn | null = null;
+    let timeoutId: number | null = null;
 
     async function setup() {
       // Initial load
@@ -146,6 +147,9 @@ export function useLiveMatch() {
           setMatchSummary(summary);
           void queryClient.invalidateQueries({ queryKey: ["matches"] });
           void queryClient.invalidateQueries({ queryKey: ["analytics"] });
+          void queryClient.invalidateQueries({ queryKey: ["sessions"] });
+          void queryClient.invalidateQueries({ queryKey: ["rollups"] });
+          void queryClient.invalidateQueries({ queryKey: ["insights"] });
           void queryClient.invalidateQueries({ queryKey: ["storageStats"] });
         });
       } catch {
@@ -164,23 +168,35 @@ export function useLiveMatch() {
 
     setup();
 
-    // Poll connection status only (match data comes from events)
-    const interval = window.setInterval(async () => {
+    // Poll connection status only (match data comes from events).
+    // Use chained timeouts so slow responses never overlap.
+    const pollConnection = async () => {
       if (cancelled) return;
       try {
         const connection = await getConnectionStatus();
-        if (cancelled) return;
-        setConnectionStatus(connection);
+        if (!cancelled) {
+          setConnectionStatus(connection);
+        }
       } catch {
         if (!cancelled) {
           setConnectionStatus("disconnected");
         }
+      } finally {
+        if (!cancelled) {
+          timeoutId = window.setTimeout(() => {
+            void pollConnection();
+          }, 2000);
+        }
       }
-    }, 2000);
+    };
+
+    void pollConnection();
 
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
       if (unlisten) unlisten();
       if (unlisten2) unlisten2();
       if (unlisten3) unlisten3();

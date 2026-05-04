@@ -28,8 +28,9 @@ impl ProcessWatcher {
         let game_running = Arc::clone(&self.game_running);
         thread::spawn(move || {
             let mut last_state = false;
+            let mut system = sysinfo::System::new();
             loop {
-                let running = is_rl_running();
+                let running = is_rl_running_with_system(&mut system);
                 if running != last_state {
                     last_state = running;
                     game_running.store(running, Ordering::SeqCst);
@@ -42,8 +43,7 @@ impl ProcessWatcher {
     }
 }
 
-fn is_rl_running() -> bool {
-    let mut system = sysinfo::System::new_all();
+fn is_rl_running_with_system(system: &mut sysinfo::System) -> bool {
     system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
     for process in system.processes().values() {
         let name = process.name().to_str().unwrap_or_default();

@@ -175,7 +175,15 @@ jobs:
         run: |
           $installer = Get-ChildItem -Path "src-tauri/target/*/release/bundle/nsis" -Recurse -Filter "*.exe" | Select-Object -First 1
           if (-not $installer) { throw "Installer not found" }
+          $installerSig = Get-ChildItem -Path $installer.Directory.FullName -Filter "*.exe.sig" | Select-Object -First 1
+          $latestJson = Get-ChildItem -Path "src-tauri/target/*/release/bundle" -Recurse -Filter "latest.json" | Select-Object -First 1
+
+          if (-not $installerSig) { throw "Installer signature not found" }
+          if (-not $latestJson) { throw "latest.json not found" }
+
           gh release upload "${{ github.ref_name }}" "$($installer.FullName)" --clobber
+          gh release upload "${{ github.ref_name }}" "$($installerSig.FullName)" --clobber
+          gh release upload "${{ github.ref_name }}" "$($latestJson.FullName)" --clobber
         shell: pwsh
 
       - name: Upload build artifacts for debugging

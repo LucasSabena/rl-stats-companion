@@ -6,6 +6,19 @@ import { useUIStore } from "@/stores/uiStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Upload, Trash2, Database, FolderOpen } from "lucide-react";
 
+async function invalidateDataQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["matches"] }),
+    queryClient.invalidateQueries({ queryKey: ["match-detail"] }),
+    queryClient.invalidateQueries({ queryKey: ["analytics"] }),
+    queryClient.invalidateQueries({ queryKey: ["sessions"] }),
+    queryClient.invalidateQueries({ queryKey: ["rollups"] }),
+    queryClient.invalidateQueries({ queryKey: ["insights"] }),
+    queryClient.invalidateQueries({ queryKey: ["storageStats"] }),
+    queryClient.invalidateQueries({ queryKey: ["tracker-profile"] }),
+  ]);
+}
+
 export function DataManagement() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -41,7 +54,7 @@ export function DataManagement() {
       const content = await file.text();
       await importDataJson(content);
       addToast({ type: "success", title: "Importación completada", message: `Archivo: ${file.name}` });
-      queryClient.invalidateQueries();
+      await invalidateDataQueries(queryClient);
     } catch {
       addToast({ type: "error", title: "Error al importar" });
     } finally {
@@ -53,7 +66,7 @@ export function DataManagement() {
     try {
       await clearAllData();
       addToast({ type: "success", title: "Datos eliminados" });
-      queryClient.invalidateQueries();
+      await invalidateDataQueries(queryClient);
       setConfirmOpen(false);
     } catch {
       addToast({ type: "error", title: "Error al eliminar datos" });

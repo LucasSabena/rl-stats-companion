@@ -281,13 +281,11 @@ async fn process_events(
             let _ = app_handle.emit("live-update", &live_data);
 
             let overlay = app_handle.state::<AppState>().overlay_server.clone();
-            let overlay_data = live_data.clone();
-            tokio::spawn(async move {
-                let guard = overlay.lock().await;
+            if let Ok(guard) = overlay.try_lock() {
                 if let Some(ref server) = *guard {
-                    server.broadcast_state(&overlay_data);
+                    server.broadcast_state(&live_data);
                 }
-            });
+            };
         }
 
         let is_finished = session.phase() == &MatchPhase::Finished;

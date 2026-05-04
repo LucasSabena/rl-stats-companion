@@ -7,22 +7,28 @@ export function useConnection() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    async function fetchStatus() {
+    async function pollStatus() {
       try {
         const s = await getConnectionStatus();
         if (!cancelled) setStatus(s);
       } catch {
         if (!cancelled) setStatus("disconnected");
+      } finally {
+        if (!cancelled) {
+          timeoutId = setTimeout(() => {
+            void pollStatus();
+          }, 5000);
+        }
       }
     }
 
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 5000);
+    void pollStatus();
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 

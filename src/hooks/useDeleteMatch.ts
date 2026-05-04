@@ -9,6 +9,9 @@ export function useDeleteMatch() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["analytics"] });
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["rollups"] });
+      queryClient.invalidateQueries({ queryKey: ["insights"] });
     },
   });
 }
