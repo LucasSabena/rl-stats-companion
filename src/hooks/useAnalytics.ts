@@ -1,23 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAnalytics, getDailyRollups, getSessions } from "@/lib/api";
-import type { AnalyticsData, AnalyticsPeriod, MatchSession } from "@/lib/types";
+import type { AnalyticsData, AnalyticsPeriod, DailyRollup, MatchSession } from "@/lib/types";
 import { QUERY_STALE_TIME } from "@/lib/constants";
 
+interface AnalyticsResult {
+  data: AnalyticsData;
+  rollups: DailyRollup[];
+  sessions: MatchSession[];
+}
+
 export function useAnalytics(period: AnalyticsPeriod) {
-  return useQuery({
+  return useQuery<AnalyticsResult>({
     queryKey: ["analytics", period],
     queryFn: async () => {
-      const raw = await getAnalytics(period);
-
-      if (period === "session") {
-        const response = raw as { sessions: MatchSession[]; summary: AnalyticsData };
-        return {
-          ...response.summary,
-          period: "session" as const,
-        } as AnalyticsData;
-      }
-
-      return raw as AnalyticsData;
+      const result = await getAnalytics(period);
+      return {
+        data: result.data,
+        rollups: result.rollups ?? [],
+        sessions: result.sessions ?? [],
+      };
     },
     staleTime: QUERY_STALE_TIME.analytics,
   });

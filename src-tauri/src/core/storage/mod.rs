@@ -461,12 +461,36 @@ pub fn update_match(
     Ok(())
 }
 
-/// Delete a match and all related data (cascade).
+/// Delete a match and all related data (cascade), then rebuild daily rollups.
 pub fn delete_match(pool: &DbPool, match_id: i64) -> AppResult<()> {
     let conn = get_conn(pool)?;
     conn.execute("DELETE FROM matches WHERE id = ?1", params![match_id])
         .map_err(|e| AppError::StorageError(e.to_string()))?;
+
+    let settings = crate::core::settings::get_settings(pool).unwrap_or_default();
+    let names = identity_candidate_names(&settings);
+    if let Err(e) = rebuild_daily_rollups_for_identity(
+        pool,
+        settings.local_primary_id.as_deref(),
+        &names,
+    ) {
+        tracing::warn!(error = %e, "Failed to rebuild daily rollups after match deletion");
+    }
     Ok(())
+}
+
+fn identity_candidate_names(settings: &crate::core::settings::AppSettings) -> Vec<String> {
+    let mut names = Vec::new();
+    if !settings.player_name.trim().is_empty() {
+        names.push(settings.player_name.trim().to_string());
+    }
+    if let Some(ref u) = settings.tracker_username {
+        let u = u.trim();
+        if !u.is_empty() && !names.iter().any(|n| n.eq_ignore_ascii_case(u)) {
+            names.push(u.to_string());
+        }
+    }
+    names
 }
 
 /// Get daily rollups for a date range.

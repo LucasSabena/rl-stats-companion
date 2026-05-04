@@ -1,8 +1,9 @@
-/// Metrics engine for derived statistics.
-/// Currently a placeholder for future analytics computations.
+mod streak;
+
 use crate::core::models::PlayerStats;
 
-/// Calculate shots-to-goals ratio.
+pub use streak::{calculate_streaks, calculate_streaks_for_sessions, StreakData};
+
 pub fn shots_to_goals_ratio(stats: &PlayerStats) -> f64 {
     if stats.goals == 0 {
         0.0
@@ -11,7 +12,6 @@ pub fn shots_to_goals_ratio(stats: &PlayerStats) -> f64 {
     }
 }
 
-/// Calculate save percentage.
 pub fn save_percentage(shots_against: i32, saves: i32) -> f64 {
     if shots_against == 0 {
         0.0

@@ -179,6 +179,8 @@ interface RawDailyRollup {
   total_shots: number;
   total_saves: number;
   avg_duration_seconds: number;
+  total_demos: number;
+  total_assists: number;
 }
 
 interface RawStorageStats {
@@ -194,28 +196,34 @@ interface RawStorageStats {
   dbPath?: string | null;
 }
 
-interface RawSessionAnalytics {
-  sessions: MatchSession[];
-  summary: {
-    totalMatches: number;
-    wins: number;
-    losses: number;
-    avgScore: number;
-    avgGoals: number;
-    avgAssists: number;
-    avgSaves: number;
-    avgShots: number;
-    avgBoost: number;
-    totalGoals: number;
-    totalAssists: number;
-    totalSaves: number;
-    totalShots: number;
-    totalDemos: number;
-    bestStreak: number;
-    currentStreak: number;
-    peakSpeed: number;
-    avgDuration: number;
-  };
+interface RawAnalyticsSummary {
+  period?: string;
+  totalMatches: number;
+  wins: number;
+  losses: number;
+  winRate?: number;
+  avgScore: number;
+  avgGoals: number;
+  avgAssists: number;
+  avgSaves: number;
+  avgShots: number;
+  avgBoost: number;
+  totalGoals: number;
+  totalAssists: number;
+  totalSaves: number;
+  totalShots: number;
+  totalDemos: number;
+  totalConceded?: number;
+  bestStreak: number;
+  currentStreak: number;
+  peakSpeed: number;
+  avgDuration: number;
+}
+
+interface RawAnalyticsResponse {
+  rollups?: RawDailyRollup[];
+  sessions?: MatchSession[];
+  summary: RawAnalyticsSummary;
 }
 
 function mapConnectionStatus(status: RawConnectionStatus): ConnectionStatus {
@@ -344,41 +352,38 @@ function mapRollup(rollup: RawDailyRollup): DailyRollup {
     losses: rollup.losses,
     avgScore: rollup.matches_played > 0 ? rollup.goals_scored / rollup.matches_played : 0,
     totalGoals: rollup.goals_scored,
+    totalShots: rollup.total_shots,
+    totalSaves: rollup.total_saves,
+    totalDemos: rollup.total_demos,
+    totalAssists: rollup.total_assists,
   };
 }
 
-function buildAnalytics(period: AnalyticsPeriod, rollups: RawDailyRollup[]): AnalyticsData {
-  const totalMatches = rollups.reduce((sum, item) => sum + item.matches_played, 0);
-  const wins = rollups.reduce((sum, item) => sum + item.wins, 0);
-  const losses = rollups.reduce((sum, item) => sum + item.losses, 0);
-  const totalGoals = rollups.reduce((sum, item) => sum + item.goals_scored, 0);
-  const totalShots = rollups.reduce((sum, item) => sum + item.total_shots, 0);
-  const totalSaves = rollups.reduce((sum, item) => sum + item.total_saves, 0);
-  const avgDuration = totalMatches > 0
-    ? rollups.reduce((sum, item) => sum + item.avg_duration_seconds * item.matches_played, 0) / totalMatches
-    : 0;
-
+function mapSummaryToAnalyticsData(
+  period: AnalyticsPeriod,
+  summary: RawAnalyticsSummary
+): AnalyticsData {
   return {
     period,
-    totalMatches,
-    wins,
-    losses,
-    winRate: totalMatches > 0 ? Math.round((wins / totalMatches) * 100) : 0,
-    avgScore: totalMatches > 0 ? totalGoals / totalMatches : 0,
-    avgGoals: totalMatches > 0 ? totalGoals / totalMatches : 0,
-    avgAssists: 0,
-    avgSaves: totalMatches > 0 ? totalSaves / totalMatches : 0,
-    avgShots: totalMatches > 0 ? totalShots / totalMatches : 0,
-    avgBoost: 0,
-    totalGoals,
-    totalAssists: 0,
-    totalSaves,
-    totalShots,
-    totalDemos: 0,
-    bestStreak: 0,
-    currentStreak: 0,
-    peakSpeed: 0,
-    avgDuration,
+    totalMatches: summary.totalMatches,
+    wins: summary.wins,
+    losses: summary.losses,
+    winRate: summary.winRate ?? (summary.totalMatches > 0 ? Math.round((summary.wins / summary.totalMatches) * 100) : 0),
+    avgScore: summary.avgScore,
+    avgGoals: summary.avgGoals,
+    avgAssists: summary.avgAssists,
+    avgSaves: summary.avgSaves,
+    avgShots: summary.avgShots,
+    avgBoost: summary.avgBoost,
+    totalGoals: summary.totalGoals,
+    totalAssists: summary.totalAssists,
+    totalSaves: summary.totalSaves,
+    totalShots: summary.totalShots,
+    totalDemos: summary.totalDemos,
+    bestStreak: summary.bestStreak,
+    currentStreak: summary.currentStreak,
+    peakSpeed: summary.peakSpeed,
+    avgDuration: summary.avgDuration,
   };
 }
 
@@ -452,20 +457,17 @@ export async function updateMatch(
 }
 
 // Analytics
-export async function getAnalytics(period: AnalyticsPeriod): Promise<AnalyticsData | RawSessionAnalytics> {
+export async function getAnalytics(period: AnalyticsPeriod): Promise<{ data: AnalyticsData; rollups?: DailyRollup[]; sessions?: MatchSession[] }> {
   const days = periodToDays(period);
-
-  if (period === "session") {
-    const response = await invokeCommand<RawSessionAnalytics>("get_analytics", {
-      period: { days },
-    });
-    return response;
-  }
-
-  const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_analytics", {
+  const response = await invokeCommand<RawAnalyticsResponse>("get_analytics", {
     period: { days },
   });
-  return buildAnalytics(period, response.rollups);
+
+  return {
+    data: mapSummaryToAnalyticsData(period, response.summary),
+    rollups: response.rollups?.map(mapRollup),
+    sessions: response.sessions,
+  };
 }
 
 export async function getSessions(gapMinutes?: number): Promise<MatchSession[]> {

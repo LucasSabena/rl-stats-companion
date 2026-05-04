@@ -9,6 +9,9 @@ import {
   Zap,
   Timer,
   TrendingUp,
+  Swords,
+  Flame,
+  Gauge,
 } from "lucide-react";
 
 interface StatsGridProps {
@@ -18,14 +21,62 @@ interface StatsGridProps {
 export const StatsGrid = memo(function StatsGrid({ data }: StatsGridProps) {
   const items = useMemo(
     () => [
-      { label: "Win Rate", value: `${data.winRate}%`, icon: Trophy },
-      { label: "Puntuación media", value: Math.round(data.avgScore), icon: TrendingUp },
-      { label: "Goles / partido", value: data.avgGoals.toFixed(1), icon: Target },
-      { label: "Asist. / partido", value: data.avgAssists.toFixed(1), icon: Zap },
-      { label: "Paradas / partido", value: data.avgSaves.toFixed(1), icon: Shield },
-      { label: "Tiros / partido", value: data.avgShots.toFixed(1), icon: Crosshair },
-      { label: "Boost medio", value: `${Math.round(data.avgBoost)}%`, icon: Zap },
-      { label: "Duración media", value: `${Math.round(data.avgDuration / 60)}m`, icon: Timer },
+      {
+        label: "Partidas jugadas",
+        value: data.totalMatches,
+        icon: Swords,
+      },
+      {
+        label: "Win Rate",
+        value: `${data.winRate}%`,
+        icon: Trophy,
+        trend: data.winRate >= 50 ? "up" as const : "down" as const,
+        trendValue: `${data.wins}V / ${data.losses}D`,
+      },
+      {
+        label: "Puntuación media",
+        value: Math.round(data.avgScore),
+        icon: TrendingUp,
+      },
+      {
+        label: "Goles totales",
+        value: data.totalGoals,
+        icon: Target,
+        trendValue: `${data.avgGoals.toFixed(1)} / partido`,
+      },
+      {
+        label: "Asistencias totales",
+        value: data.totalAssists,
+        icon: Zap,
+        trendValue: `${data.avgAssists.toFixed(1)} / partido`,
+      },
+      {
+        label: "Paradas totales",
+        value: data.totalSaves,
+        icon: Shield,
+        trendValue: `${data.avgSaves.toFixed(1)} / partido`,
+      },
+      {
+        label: "Tiros totales",
+        value: data.totalShots,
+        icon: Crosshair,
+        trendValue: `${data.avgShots.toFixed(1)} / partido`,
+      },
+      {
+        label: "Demoliciones",
+        value: data.totalDemos,
+        icon: Flame,
+      },
+      {
+        label: "Velocidad max",
+        value: `${Math.round(data.peakSpeed)} km/h`,
+        icon: Gauge,
+      },
+      {
+        label: "Duración media",
+        value: `${Math.round(data.avgDuration / 60)}m`,
+        icon: Timer,
+      },
     ],
     [data]
   );
@@ -33,7 +84,14 @@ export const StatsGrid = memo(function StatsGrid({ data }: StatsGridProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
-        <StatCard key={item.label} label={item.label} value={item.value} icon={item.icon} />
+        <StatCard
+          key={item.label}
+          label={item.label}
+          value={item.value}
+          icon={item.icon}
+          trend={item.trend}
+          trendValue={item.trendValue}
+        />
       ))}
     </div>
   );

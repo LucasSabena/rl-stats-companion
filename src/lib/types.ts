@@ -161,6 +161,10 @@ export interface DailyRollup {
   losses: number;
   avgScore: number;
   totalGoals: number;
+  totalShots?: number;
+  totalSaves?: number;
+  totalDemos?: number;
+  totalAssists?: number;
 }
 
 export interface MatchSession {
