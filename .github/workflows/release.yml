@@ -176,14 +176,33 @@ jobs:
           $installer = Get-ChildItem -Path "src-tauri/target/*/release/bundle/nsis" -Recurse -Filter "*.exe" | Select-Object -First 1
           if (-not $installer) { throw "Installer not found" }
           $installerSig = Get-ChildItem -Path $installer.Directory.FullName -Filter "*.exe.sig" | Select-Object -First 1
-          $latestJson = Get-ChildItem -Path "src-tauri/target/*/release/bundle" -Recurse -Filter "latest.json" | Select-Object -First 1
 
           if (-not $installerSig) { throw "Installer signature not found" }
-          if (-not $latestJson) { throw "latest.json not found" }
+
+          $signature = (Get-Content -Path $installerSig.FullName -Raw).Trim()
+          if (-not $signature) { throw "Installer signature is empty" }
 
           gh release upload "${{ github.ref_name }}" "$($installer.FullName)" --clobber
           gh release upload "${{ github.ref_name }}" "$($installerSig.FullName)" --clobber
-          gh release upload "${{ github.ref_name }}" "$($latestJson.FullName)" --clobber
+
+          $assetUrl = gh release view "${{ github.ref_name }}" --json assets --jq '.assets[] | select(.name | endswith("setup.exe")) | .url' | Select-Object -First 1
+          if (-not $assetUrl) { throw "Uploaded installer asset URL not found" }
+
+          $latestJsonPath = Join-Path $env:RUNNER_TEMP "latest.json"
+          $latestJson = @{
+            version = "${{ needs.create-release.outputs.version }}"
+            notes = "RL Stats Companion ${{ github.ref_name }}"
+            pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = $signature
+                url = $assetUrl
+              }
+            }
+          } | ConvertTo-Json -Depth 5
+          Set-Content -Path $latestJsonPath -Value $latestJson -Encoding UTF8
+
+          gh release upload "${{ github.ref_name }}" "$latestJsonPath" --clobber
         shell: pwsh
 
       - name: Upload build artifacts for debugging
