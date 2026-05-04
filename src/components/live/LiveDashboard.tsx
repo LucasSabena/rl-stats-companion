@@ -8,6 +8,7 @@ import { ConnectionStatus } from "./ConnectionStatus";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { RankWidget } from "@/components/tracker/RankWidget";
+import { useLiveMmr } from "@/hooks/useLiveMmr";
 import { cn } from "@/lib/utils";
 import { Radio, X } from "lucide-react";
 
@@ -105,9 +106,13 @@ function MatchEndBanner() {
 export function LiveDashboard() {
   const currentMatch = useLiveStore((state) => state.currentMatch);
   const connectionStatus = useLiveStore((state) => state.connectionStatus);
+  const { data: liveMmr, isFetching: isFetchingMmr } = useLiveMmr();
 
   const bluePlayers = currentMatch?.players.filter((player) => player.team === 0) ?? [];
   const orangePlayers = currentMatch?.players.filter((player) => player.team === 1) ?? [];
+  const mmrByPlayerId = Object.fromEntries(
+    (liveMmr?.players ?? []).map((player) => [player.primaryId, player])
+  );
 
   if (!currentMatch) {
     return (
@@ -162,8 +167,18 @@ export function LiveDashboard() {
       <RankWidget />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <TeamPanel team="blue" players={bluePlayers} />
-        <TeamPanel team="orange" players={orangePlayers} />
+        <TeamPanel
+          team="blue"
+          players={bluePlayers}
+          mmrByPlayerId={mmrByPlayerId}
+          mmrLoading={isFetchingMmr}
+        />
+        <TeamPanel
+          team="orange"
+          players={orangePlayers}
+          mmrByPlayerId={mmrByPlayerId}
+          mmrLoading={isFetchingMmr}
+        />
       </div>
 
       <EventFeed />

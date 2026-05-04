@@ -10,7 +10,7 @@ import {
 
 describe("constants", () => {
   it("exposes the expected app metadata and defaults", () => {
-    expect(APP_NAME).toBe("RL Stats Companion");
+    expect(APP_NAME).toBe("RL Stats");
     expect(MAX_EVENT_FEED_ITEMS).toBe(100);
     expect(DEFAULT_DATA_RETENTION_DAYS).toBe(90);
   });

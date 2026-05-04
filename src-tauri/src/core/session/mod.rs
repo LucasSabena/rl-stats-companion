@@ -39,6 +39,7 @@ pub struct SessionManager {
     match_type: Option<String>,
     winner_team_num: Option<i32>,
     max_player_count: usize,
+    last_touch_team: Option<i32>,
 }
 
 impl SessionManager {
@@ -60,6 +61,7 @@ impl SessionManager {
             match_type: Some("ranked".into()),
             winner_team_num: None,
             max_player_count: 0,
+            last_touch_team: None,
         }
     }
 
@@ -85,6 +87,7 @@ impl SessionManager {
             ball_speed: self.ball_speed,
             player_count,
             match_type: self.match_type.clone(),
+            last_touch_team: self.last_touch_team,
         }
     }
 
@@ -410,6 +413,7 @@ impl SessionManager {
         self.ball_speed = 0.0;
         self.winner_team_num = None;
         self.max_player_count = 0;
+        self.last_touch_team = None;
     }
 
     fn has_meaningful_match_data(&self) -> bool {

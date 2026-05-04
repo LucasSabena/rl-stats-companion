@@ -1,6 +1,6 @@
-# RL Stats Companion — Security & Privacy Policy
+# RL Stats — Security & Privacy Policy
 
-> This document defines the security architecture, privacy guarantees, and operational security rules for RL Stats Companion.
+> This document defines the security architecture, privacy guarantees, and operational security rules for RL Stats.
 
 ## Core Principle
 
@@ -129,9 +129,9 @@ The app operates entirely on your local machine. Your match data, statistics, an
 
 ### Data Storage Location
 ```
-Windows: %APPDATA%\rl-stats-companion\data.db
-Settings: %APPDATA%\rl-stats-companion\settings.json
-Logs: %APPDATA%\rl-stats-companion\logs\
+Windows: %APPDATA%\rl-stats\data.db
+Settings: %APPDATA%\rl-stats\settings.json
+Logs: %APPDATA%\rl-stats\logs\
 ```
 
 ### Third-Party Services

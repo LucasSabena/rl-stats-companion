@@ -1,6 +1,6 @@
-# RL Stats Companion — Frontend Development Guide
+# RL Stats — Frontend Development Guide
 
-> The definitive guide for frontend developers working on the RL Stats Companion desktop application.
+> The definitive guide for frontend developers working on the RL Stats desktop application.
 > **Stack**: Tauri 2 + React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui + Zustand + TanStack Query
 
 ---

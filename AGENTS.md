@@ -1,4 +1,4 @@
-# RL Stats Companion — Agent Guide
+# RL Stats — Agent Guide
 
 > Project: `api-rocketleague` — A local-first desktop companion app for Rocket League Stats API.
 > Stack: Tauri 2 (Rust) + React + TypeScript + SQLite

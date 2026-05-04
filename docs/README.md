@@ -1,4 +1,4 @@
-# RL Stats Companion — Documentation Index
+# RL Stats — Documentation Index
 
 > Central index for all project documentation.
 

@@ -17,6 +17,7 @@ mod updater;
 use crate::core::autostart::configure_autostart;
 use crate::core::ingestor::{start_ingestor, IngestorHandle};
 use crate::core::models::RlEvent;
+use crate::core::obs_text;
 use crate::core::overlay::OverlayServer;
 use crate::core::process_watcher::ProcessWatcher;
 use crate::core::session::{MatchPhase, SessionManager};
@@ -52,6 +53,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::live::get_live_state,
             commands::live::get_connection_status,
+            commands::mmr::fetch_live_mmr_snapshot,
             commands::history::get_matches,
             commands::history::get_match_detail,
             commands::history::delete_match_cmd,
@@ -135,7 +137,7 @@ pub fn run() {
 
             let tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
-                .tooltip("RL Stats Companion")
+                .tooltip("RL Stats")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => {
@@ -254,12 +256,23 @@ async fn process_events(
 ) {
     info!("Event processing task started");
 
+    let mut session_wins: i32 = 0;
+    let mut session_losses: i32 = 0;
+    let mut session_streak: i32 = 0;
+    let mut last_was_win: Option<bool> = None;
+
     while let Some(event) = ingestor.event_rx.recv().await {
         let mut session = session_manager.write().await;
         let was_finished = session.phase() == &MatchPhase::Finished;
 
         match &event {
             RlEvent::MatchCreated | RlEvent::MatchInitialized => {
+                session_wins = 0;
+                session_losses = 0;
+                session_streak = 0;
+                last_was_win = None;
+                obs_text::update_obs_files(0, 0, "");
+
                 let _ = app_handle.emit(
                     "match-started",
                     serde_json::json!({
@@ -271,6 +284,11 @@ async fn process_events(
         }
 
         session.handle_event(event.clone());
+
+        {
+            let overlay = app_handle.state::<AppState>().overlay_server.clone();
+            broadcast_to_overlay(&overlay, &event);
+        }
 
         if let Some(live_event) = map_live_event(&event) {
             let _ = app_handle.emit("live-event", live_event);
@@ -298,6 +316,27 @@ async fn process_events(
                 match session.persist_finished_match(&db_pool) {
                     Ok(summary) => {
                         info!(guid = %summary.match_guid, "Match persisted");
+
+                        if let Some(winner) = summary.winner {
+                            let settings = get_settings(&db_pool).unwrap_or_default();
+                            let local_team = settings.local_primary_id.as_ref().and_then(|pid| {
+                                summary.players.iter().find(|p| &p.primary_id == pid).map(|p| p.team_num)
+                            });
+                            let is_win = local_team == Some(winner);
+                            if is_win {
+                                session_wins += 1;
+                            } else {
+                                session_losses += 1;
+                            }
+                            session_streak = match last_was_win {
+                                Some(true) if is_win => session_streak + 1,
+                                Some(false) if !is_win => session_streak - 1,
+                                _ => if is_win { 1 } else { -1 },
+                            };
+                            last_was_win = Some(is_win);
+                            obs_text::update_obs_files_win(is_win, session_wins, session_losses, session_streak);
+                        }
+
                         let _ = app_handle.emit("match-summary", &summary);
                         session.handle_event(RlEvent::MatchDestroyed);
                         let final_state = session.live_state();
@@ -320,6 +359,14 @@ fn map_live_event(event: &RlEvent) -> Option<serde_json::Value> {
         RlEvent::GoalScored { .. } => "GoalScored",
         RlEvent::StatfeedEvent { .. } => "StatfeedEvent",
         RlEvent::MatchEnded { .. } => "MatchEnded",
+        RlEvent::BallHit => "BallHit",
+        RlEvent::CountdownBegin => "CountdownBegin",
+        RlEvent::MatchPaused => "MatchPaused",
+        RlEvent::MatchUnpaused => "MatchUnpaused",
+        RlEvent::GoalReplayStart => "GoalReplayStart",
+        RlEvent::GoalReplayEnd => "GoalReplayEnd",
+        RlEvent::ClockUpdatedSeconds { .. } => "ClockUpdatedSeconds",
+        RlEvent::RoundStarted => "RoundStarted",
         _ => return None,
     };
 
@@ -329,6 +376,52 @@ fn map_live_event(event: &RlEvent) -> Option<serde_json::Value> {
         "timestamp": chrono::Utc::now().timestamp(),
         "data": {}
     }))
+}
+
+fn broadcast_to_overlay(overlay: &std::sync::Arc<tokio::sync::Mutex<Option<OverlayServer>>>, event: &RlEvent) {
+    if let Ok(guard) = overlay.try_lock() {
+        if let Some(ref server) = *guard {
+            match event {
+                RlEvent::GoalScored { data } => {
+                    server.broadcast_goal(&data.scorer.name, data.scorer.team_num);
+                }
+                RlEvent::StatfeedEvent { data } => {
+                    server.broadcast_statfeed(
+                        &data.event_name,
+                        &data.main_target.name,
+                        data.main_target.team_num,
+                        data.secondary_target.as_ref().map(|t| t.name.as_str()),
+                        data.secondary_target.as_ref().map(|t| t.team_num),
+                    );
+                }
+                RlEvent::BallHit => {
+                    server.broadcast_ball_hit(-1);
+                }
+                RlEvent::ClockUpdatedSeconds { time } => {
+                    server.broadcast_clock(*time);
+                }
+                RlEvent::MatchCreated | RlEvent::MatchInitialized => {
+                    server.broadcast_match_started();
+                }
+                RlEvent::MatchEnded { winner_team_num } => {
+                    server.broadcast_match_ended(*winner_team_num);
+                }
+                RlEvent::GoalReplayStart => {
+                    server.broadcast_replay_start();
+                }
+                RlEvent::GoalReplayEnd => {
+                    server.broadcast_replay_end();
+                }
+                RlEvent::MatchPaused => {
+                    server.broadcast_match_paused();
+                }
+                RlEvent::MatchUnpaused => {
+                    server.broadcast_match_unpaused();
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 async fn tracker_refresh_loop(db_pool: Arc<DbPool>, app_handle: tauri::AppHandle) {

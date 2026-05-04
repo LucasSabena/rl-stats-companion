@@ -1,7 +1,9 @@
 pub mod autostart;
 pub mod ingestor;
 pub mod metrics;
+pub mod mmr;
 pub mod models;
+pub mod obs_text;
 pub mod overlay;
 pub mod parser;
 pub mod process_watcher;

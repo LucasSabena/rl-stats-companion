@@ -104,6 +104,7 @@ pub struct LiveMatchState {
     pub ball_speed: f64,
     pub player_count: usize,
     pub match_type: Option<String>,
+    pub last_touch_team: Option<i32>,
 }
 
 /// Represents a statfeed event payload (e.g., "Shot on Goal", "Save").

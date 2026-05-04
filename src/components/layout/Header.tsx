@@ -15,7 +15,7 @@ export function Header() {
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle bg-bg-primary/80 px-6 backdrop-blur-sm">
       <div className="flex items-center gap-3">
         <h1 className="font-display text-base font-bold tracking-tight text-text-primary">
-          RL Stats Companion
+          RL Stats
         </h1>
         {isLive ? (
           <Badge variant="live">

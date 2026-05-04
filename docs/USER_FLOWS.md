@@ -1,6 +1,6 @@
-# RL Stats Companion — User Flows & Experience Documentation
+# RL Stats — User Flows & Experience Documentation
 
-> Comprehensive UX documentation for the RL Stats Companion desktop application.
+> Comprehensive UX documentation for the RL Stats desktop application.
 > Language convention: Spanish for user-facing content, English for technical terms and system concepts.
 
 ---
@@ -37,7 +37,7 @@
 
 **Sesión Típica**
 1. Enciende PC, RL se abre automáticamente
-2. Abre RL Stats Companion (quizás desde el tray)
+2. Abre RL Stats (quizás desde el tray)
 3. Juega 15-20 partidas ranked
 4. Entre partidas, mira el tablero en vivo para ver quién lleva más goles
 5. Al terminar, revisa "Historial" para ver cuántas ganó/perdió
@@ -83,7 +83,7 @@
 
 **Sesión Típica**
 1. Abre Rocket League cuando sus amigos la llaman
-2. Se da cuenta de que RL Stats Companion está abierto en el tray
+2. Se da cuenta de que RL Stats está abierto en el tray
 3. Juega un par de partidas casual
 4. Después de la última partida, curiosea el historial
 5. Ríe al ver que un amigo suyo hizo 0 saves en 5 partidas
@@ -128,7 +128,7 @@
 - Entiende conceptos de red, puertos, TCP.
 
 **Sesión Típica**
-1. Prepara stream: abre OBS, RL, RL Stats Companion
+1. Prepara stream: abre OBS, RL, RL Stats
 2. Durante stream, mantiene el Live Dashboard visible en monitor secundario
 3. Comenta stats en vivo: "Vamos perdiendo pero tengo más shots"
 4. Después del stream, revisa Analytics para ver su rendimiento promedio
@@ -150,7 +150,7 @@
 
 | Fase | Acciones | Pensamientos | Emociones | Pain Points | Oportunidades |
 |------|----------|--------------|-----------|-------------|---------------|
-| **Discovery** | Busca "rocket league stats tracker" en Google. Encuentra Reddit hablando de RL Stats Companion. | "Ojalá haya algo como BakkesMod pero que funcione online" | 😐 Curioso | No sabe si es confiable o seguro | Testimonios de comunidad, badges de "open source" |
+| **Discovery** | Busca "rocket league stats tracker" en Google. Encuentra Reddit hablando de RL Stats. | "Ojalá haya algo como BakkesMod pero que funcione online" | 😐 Curioso | No sabe si es confiable o seguro | Testimonios de comunidad, badges de "open source" |
 | **Onboarding** | Descarga MSI desde GitHub. Instala. App abre con wizard de configuración. | "Espero que no sea un dolor de cabeza configurar el API" | 😐 Cauteloso | Editar el INI de RL puede ser intimidante | Wizard visual que detecta automáticamente la ruta de RL |
 | **First Match** | Inicia RL. Juega una partida casual. Ve que el dashboard se llena de datos. | "¡Oh, wow! Ahí está mi nombre, mi equipo, todo en tiempo real" | 😃 Emocionado | Ninguno claro | Animaciones sutiles que recompensan la primera conexión |
 | **Daily Use** | Abre Historial. Ve 15 partidas capturadas. Filtra por "Victorias". Ve su win rate. | "He ganado 9 de 15... no está mal. Vamos a ver el análisis" | 😊 Satisfecho | Querría ver métricas más avanzadas | Sugerencias contextuales: "¿Quieres ver tu tendencia semanal?" |
@@ -190,19 +190,19 @@
 
 #### Step 1.1 — Download & Install
 
-**Narrativa**: Usuario llega a la página de Releases en GitHub. Descarga `RLStatsCompanion_Setup_x64.msi`. Ejecuta el instalador. Windows SmartScreen puede aparecer (es open source, no firmado con certificado EV en V1).
+**Narrativa**: Usuario llega a la página de Releases en GitHub. Descarga `RLStats_Setup_x64.msi`. Ejecuta el instalador. Windows SmartScreen puede aparecer (es open source, no firmado con certificado EV en V1).
 
 **ASCII Wireframe — Installer**
 ```
 +-----------------------------------------------------------+
-|  RL Stats Companion Setup                                 |
+|  RL Stats Setup                                 |
 +-----------------------------------------------------------+
 |                                                           |
 |     [App Icon]                                            |
 |                                                           |
-|     Welcome to RL Stats Companion                         |
+|     Welcome to RL Stats                         |
 |                                                           |
-|     Your personal Rocket League stats companion.          |
+|     RL Stats.          |
 |     Local. Private. Free.                                 |
 |                                                           |
 |     [ License Agreement ]  (checked)                      |
@@ -232,7 +232,7 @@
 |              [App Logo: 96px]                             |
 |                                                           |
 |              ¡Bienvenido a                                |
-|              RL Stats Companion!                          |
+|              RL Stats!                          |
 |                                                           |
 |     Tu compañero de estadísticas para Rocket League.      |
 |     Totalmente local y gratuito.                          |
@@ -267,7 +267,7 @@
 |     Ubicación:                                            |
 |     C:\Program Files\Epic Games\RL...                    |
 |                                                           |
-|     [?] El Stats API permite que RL Stats Companion       |
+|     [?] El Stats API permite que RL Stats       |
 |         reciba datos en tiempo real de tus partidas.      |
 |                                                           |
 |     -------------------------------------------------     |
@@ -643,7 +643,7 @@
 
 #### Step 3.1 — Open App & Navigate to History
 
-**Narrativa**: Usuario abre RL Stats Companion desde el menú inicio o bandeja del sistema. App muestra la última vista usada (en este caso, abre en Live). Usuario clickea "Historial".
+**Narrativa**: Usuario abre RL Stats desde el menú inicio o bandeja del sistema. App muestra la última vista usada (en este caso, abre en Live). Usuario clickea "Historial".
 
 **ASCII Wireframe — History Page (Default View)**
 ```
@@ -1123,7 +1123,7 @@
 ### 4.1 Site Map / Navigation Structure
 
 ```
-RL Stats Companion
+RL Stats
 │
 ├── Sidebar Navigation (persistent)
 │   ├── En Vivo (Live Match)        — Pulse indicator when active
@@ -1395,7 +1395,7 @@ No Events in Match:
 System Notifications (Windows native via Tauri):
 - Post-match summary: "Victoria 3-2 · 450 pts · MVP"
 - Connection lost: "Desconectado de Rocket League"
-- Update available: "RL Stats Companion v1.1.0 disponible"
+- Update available: "RL Stats v1.1.0 disponible"
 - Setting: user can disable all notifications
 
 In-App Toast Notifications:
@@ -1634,7 +1634,7 @@ Epilepsy Safety:
 ### 7.1 Rocket League Not Running
 
 ```
-Scenario: User opens RL Stats Companion but RL is not running.
+Scenario: User opens RL Stats but RL is not running.
 
 UI State:
 - Dashboard shows "Esperando partida..." with Radio icon
@@ -1959,7 +1959,7 @@ Content Creator:
 Net Promoter Score (NPS):
 - Target: > 40 (would recommend to a friend)
 - Measurement: In-app survey after 10th match captured
-- Question: "¿Qué tan probable es que recomiendes RL Stats Companion a un amigo?"
+- Question: "¿Qué tan probable es que recomiendes RL Stats a un amigo?"
 ```
 
 ---

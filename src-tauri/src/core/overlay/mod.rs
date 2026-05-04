@@ -233,7 +233,90 @@ impl OverlayServer {
         self.broadcast_event(event);
     }
 
-    /// Returns a point-in-time snapshot of server status.
+    pub fn broadcast_goal(&self, scorer_name: &str, team_num: i32) {
+        let event = serde_json::json!({
+            "type": "goal",
+            "data": { "scorerName": scorer_name, "teamNum": team_num }
+        });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_statfeed(
+        &self,
+        event_name: &str,
+        main_target_name: &str,
+        main_target_team: i32,
+        secondary_target_name: Option<&str>,
+        secondary_target_team: Option<i32>,
+    ) {
+        let event = serde_json::json!({
+            "type": "statfeed",
+            "data": {
+                "eventName": event_name,
+                "mainTarget": { "name": main_target_name, "teamNum": main_target_team },
+                "secondaryTarget": secondary_target_name.map(|n| serde_json::json!({
+                    "name": n,
+                    "teamNum": secondary_target_team.unwrap_or(-1)
+                }))
+            }
+        });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_ball_hit(&self, team_num: i32) {
+        let event = serde_json::json!({
+            "type": "ball_hit",
+            "data": { "teamNum": team_num }
+        });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_clock(&self, time: i32) {
+        let event = serde_json::json!({
+            "type": "clock",
+            "data": { "time": time }
+        });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_match_started(&self) {
+        let event = serde_json::json!({ "type": "match_started" });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_match_ended(&self, winner_team_num: Option<i32>) {
+        let event = serde_json::json!({
+            "type": "match_ended",
+            "data": { "winnerTeamNum": winner_team_num }
+        });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_replay_start(&self) {
+        let event = serde_json::json!({ "type": "replay_start" });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_replay_end(&self) {
+        let event = serde_json::json!({ "type": "replay_end" });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_match_paused(&self) {
+        let event = serde_json::json!({ "type": "match_paused" });
+        self.broadcast_event(event);
+    }
+
+    pub fn broadcast_match_unpaused(&self) {
+        let event = serde_json::json!({ "type": "match_unpaused" });
+        self.broadcast_event(event);
+    }
+
+    /// Returns a clone of the cached state handle for REST API access.
+    pub fn latest_state_handle(&self) -> Arc<RwLock<Option<String>>> {
+        Arc::clone(&self.latest_state)
+    }
+
     pub fn status(&self) -> OverlayServerStatus {
         OverlayServerStatus {
             running: self.running,
@@ -242,14 +325,8 @@ impl OverlayServer {
         }
     }
 
-    /// The TCP port this server was configured with.
     pub fn port(&self) -> u16 {
         self.port
-    }
-
-    /// Returns a clone of the cached state handle for REST API access.
-    pub fn latest_state_handle(&self) -> Arc<RwLock<Option<String>>> {
-        Arc::clone(&self.latest_state)
     }
 }
 

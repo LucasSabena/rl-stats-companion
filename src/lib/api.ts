@@ -23,6 +23,8 @@ import {
   type AppSettings,
   type StorageStats,
   type TrackerProfile,
+  type LiveMmrSnapshot,
+  type RlInstallation,
 } from "./types";
 import { formatLocalDateFromUnix } from "./utils";
 
@@ -580,12 +582,12 @@ export async function setSettings(settings: AppSettings): Promise<void> {
   });
 }
 
-export async function configureRlIni(port?: number): Promise<void> {
-  return invokeCommand<void>("configure_rl_ini_cmd", { port: port ?? 49123 });
+export async function configureRlIni(path: string, port?: number): Promise<void> {
+  return invokeCommand<void>("configure_rl_ini_cmd", { path, port: port ?? 49123 });
 }
 
-export async function detectRlPath(): Promise<string[]> {
-  return invokeCommand<string[]>("detect_rl_path");
+export async function detectRlPath(platform?: "steam" | "epic" | null): Promise<RlInstallation[]> {
+  return invokeCommand<RlInstallation[]>("detect_rl_path", { platform });
 }
 
 // Data management
@@ -701,4 +703,8 @@ export async function getCachedProfile(): Promise<TrackerProfile | null> {
 
 export async function refreshTrackerProfile(): Promise<TrackerProfile> {
   return invokeCommand<TrackerProfile>("refresh_tracker_profile");
+}
+
+export async function fetchLiveMmrSnapshot(): Promise<LiveMmrSnapshot> {
+  return invokeCommand<LiveMmrSnapshot>("fetch_live_mmr_snapshot");
 }

@@ -67,9 +67,6 @@ export function Sidebar() {
               <span className="text-sm font-bold text-text-primary tracking-tight">
                 RL Stats
               </span>
-              <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-widest">
-                Companion
-              </span>
             </div>
           )}
         </button>

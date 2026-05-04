@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for RL Stats Companion
+about: Suggest an idea for RL Stats
 title: '[FEATURE] '
 labels: ['enhancement']
 assignees: []

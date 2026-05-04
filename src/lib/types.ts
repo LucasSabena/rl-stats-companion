@@ -436,3 +436,30 @@ export interface TrackerSettings {
   autoRefresh: boolean;
   refreshIntervalMin: number;
 }
+
+export interface LiveMmrPlayer {
+  primaryId: string;
+  playerName: string;
+  platform: string;
+  identifier: string;
+  playlist: string | null;
+  mmr: number | null;
+  rankName: string | null;
+  division: string | null;
+  matchesPlayed: number | null;
+  source: string | null;
+  cached: boolean;
+  error: string | null;
+}
+
+export interface LiveMmrSnapshot {
+  playlist: string | null;
+  fetchedAt: string;
+  players: LiveMmrPlayer[];
+}
+
+export interface RlInstallation {
+  path: string;
+  platform: "steam" | "epic";
+  valid: boolean;
+}

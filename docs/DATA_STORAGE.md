@@ -1,4 +1,4 @@
-# Datos que almacena RL Stats Companion
+# Datos que almacena RL Stats
 
 Este documento explica, de forma clara y sin tecnicismos, exactamente qué datos guarda la aplicación y dónde se almacenan.
 
@@ -9,7 +9,7 @@ Este documento explica, de forma clara y sin tecnicismos, exactamente qué datos
 Todos los datos se guardan en una base de datos local **SQLite**, en un único archivo dentro de tu PC:
 
 ```
-%APPDATA%\com.lukit.rl-stats-companion\rl_stats.db
+%APPDATA%\com.lukit.rl-stats\rl_stats.db
 ```
 
 Esto significa:

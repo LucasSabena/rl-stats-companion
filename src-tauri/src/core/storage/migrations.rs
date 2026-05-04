@@ -145,6 +145,21 @@ pub static MIGRATIONS: &[Migration] = &[
              ALTER TABLE matches ADD COLUMN playlist TEXT;
              CREATE INDEX IF NOT EXISTS idx_matches_match_type ON matches(match_type);",
     },
+    Migration {
+        version: 12,
+        name: "create_mmr_cache_table",
+        sql: "CREATE TABLE IF NOT EXISTS mmr_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            provider TEXT NOT NULL,
+            platform TEXT NOT NULL,
+            identifier TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            fetched_at TEXT NOT NULL,
+            UNIQUE(provider, platform, identifier)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_mmr_cache_lookup ON mmr_cache(provider, platform, identifier);",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

@@ -1,6 +1,6 @@
-# RL Stats Companion — Implementation Guide
+# RL Stats — Implementation Guide
 
-> The primary reference for developers. Practical patterns, code examples, and operational procedures for building the RL Stats Companion desktop application.
+> The primary reference for developers. Practical patterns, code examples, and operational procedures for building the RL Stats desktop application.
 
 ---
 
@@ -117,9 +117,9 @@ Required extensions:
 
 **Logs**: The app uses `tracing` (Rust) and writes to:
 ```
-%APPDATA%\rl-stats-companion\logs\
+%APPDATA%\rl-stats\logs\
 ```
-Set `RUST_LOG=rl_stats_companion=debug` before running to see verbose output.
+Set `RUST_LOG=rl_stats=debug` before running to see verbose output.
 
 ---
 
@@ -483,7 +483,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 tracing_subscriber::registry()
     .with(
         tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| "rl_stats_companion=info,tower_http=debug".into()),
+            .unwrap_or_else(|_| "rl_stats=info,tower_http=debug".into()),
     )
     .with(tracing_subscriber::fmt::layer().with_writer(std::io::stderr))
     .init();
@@ -1082,7 +1082,7 @@ mod tests {
 **Integration test with fixtures:**
 ```rust
 // tests/parser_tests.rs
-use rl_stats_companion::core::parser::EventParser;
+use rl_stats::core::parser::EventParser;
 
 #[test]
 fn test_replay_fixture_1v1() {
@@ -1334,7 +1334,7 @@ Keep permissions minimal. Review `src-tauri/capabilities/default.json`:
 {
   "$schema": "../gen/schemas/capability-schema.json",
   "identifier": "default",
-  "description": "Minimal capabilities for RL Stats Companion",
+  "description": "Minimal capabilities for RL Stats",
   "windows": ["main"],
   "permissions": [
     "core:app:default",

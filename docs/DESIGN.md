@@ -1,4 +1,4 @@
-# RL Stats Companion — Design Document
+# RL Stats — Design Document
 
 > Following [Google Stitch Design.md Spec](https://stitch.withgoogle.com/docs/design-md/overview)
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-**Product Name**: RL Stats Companion
+**Product Name**: RL Stats
 **Type**: Desktop application (Windows)
 **Platform**: Tauri 2 (Rust backend + Web frontend)
 **Target Audience**: Rocket League players who want deep, personal analytics without relying on external services or violating privacy.

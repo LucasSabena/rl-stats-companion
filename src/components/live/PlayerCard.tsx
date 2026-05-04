@@ -1,15 +1,22 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { formatBoost, formatSpeed } from "@/lib/utils";
-import type { Player } from "@/lib/types";
+import type { LiveMmrPlayer, Player } from "@/lib/types";
 
 interface PlayerCardProps {
   player: Player;
   isCurrentUser?: boolean;
+  mmr?: LiveMmrPlayer | null;
+  mmrLoading?: boolean;
 }
 
-export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser }: PlayerCardProps) {
+export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr, mmrLoading }: PlayerCardProps) {
   const isBlue = player.team === 0;
+  const hasMmr = mmr?.mmr !== null && mmr?.mmr !== undefined;
+  const mmrLabel = hasMmr ? `MMR ${mmr?.mmr}` : null;
+  const rankLabel = mmr?.rankName
+    ? `${mmr.rankName}${mmr.division ? ` ${mmr.division}` : ""}`
+    : null;
 
   return (
     <div
@@ -40,6 +47,12 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser }: Pl
                 Tu
               </span>
             )}
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-text-tertiary">
+              {mmrLoading && !hasMmr ? <span>Buscando MMR...</span> : null}
+              {mmrLabel ? <span className="font-mono font-semibold text-text-secondary">{mmrLabel}</span> : null}
+              {rankLabel ? <span>{rankLabel}</span> : null}
+              {mmr?.cached ? <span className="uppercase tracking-wide">cache</span> : null}
+            </div>
           </div>
         </div>
         <span className="font-mono text-lg font-bold text-text-primary">{player.score}</span>

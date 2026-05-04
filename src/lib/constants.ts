@@ -1,4 +1,4 @@
-export const APP_NAME = "RL Stats Companion";
+export const APP_NAME = "RL Stats";
 export const APP_VERSION = import.meta.env.PACKAGE_VERSION ?? "0.6.0";
 
 export const MAX_EVENT_FEED_ITEMS = 100;

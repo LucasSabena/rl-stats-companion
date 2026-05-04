@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug to help us improve RL Stats Companion
+about: Report a bug to help us improve RL Stats
 title: '[BUG] '
 labels: ['bug']
 assignees: []
@@ -30,7 +30,7 @@ If applicable, add screenshots to help explain your problem.
 
 ## Logs
 <!-- If applicable, attach logs or error messages. Logs are located at:
-     %APPDATA%\com.lukit.rl-stats-companion\logs\ -->
+     %APPDATA%\com.lukit.rl-stats\logs\ -->
 ```
 Paste any relevant log output here.
 ```

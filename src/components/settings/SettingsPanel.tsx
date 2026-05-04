@@ -74,9 +74,20 @@ export function SettingsPanel() {
   const handleDetectPath = async () => {
     setIsDetecting(true);
     try {
-      const paths = await detectRlPath();
-      if (paths.length > 0) setValue("rlPath", paths[0]);
-      else addToast({ type: "warning", title: "No encontrado", message: "No se detecto Rocket League." });
+      const platform = settings?.platform ?? null;
+      const results = await detectRlPath(platform);
+      const valid = results.find((r) => r.valid) ?? results[0];
+      if (valid) {
+        setValue("rlPath", valid.path);
+        setValue("platform", valid.platform);
+        addToast({
+          type: "success",
+          title: "Instalación encontrada",
+          message: `${valid.platform === "steam" ? "Steam" : "Epic Games"}: ${valid.path}`,
+        });
+      } else {
+        addToast({ type: "warning", title: "No encontrado", message: "No se detectó Rocket League. Verificá que esté instalado." });
+      }
     } catch {
       addToast({ type: "error", title: "Error", message: "Error al detectar la ruta." });
     } finally {

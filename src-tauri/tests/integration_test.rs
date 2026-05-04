@@ -1,10 +1,10 @@
-/// Integration tests for the RL Stats Companion.
+/// Integration tests for the RL Stats.
 /// These tests cover parsing, session management, storage CRUD, and metrics.
-use rl_stats_companion_lib::core::metrics::{save_percentage, shots_to_goals_ratio};
-use rl_stats_companion_lib::core::models::{PlayerStats, RlEvent};
-use rl_stats_companion_lib::core::parser::parse_event;
-use rl_stats_companion_lib::core::session::SessionManager;
-use rl_stats_companion_lib::core::storage::{self, init_storage, DbPool};
+use rl_stats_lib::core::metrics::{save_percentage, shots_to_goals_ratio};
+use rl_stats_lib::core::models::{PlayerStats, RlEvent};
+use rl_stats_lib::core::parser::parse_event;
+use rl_stats_lib::core::session::SessionManager;
+use rl_stats_lib::core::storage::{self, init_storage, DbPool};
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -227,7 +227,7 @@ mod malformed_tests {
 
 mod session_tests {
     use super::*;
-    use rl_stats_companion_lib::core::models::{GameState, LivePlayer};
+    use rl_stats_lib::core::models::{GameState, LivePlayer};
     use std::collections::HashMap;
 
     #[test]
@@ -235,7 +235,7 @@ mod session_tests {
         let mut session = SessionManager::new();
         assert_eq!(
             session.phase(),
-            &rl_stats_companion_lib::core::session::MatchPhase::Waiting
+            &rl_stats_lib::core::session::MatchPhase::Waiting
         );
 
         replay_fixture_into_session("full_match.jsonl", &mut session);
@@ -243,7 +243,7 @@ mod session_tests {
         // After MatchEnded, phase should be Finished
         assert_eq!(
             session.phase(),
-            &rl_stats_companion_lib::core::session::MatchPhase::Finished,
+            &rl_stats_lib::core::session::MatchPhase::Finished,
             "session should be Finished after full fixture replay"
         );
     }
@@ -254,7 +254,7 @@ mod session_tests {
         replay_fixture_into_session("short_match.jsonl", &mut session);
         assert_eq!(
             session.phase(),
-            &rl_stats_companion_lib::core::session::MatchPhase::Finished
+            &rl_stats_lib::core::session::MatchPhase::Finished
         );
     }
 
@@ -395,12 +395,12 @@ mod session_tests {
         session.handle_event(RlEvent::MatchCreated);
         assert_eq!(
             session.phase(),
-            &rl_stats_companion_lib::core::session::MatchPhase::Active
+            &rl_stats_lib::core::session::MatchPhase::Active
         );
         session.handle_event(RlEvent::MatchCreated);
         assert!(
-            *session.phase() == rl_stats_companion_lib::core::session::MatchPhase::Active
-                || *session.phase() == rl_stats_companion_lib::core::session::MatchPhase::Waiting,
+            *session.phase() == rl_stats_lib::core::session::MatchPhase::Active
+                || *session.phase() == rl_stats_lib::core::session::MatchPhase::Waiting,
             "double MatchCreated should not crash"
         );
     }

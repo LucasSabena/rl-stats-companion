@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes how to create a new release of **RL Stats Companion**.
+This document describes how to create a new release of **RL Stats**.
 
 ## Prerequisites
 
@@ -108,8 +108,8 @@ Once the workflow completes:
 1. Go to **Releases** in the GitHub repository.
 2. Open the draft release for `v0.2.0`.
 3. Verify the following assets are attached:
-   - `RL Stats Companion_0.2.0_x64-setup.exe` (NSIS installer)
-   - `RL Stats Companion_0.2.0_x64_en-US.msi` (MSI installer)
+   - `RL Stats_0.2.0_x64-setup.exe` (NSIS installer)
+   - `RL Stats_0.2.0_x64_en-US.msi` (MSI installer)
    - `latest.json` (Tauri updater manifest)
    - `checksums.txt` (SHA256 hashes)
 
@@ -168,7 +168,7 @@ Before announcing the release, verify the auto-updater works:
 If the updater fails:
 - Check that `latest.json` is accessible at:
   ```
-  https://github.com/LucasSabena/rl-stats-companion/releases/latest/download/latest.json
+  https://github.com/LucasSabena/rl-stats/releases/latest/download/latest.json
   ```
 - Verify the signature in `latest.json` matches the public key in `tauri.conf.json`.
 - Check the app logs for updater errors.

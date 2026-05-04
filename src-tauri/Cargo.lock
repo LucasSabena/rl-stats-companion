@@ -3373,7 +3373,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rl-stats-companion"
+name = "rl-stats"
 version = "0.6.0"
 dependencies = [
  "axum",

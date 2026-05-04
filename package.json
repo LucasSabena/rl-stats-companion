@@ -1,5 +1,5 @@
 {
-    "name":  "rl-stats-companion",
+    "name":  "rl-stats",
     "private":  true,
     "version":  "0.6.0",
     "type":  "module",

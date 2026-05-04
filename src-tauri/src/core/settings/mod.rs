@@ -286,17 +286,16 @@ pub fn set_settings(pool: &DbPool, settings: &AppSettings) -> AppResult<()> {
     Ok(())
 }
 
-/// Attempt to write Rocket League's DefaultStatsAPI.ini to configure the Stats API port.
-/// Checks multiple known installation locations (Steam libraries, Epic, Documents).
-pub fn configure_rl_ini(port: u16) -> AppResult<()> {
-    let candidates = find_rl_ini_candidates();
+pub fn configure_rl_ini(game_root: &str, port: u16) -> AppResult<()> {
+    let root = PathBuf::from(game_root);
+    if !root.exists() {
+        return Err(AppError::ConfigError("La ruta del juego no existe.".into()));
+    }
 
-    if candidates.is_empty() {
-        return Err(AppError::ConfigError(
-            "No se encontró la instalación de Rocket League. \
-Verificá que el juego esté instalado en Steam o Epic Games."
-                .into(),
-        ));
+    let ini_path = root.join("TAGame/Config/DefaultStatsAPI.ini");
+
+    if let Some(parent) = ini_path.parent() {
+        fs::create_dir_all(parent).map_err(|e| AppError::ConfigError(e.to_string()))?;
     }
 
     let content = format!(
@@ -304,61 +303,25 @@ Verificá que el juego esté instalado en Steam o Epic Games."
         port
     );
 
-    let mut last_error = None;
-    let mut written_paths = Vec::new();
+    fs::write(&ini_path, content).map_err(|e| AppError::ConfigError(e.to_string()))?;
 
-    for path in &candidates {
-        if let Some(parent) = path.parent() {
-            if let Err(e) = fs::create_dir_all(parent) {
-                last_error = Some(format!("{}: {}", path.display(), e));
-                continue;
-            }
-        }
-        match fs::write(path, &content) {
-            Ok(()) => {
-                info!(path = %path.display(), "Wrote Rocket League Stats API INI");
-                written_paths.push(path.display().to_string());
-            }
-            Err(e) => {
-                last_error = Some(format!("{}: {}", path.display(), e));
-            }
-        }
-    }
-
-    if !written_paths.is_empty() {
-        info!(
-            count = written_paths.len(),
-            "Updated Rocket League Stats API INI files"
-        );
-        return Ok(());
-    }
-
-    Err(AppError::ConfigError(format!(
-        "No se pudo escribir el archivo de configuración en ninguna ubicación conocida. Último error: {}",
-        last_error.unwrap_or_else(|| "desconocido".into())
-    )))
+    info!(path = %ini_path.display(), "Wrote Rocket League Stats API INI");
+    Ok(())
 }
 
 /// Find all candidate paths for DefaultStatsAPI.ini across known Steam/Epic installations.
+/// This is intentionally fast: only checks known paths + Steam libraryfolders.vdf.
 fn find_rl_ini_candidates() -> Vec<PathBuf> {
     let mut candidates = Vec::new();
 
-    // 1. User profile search for any existing Rocket League config copies, including OneDrive/localized folders.
-    if let Some(user_profile) = dirs::home_dir() {
-        collect_existing_rl_ini_files(&user_profile, &mut candidates);
-    }
-
-    // 2. Documents fallback (legacy location used by some versions)
-    if let Some(docs) = dirs::document_dir() {
-        candidates.push(docs.join("My Games/Rocket League/TAGame/Config/DefaultStatsAPI.ini"));
-    }
-
-    // 3. Discover Steam library folders from libraryfolders.vdf
+    // Discover Steam library folders from libraryfolders.vdf
     let mut steam_root_candidates: Vec<PathBuf> = vec![
         PathBuf::from("C:/Program Files (x86)/Steam"),
         PathBuf::from("C:/Program Files/Steam"),
-        PathBuf::from("A:/Steam"),
-        PathBuf::from("A:/SteamLibrary"),
+        PathBuf::from("D:/Steam"),
+        PathBuf::from("D:/SteamLibrary"),
+        PathBuf::from("E:/Steam"),
+        PathBuf::from("E:/SteamLibrary"),
     ];
     if let Some(data_dir) = dirs::data_dir() {
         steam_root_candidates.push(data_dir.join("Steam"));
@@ -368,18 +331,15 @@ fn find_rl_ini_candidates() -> Vec<PathBuf> {
         let vdf = steam_root.join("steamapps/libraryfolders.vdf");
         if vdf.exists() {
             if let Ok(text) = fs::read_to_string(&vdf) {
-                // Extract quoted paths from VDF (simple heuristic)
                 for line in text.lines() {
                     let trimmed = line.trim();
-                    if trimmed.starts_with('"')
-                        && (trimmed.contains(":/") || trimmed.contains(":\\"))
-                    {
-                        // Find quoted string content
-                        if let Some(start) = trimmed.find('"') {
-                            let after = &trimmed[start + 1..];
-                            if let Some(end) = after.find('"') {
-                                let path_str = &after[..end];
-                                let path = PathBuf::from(path_str.replace("\\\\", "/"));
+                    // Match line like: "path"		"A:\\SteamLibrary"
+                    if trimmed.starts_with("\"path\"") {
+                        let parts: Vec<&str> = trimmed.split('"').collect();
+                        if parts.len() >= 4 {
+                            let path_str = parts[3];
+                            let path = PathBuf::from(path_str.replace("\\\\", "/"));
+                            if path.is_absolute() {
                                 candidates.push(path.join("steamapps/common/rocketleague/TAGame/Config/DefaultStatsAPI.ini"));
                             }
                         }
@@ -394,11 +354,14 @@ fn find_rl_ini_candidates() -> Vec<PathBuf> {
         );
     }
 
-    // 4. Epic Games common paths
+    // Epic Games common paths
     let epic_candidates = [
         "C:/Program Files/Epic Games/RocketLeague/TAGame/Config/DefaultStatsAPI.ini",
         "C:/Program Files/Epic Games/Rocket League/TAGame/Config/DefaultStatsAPI.ini",
-        "A:/Epic Games/RocketLeague/TAGame/Config/DefaultStatsAPI.ini",
+        "D:/Epic Games/RocketLeague/TAGame/Config/DefaultStatsAPI.ini",
+        "D:/Epic Games/Rocket League/TAGame/Config/DefaultStatsAPI.ini",
+        "E:/Epic Games/RocketLeague/TAGame/Config/DefaultStatsAPI.ini",
+        "E:/Epic Games/Rocket League/TAGame/Config/DefaultStatsAPI.ini",
     ];
     for path in &epic_candidates {
         candidates.push(PathBuf::from(path));
@@ -411,67 +374,15 @@ fn find_rl_ini_candidates() -> Vec<PathBuf> {
     candidates
 }
 
-fn collect_existing_rl_ini_files(root: &Path, candidates: &mut Vec<PathBuf>) {
-    let mut stack = vec![root.to_path_buf()];
-
-    while let Some(dir) = stack.pop() {
-        let entries = match fs::read_dir(&dir) {
-            Ok(entries) => entries,
-            Err(_) => continue,
-        };
-
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                let name = path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .unwrap_or_default()
-                    .to_ascii_lowercase();
-
-                if ["appdata", ".cargo", ".rustup", "node_modules"].contains(&name.as_str()) {
-                    continue;
-                }
-
-                stack.push(path);
-                continue;
-            }
-
-            let is_target = path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .map(|name| name.eq_ignore_ascii_case("DefaultStatsAPI.ini"))
-                .unwrap_or(false);
-
-            if !is_target {
-                continue;
-            }
-
-            let path_text = path.to_string_lossy().to_ascii_lowercase();
-            if path_text.contains("rocket league") || path_text.contains("rocketleague") {
-                candidates.push(path);
-            }
-        }
-    }
-}
-
-/// Extract unique Rocket League installation root paths from INI candidates.
-/// Goes up from TAGame/Config/ to find the game root directory.
-pub fn get_rl_installation_paths() -> Vec<String> {
-    let mut seen = HashSet::new();
-    let mut paths = Vec::new();
-
-    for ini_path in find_rl_ini_candidates() {
-        // Walk up to find the game root (above TAGame/Config/DefaultStatsAPI.ini)
-        if let Some(root) = extract_game_root(&ini_path) {
-            let normalized = root.to_string_lossy().to_string();
-            if seen.insert(normalized.clone()) {
-                paths.push(normalized);
-            }
-        }
-    }
-
-    paths
+/// Check if a discovered path actually looks like a valid Rocket League installation
+/// by verifying the executable exists.
+fn validate_rl_installation(game_root: &Path) -> bool {
+    // Common executable locations
+    let exe_candidates = [
+        game_root.join("RocketLeague.exe"),
+        game_root.join("Binaries/Win64/RocketLeague.exe"),
+    ];
+    exe_candidates.iter().any(|p| p.exists())
 }
 
 /// Given a path like ".../rocketleague/TAGame/Config/DefaultStatsAPI.ini",
@@ -480,17 +391,88 @@ fn extract_game_root(ini_path: &Path) -> Option<PathBuf> {
     let mut current = ini_path.to_path_buf();
 
     // Walk up 3 levels: file -> Config -> TAGame -> game root
-    // First: remove DefaultStatsAPI.ini (file)
     current = current.parent()?.to_path_buf();
-    // Second: remove Config
     current = current.parent()?.to_path_buf();
-    // Third: remove TAGame
     current = current.parent()?.to_path_buf();
 
-    // Verify this looks like a game root by checking existence
-    if current.exists() {
-        Some(current)
-    } else {
-        None
+    Some(current)
+}
+
+/// Detected installation info returned to the frontend.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RlInstallation {
+    pub path: String,
+    pub platform: String, // "steam" or "epic"
+    pub valid: bool,
+}
+
+/// Extract unique Rocket League installation root paths from INI candidates.
+/// Optionally filter by platform ("steam" or "epic").
+/// Validates that the installation looks real by checking for the executable.
+pub fn get_rl_installation_paths(platform_filter: Option<&str>) -> Vec<RlInstallation> {
+    let mut seen = HashSet::new();
+    let mut installations = Vec::new();
+
+    for ini_path in find_rl_ini_candidates() {
+        let Some(root) = extract_game_root(&ini_path) else {
+            continue;
+        };
+
+        // If the game root doesn't exist on disk, don't even return it.
+        // This stops garbage paths from cluttering the UI.
+        if !root.exists() {
+            continue;
+        }
+
+        let normalized = root.to_string_lossy().to_string().to_ascii_lowercase();
+        if !seen.insert(normalized.clone()) {
+            continue;
+        }
+
+        // Infer platform from path
+        let path_lower = root.to_string_lossy().to_ascii_lowercase();
+        let inferred_platform = if path_lower.contains("epic") {
+            "epic"
+        } else {
+            "steam"
+        };
+
+        // Apply platform filter if provided
+        if let Some(filter) = platform_filter {
+            if filter.to_ascii_lowercase() != inferred_platform {
+                continue;
+            }
+        }
+
+        let mut valid_root = root.clone();
+
+        // Si es una ruta configurada desde Documents/OneDrive, intentamos derivar
+        // donde está realmente el juego basándonos en si el ejecutable existe,
+        // pero esto normalmente falla porque los documentos no contienen el .exe.
+        // Así que usamos nuestro validador.
+        let valid = validate_rl_installation(&valid_root);
+
+        // Si la validación falla y la ruta contiene "Documents" o "OneDrive",
+        // significa que extrajimos "My Games/Rocket League" como game root, 
+        // pero el ejecutable obviamente no está ahí. En este caso no es una 
+        // instalación real del juego que podamos reportar como válida.
+        if !valid && (valid_root.to_string_lossy().contains("Documents") || valid_root.to_string_lossy().contains("OneDrive")) {
+            continue;
+        }
+
+        installations.push(RlInstallation {
+            path: valid_root.to_string_lossy().to_string().replace("\\", "/"),
+            platform: inferred_platform.to_string(),
+            valid,
+        });
     }
+
+    // Filter out completely invalid installations to clean up the UI
+    // Only return ones where the executable was found
+    installations.retain(|inst| inst.valid);
+
+    // Sort by path
+    installations.sort_by(|a, b| a.path.cmp(&b.path));
+
+    installations
 }

@@ -1,4 +1,4 @@
-# RL Stats Companion — Especificación de Componentes UI
+# RL Stats — Especificación de Componentes UI
 
 > Documento fuente de verdad para la implementación de todos los componentes de interfaz.
 > Filosofía: "Broadcast precision meets personal performance terminal."

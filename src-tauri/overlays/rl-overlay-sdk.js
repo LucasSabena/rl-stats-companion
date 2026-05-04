@@ -1,7 +1,7 @@
 /*!
  * RL Overlay SDK v1.0.0
  * Minimal JavaScript SDK for building custom OBS overlays that connect to
- * the Rocket League Stats Companion overlay server (ws://127.0.0.1:9528/ws).
+ * the RL Stats overlay server (ws://127.0.0.1:9528/ws).
  *
  * Dependency-free, vanilla JS (ES5 compatible), ~5 KB gzipped.
  *

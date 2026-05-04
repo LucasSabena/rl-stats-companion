@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    rl_stats_companion_lib::run()
+    rl_stats_lib::run()
 }

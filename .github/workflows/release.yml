@@ -68,7 +68,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: tagName,
-              name: `RL Stats Companion ${tagName}`,
+              name: `RL Stats ${tagName}`,
               body: `Windows installer for ${tagName}.`,
               draft: context.eventName === 'workflow_dispatch'
                 ? context.payload.inputs.draft === 'true'
@@ -191,7 +191,7 @@ jobs:
           $latestJsonPath = Join-Path $env:RUNNER_TEMP "latest.json"
           $latestJson = @{
             version = "${{ needs.create-release.outputs.version }}"
-            notes = "RL Stats Companion ${{ github.ref_name }}"
+            notes = "RL Stats ${{ github.ref_name }}"
             pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
             platforms = @{
               "windows-x86_64" = @{

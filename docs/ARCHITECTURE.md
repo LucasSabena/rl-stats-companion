@@ -1,4 +1,4 @@
-# RL Stats Companion — Architecture Document
+# RL Stats — Architecture Document
 
 > High-level system architecture, data flow, and technical decisions.
 
@@ -8,7 +8,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    RL Stats Companion                        │
+│                    RL Stats                        │
 │                      (Tauri Desktop App)                     │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │

@@ -69,8 +69,8 @@ fn identity_candidate_names(settings: &AppSettings) -> Vec<String> {
 }
 
 #[tauri::command]
-pub async fn configure_rl_ini_cmd(port: u16) -> Result<(), String> {
-    match configure_rl_ini(port) {
+pub async fn configure_rl_ini_cmd(path: String, port: u16) -> Result<(), String> {
+    match configure_rl_ini(&path, port) {
         Ok(()) => Ok(()),
         Err(e) => {
             error!(error = %e, "Failed to configure RL INI");

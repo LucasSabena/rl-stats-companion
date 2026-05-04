@@ -117,10 +117,11 @@ pub async fn get_overlay_urls(
 
     #[rustfmt::skip]
     let overlays: &[(&str, &str)] = &[
-        ("Scoreboard",   "scoreboard"),
-        ("Player Stats", "player-stats"),
-        ("Event Feed",   "event-feed"),
-        ("All-in-One",   "all-in-one"),
+        ("Enhanced",      "enhanced"),
+        ("Scoreboard",    "scoreboard"),
+        ("Player Stats",  "player-stats"),
+        ("Event Feed",    "event-feed"),
+        ("All-in-One",    "all-in-one"),
     ];
 
     Ok(overlays

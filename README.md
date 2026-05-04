@@ -1,10 +1,10 @@
-# RL Stats Companion
+# RL Stats
 
 > A local-first desktop companion app for Rocket League. Capture live match data, build your personal match history, and analyze your performance — no cloud, no accounts, no tracking.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows)](https://github.com/LucasSabena/rl-stats-companion)
-[![Status: Pre-Alpha](https://img.shields.io/badge/Status-Pre--Alpha-red)](https://github.com/LucasSabena/rl-stats-companion)
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows)](https://github.com/LucasSabena/rl-stats)
+[![Status: Pre-Alpha](https://img.shields.io/badge/Status-Pre--Alpha-red)](https://github.com/LucasSabena/rl-stats)
 
 <!-- TODO: add screenshots -->
 <!--
@@ -19,7 +19,7 @@
 
 After Psyonix disabled BakkesMod for online play with the EAC update, players lost their primary stats tracking tool. The new official Rocket League Stats API streams live match data locally — but there's no official app to consume it.
 
-**RL Stats Companion** fills that gap. It reads the local TCP stream from your game, parses every event, and gives you:
+**RL Stats** fills that gap. It reads the local TCP stream from your game, parses every event, and gives you:
 
 - **Live Dashboard** — Real-time player stats, scores, boost levels, and event feed during matches
 - **Match History** — Every match you play, saved locally with full detail: goals, assists, saves, demos, ball hits
@@ -116,7 +116,7 @@ The app automatically groups consecutive matches into play sessions. A session i
 
 Prebuilt Windows installers are published on every tagged GitHub release.
 
-- Go to **GitHub Releases**: `https://github.com/LucasSabena/rl-stats-companion/releases`
+- Go to **GitHub Releases**: `https://github.com/LucasSabena/rl-stats/releases`
 - Download one of the Windows x64 artifacts:
   - `*.msi` - Recommended standard Windows installer
   - `*-setup.exe` - NSIS installer
@@ -126,8 +126,8 @@ Prebuilt Windows installers are published on every tagged GitHub release.
 
 Each release is expected to ship these assets:
 
-- `RL Stats Companion_<version>_x64_en-US.msi`
-- `RL Stats Companion_<version>_x64-setup.exe`
+- `RL Stats_<version>_x64_en-US.msi`
+- `RL Stats_<version>_x64-setup.exe`
 - `latest.json` for the Tauri updater
 - `checksums.txt` with SHA256 hashes
 
@@ -137,8 +137,8 @@ The project is open source, so source code, release notes, issues, and binary do
 
 ```bash
 # Clone the repository
-git clone https://github.com/LucasSabena/rl-stats-companion.git
-cd rl-stats-companion
+git clone https://github.com/LucasSabena/rl-stats.git
+cd rl-stats
 
 # Install dependencies
 pnpm install
@@ -154,8 +154,8 @@ pnpm tauri build
 ```
 
 The output will be in `src-tauri/target/release/bundle/`:
-- `RL Stats Companion_x.x.x_x64-setup.exe` — NSIS installer
-- `RL Stats Companion_x.x.x_x64_en-US.msi` — MSI installer
+- `RL Stats_x.x.x_x64-setup.exe` — NSIS installer
+- `RL Stats_x.x.x_x64_en-US.msi` — MSI installer
 
 ---
 

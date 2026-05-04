@@ -1,4 +1,4 @@
-# RL Stats Companion — Product Requirements
+# RL Stats — Product Requirements
 
 ## Problem Statement
 
@@ -153,7 +153,7 @@ Rocket League players want to track their performance, analyze trends, and impro
 - **Tracker Network (rocketleague.tracker.network)**: Web-based, requires manual lookup, no live data
 - **RLStats.net**: Similar to Tracker, web-based
 - **Community overlays (InGameRank, etc.)**: Single-purpose, not comprehensive
-- **RL Stats Companion positioning**: Local-first, comprehensive, privacy-focused, live + historical
+- **RL Stats positioning**: Local-first, comprehensive, privacy-focused, live + historical
 
 ## Monetization
 

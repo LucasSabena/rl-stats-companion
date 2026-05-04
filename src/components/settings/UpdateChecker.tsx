@@ -76,7 +76,7 @@ export function UpdateChecker() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-text-primary">Actualizaciones</p>
-          <p className="text-xs text-text-secondary">Busca nuevas versiones de RL Stats Companion</p>
+          <p className="text-xs text-text-secondary">Busca nuevas versiones de RL Stats</p>
         </div>
         <Button
           variant="secondary"

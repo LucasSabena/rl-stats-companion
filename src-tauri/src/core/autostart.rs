@@ -4,7 +4,7 @@ use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 use tracing::{info, warn};
 
 const AUTOSTART_REG_PATH: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-const APP_NAME: &str = "RLStatsCompanion";
+const APP_NAME: &str = "RLStats";
 
 #[cfg(target_os = "windows")]
 fn get_current_exe_path() -> Option<String> {

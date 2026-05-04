@@ -1,15 +1,25 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { PlayerCard } from "./PlayerCard";
-import type { Player } from "@/lib/types";
+import type { LiveMmrPlayer, Player } from "@/lib/types";
 
 interface TeamPanelProps {
   team: "blue" | "orange";
   players: Player[];
+  mmrByPlayerId?: Record<string, LiveMmrPlayer>;
+  mmrLoading?: boolean;
 }
 
-export const TeamPanel = memo(function TeamPanel({ team, players }: TeamPanelProps) {
+export const TeamPanel = memo(function TeamPanel({ team, players, mmrByPlayerId, mmrLoading }: TeamPanelProps) {
   const isBlue = team === "blue";
+  const averageMmr = (() => {
+    const values = players
+      .map((player) => mmrByPlayerId?.[player.id]?.mmr)
+      .filter((value): value is number => typeof value === "number");
+
+    if (values.length === 0) return null;
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  })();
 
   return (
     <div
@@ -42,9 +52,23 @@ export const TeamPanel = memo(function TeamPanel({ team, players }: TeamPanelPro
         </span>
       </div>
 
+      {(averageMmr !== null || mmrLoading) && (
+        <div className="mb-3 flex items-center justify-between rounded-lg border border-border-subtle/60 bg-bg-secondary/50 px-3 py-2 text-xs text-text-tertiary">
+          <span>MMR promedio</span>
+          <span className="font-mono font-semibold text-text-secondary">
+            {averageMmr !== null ? averageMmr : "Buscando..."}
+          </span>
+        </div>
+      )}
+
       <div className="space-y-2">
         {players.map((player) => (
-          <PlayerCard key={player.id} player={player} />
+          <PlayerCard
+            key={player.id}
+            player={player}
+            mmr={mmrByPlayerId?.[player.id] ?? null}
+            mmrLoading={mmrLoading}
+          />
         ))}
       </div>
     </div>

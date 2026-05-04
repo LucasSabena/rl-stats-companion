@@ -1,304 +1,228 @@
 @import "tailwindcss";
 
 /* ============================================
-   RL Stats Companion — Design System
+   RL Stats — Design System (Native Desktop)
    Rocket League arena aesthetic: deep darks,
    neon accents, competitive energy
    ============================================ */
 
 @theme {
   /* ── Typography ── */
-  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* ── Surfaces (dark default) ── */
-  --color-bg-base: #0c0f1a;
-  --color-bg-primary: #10141f;
-  --color-bg-secondary: #161b2e;
-  --color-bg-tertiary: #1c2238;
-  --color-bg-elevated: #222842;
-  --color-surface-hover: #262d4a;
-  --color-surface-active: #2a3252;
-  --color-surface-glass: rgba(22, 27, 46, 0.85);
+  --color-bg-base: #070a13;
+  --color-bg-surface: #0d111f;
+  --color-bg-elevated: #151a2b;
+  --color-bg-panel: #1a1f33;
+  
+  --color-surface-hover: #1c2238;
+  --color-surface-active: #222a45;
+  --color-surface-glass: rgba(13, 17, 31, 0.75);
 
   /* ── Borders ── */
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border-default: rgba(255, 255, 255, 0.1);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-border-accent: rgba(59, 130, 246, 0.3);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-highlight: rgba(255, 255, 255, 0.15);
+  --color-border-accent: rgba(59, 130, 246, 0.4);
 
   /* ── Text ── */
-  --color-text-primary: #f0f2f8;
-  --color-text-secondary: #8b93af;
-  --color-text-tertiary: #5c6484;
-  --color-text-muted: #3d4463;
-  --color-text-inverse: #10141f;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #475569;
+  --color-text-inverse: #070a13;
 
   /* ── RL Accent — Electric Blue ── */
-  --color-accent-primary: #4d8eff;
-  --color-accent-primary-hover: #6ba3ff;
-  --color-accent-primary-subtle: rgba(77, 142, 255, 0.12);
-  --color-accent-primary-muted: rgba(77, 142, 255, 0.06);
+  --color-accent-primary: #3b82f6;
+  --color-accent-primary-hover: #60a5fa;
+  --color-accent-primary-subtle: rgba(59, 130, 246, 0.15);
+  --color-accent-primary-muted: rgba(59, 130, 246, 0.05);
 
   /* ── RL Accent — Turbo Orange ── */
-  --color-accent-secondary: #ff7a2f;
-  --color-accent-secondary-hover: #ff9654;
-  --color-accent-secondary-subtle: rgba(255, 122, 47, 0.12);
-
-  /* ── Semantic ── */
-  --color-accent-success: #34d399;
-  --color-accent-success-subtle: rgba(52, 211, 153, 0.12);
-  --color-accent-danger: #f87171;
-  --color-accent-danger-subtle: rgba(248, 113, 113, 0.12);
-  --color-accent-warning: #fbbf24;
-  --color-accent-warning-subtle: rgba(251, 191, 36, 0.12);
-  --color-accent-info: #38bdf8;
-  --color-accent-info-subtle: rgba(56, 189, 248, 0.12);
-  --color-accent-purple: #a78bfa;
-  --color-accent-purple-subtle: rgba(167, 139, 250, 0.12);
+  --color-accent-secondary: #f97316;
+  --color-accent-secondary-hover: #fb923c;
+  --color-accent-secondary-subtle: rgba(249, 115, 22, 0.15);
+  --color-accent-secondary-muted: rgba(249, 115, 22, 0.05);
 
   /* ── Team colors ── */
-  --color-team-blue: #4d8eff;
-  --color-team-blue-bg: rgba(77, 142, 255, 0.1);
-  --color-team-blue-glow: rgba(77, 142, 255, 0.25);
-  --color-team-orange: #ff7a2f;
-  --color-team-orange-bg: rgba(255, 122, 47, 0.1);
-  --color-team-orange-glow: rgba(255, 122, 47, 0.25);
-  --color-team-blue-dark: #2563eb;
+  --color-team-blue: #3b82f6;
+  --color-team-blue-bg: rgba(59, 130, 246, 0.12);
+  --color-team-blue-glow: rgba(59, 130, 246, 0.3);
+  --color-team-blue-dark: #1d4ed8;
+
+  --color-team-orange: #f97316;
+  --color-team-orange-bg: rgba(249, 115, 22, 0.12);
+  --color-team-orange-glow: rgba(249, 115, 22, 0.3);
   --color-team-orange-dark: #c2410c;
 
-  /* ── Boost ── */
-  --color-boost-full: #34d399;
-  --color-boost-mid: #fbbf24;
-  --color-boost-low: #f87171;
+  /* ── Semantic ── */
+  --color-accent-success: #10b981;
+  --color-accent-success-subtle: rgba(16, 185, 129, 0.15);
+  --color-accent-danger: #ef4444;
+  --color-accent-danger-subtle: rgba(239, 68, 68, 0.15);
+  --color-accent-warning: #f59e0b;
+  --color-accent-warning-subtle: rgba(245, 158, 11, 0.15);
+  --color-accent-info: #0ea5e9;
+  --color-accent-purple: #8b5cf6;
 
-  /* ── Misc ── */
-  --color-overlay: rgba(0, 0, 0, 0.65);
-  --color-scrim: rgba(0, 0, 0, 0.4);
-  --color-ring: rgba(77, 142, 255, 0.4);
+  /* ── Shadows & Depth ── */
+  --shadow-level-1: 0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-level-2: 0 8px 16px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
+  --shadow-level-3: 0 16px 32px rgba(0,0,0,0.5), 0 8px 16px rgba(0,0,0,0.4);
+  
+  --shadow-glow-blue: 0 0 24px rgba(59,130,246,0.25), 0 0 8px rgba(59,130,246,0.15);
+  --shadow-glow-orange: 0 0 24px rgba(249,115,22,0.25), 0 0 8px rgba(249,115,22,0.15);
+  
+  /* Sharp inner border effect for native desktop feel */
+  --shadow-card-inner: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  --shadow-card-inner-hover: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 
-  /* ── Shadows ── */
-  --shadow-level-1: 0 1px 3px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.15);
-  --shadow-level-2: 0 4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-  --shadow-level-3: 0 12px 24px rgba(0,0,0,0.35), 0 4px 8px rgba(0,0,0,0.25);
-  --shadow-level-4: 0 24px 48px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.3);
-  --shadow-glow-blue: 0 0 24px rgba(77,142,255,0.2), 0 0 8px rgba(77,142,255,0.1);
-  --shadow-glow-orange: 0 0 24px rgba(255,122,47,0.2), 0 0 8px rgba(255,122,47,0.1);
-  --shadow-glow-green: 0 0 20px rgba(52,211,153,0.15);
-  --shadow-inset: inset 0 1px 2px rgba(0,0,0,0.2);
+  --color-overlay: rgba(0, 0, 0, 0.75);
+  --color-ring: rgba(59, 130, 246, 0.5);
 }
 
 /* ============================================
    Light Theme Overrides
    ============================================ */
 .light {
-  --color-bg-base: #f5f6fa;
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f8f9fc;
-  --color-bg-tertiary: #eef0f6;
+  --color-bg-base: #f1f5f9;
+  --color-bg-surface: #ffffff;
   --color-bg-elevated: #ffffff;
-  --color-surface-hover: #e8eaf2;
-  --color-surface-active: #dde0ec;
-  --color-surface-glass: rgba(255, 255, 255, 0.9);
+  --color-bg-panel: #f8fafc;
+  
+  --color-surface-hover: #f1f5f9;
+  --color-surface-active: #e2e8f0;
+  --color-surface-glass: rgba(255, 255, 255, 0.85);
 
-  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-subtle: rgba(0, 0, 0, 0.05);
   --color-border-default: rgba(0, 0, 0, 0.1);
-  --color-border-strong: rgba(0, 0, 0, 0.18);
-  --color-border-accent: rgba(37, 99, 235, 0.3);
+  --color-border-highlight: rgba(0, 0, 0, 0.15);
 
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-tertiary: #9ca3af;
-  --color-text-muted: #d1d5db;
-  --color-text-inverse: #f0f2f8;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #f8fafc;
 
   --color-accent-primary: #2563eb;
   --color-accent-primary-hover: #1d4ed8;
-  --color-accent-primary-subtle: rgba(37, 99, 235, 0.08);
-  --color-accent-primary-muted: rgba(37, 99, 235, 0.04);
+  --color-accent-primary-subtle: rgba(37, 99, 235, 0.1);
 
   --color-accent-secondary: #ea580c;
   --color-accent-secondary-hover: #c2410c;
-  --color-accent-secondary-subtle: rgba(234, 88, 12, 0.08);
-
-  --color-accent-success: #059669;
-  --color-accent-success-subtle: rgba(5, 150, 105, 0.08);
-  --color-accent-danger: #dc2626;
-  --color-accent-danger-subtle: rgba(220, 38, 38, 0.08);
-  --color-accent-warning: #d97706;
-  --color-accent-warning-subtle: rgba(217, 119, 6, 0.08);
-  --color-accent-info: #0284c7;
-  --color-accent-info-subtle: rgba(2, 132, 199, 0.08);
-  --color-accent-purple: #7c3aed;
-  --color-accent-purple-subtle: rgba(124, 58, 237, 0.08);
+  --color-accent-secondary-subtle: rgba(234, 88, 12, 0.1);
 
   --color-team-blue: #2563eb;
-  --color-team-blue-bg: rgba(37, 99, 235, 0.08);
-  --color-team-blue-glow: rgba(37, 99, 235, 0.15);
   --color-team-orange: #ea580c;
-  --color-team-orange-bg: rgba(234, 88, 12, 0.08);
-  --color-team-orange-glow: rgba(234, 88, 12, 0.15);
-  --color-team-blue-dark: #1e40af;
-  --color-team-orange-dark: #9a3412;
 
-  --color-boost-full: #059669;
-  --color-boost-mid: #d97706;
-  --color-boost-low: #dc2626;
+  --shadow-level-1: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-level-2: 0 4px 6px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-level-3: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04);
 
-  --color-overlay: rgba(0, 0, 0, 0.35);
-  --color-scrim: rgba(0, 0, 0, 0.15);
-  --color-ring: rgba(37, 99, 235, 0.35);
-
-  --shadow-level-1: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-level-2: 0 4px 8px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-level-3: 0 12px 24px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06);
-  --shadow-level-4: 0 24px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.08);
-  --shadow-glow-blue: 0 0 20px rgba(37,99,235,0.12);
-  --shadow-glow-orange: 0 0 20px rgba(234,88,12,0.12);
-  --shadow-glow-green: 0 0 16px rgba(5,150,105,0.1);
-  --shadow-inset: inset 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-card-inner: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+  --shadow-card-inner-hover: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 /* ============================================
-   Base Styles
+   Base Styles & Resets
    ============================================ */
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
-
   body {
     font-family: var(--font-sans);
     background-color: var(--color-bg-base);
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.011em;
-    line-height: 1.5;
+    letter-spacing: -0.01em;
   }
 
-  ::selection {
-    background-color: var(--color-accent-primary-subtle);
-    color: var(--color-text-primary);
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    font-weight: 600;
   }
 
+  /* Custom scrollbar for desktop app */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
     background: var(--color-border-default);
-    border-radius: 3px;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-border-strong);
-  }
-  ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
-  }
-
-  h1, h2, h3 {
-    font-family: var(--font-display);
-    letter-spacing: -0.025em;
+    background: var(--color-border-highlight);
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 }
 
 /* ============================================
-   Utility Classes
+   Utilities
    ============================================ */
 @layer utilities {
-  .text-gradient {
-    background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-info));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .text-gradient-rl {
-    background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .glow-blue { box-shadow: var(--shadow-glow-blue); }
-  .glow-orange { box-shadow: var(--shadow-glow-orange); }
-  .glow-green { box-shadow: var(--shadow-glow-green); }
-
   .surface-glass {
     background: var(--color-surface-glass);
-    backdrop-filter: blur(12px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  }
+
+  /* Typography utilities */
+  .text-gradient {
+    background: linear-gradient(to right bottom, var(--color-text-primary), var(--color-text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .text-gradient-orange {
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }
 
 /* ============================================
-   Animations
+   Animations & Transitions
    ============================================ */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.animate-fade-in { animation: fade-in 0.3s ease-out; }
-.animate-slide-up { animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-.animate-slide-down { animation: slide-down 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-.animate-slide-in-right { animation: slide-in-right 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
-.animate-scale-in { animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-.animate-float { animation: float 3s ease-in-out infinite; }
-.animate-gradient { background-size: 200% 200%; animation: gradient-shift 3s ease infinite; }
-
-.animate-shimmer {
-  background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-bg-elevated) 50%, var(--color-bg-tertiary) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+@keyframes spring-in {
+  0% { opacity: 0; transform: scale(0.9); }
+  70% { transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-/* Overlay mode */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.animate-slide-in-up { animation: slide-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-spring-in { animation: spring-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.animate-pulse-subtle { animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Overlay mode support */
 .overlay-mode {
   background: transparent !important;
-  border-radius: 0 !important;
   user-select: none;
-  pointer-events: none;
 }
-body.overlay-body,
-body.overlay-body #root {
+body.overlay-body {
   background: transparent !important;
 }

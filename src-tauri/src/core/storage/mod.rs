@@ -1425,6 +1425,47 @@ pub fn get_tracker_cache(
     Ok(result)
 }
 
+pub fn upsert_mmr_cache(
+    pool: &DbPool,
+    provider: &str,
+    platform: &str,
+    identifier: &str,
+    payload_json: &str,
+    fetched_at: &str,
+) -> AppResult<()> {
+    let conn = get_conn(pool)?;
+    conn.execute(
+        "INSERT INTO mmr_cache (provider, platform, identifier, payload_json, fetched_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(provider, platform, identifier) DO UPDATE SET
+         payload_json = excluded.payload_json,
+         fetched_at = excluded.fetched_at",
+        params![provider, platform, identifier, payload_json, fetched_at],
+    )
+    .map_err(|e| AppError::StorageError(e.to_string()))?;
+    debug!(provider, platform, identifier, "MMR cache updated");
+    Ok(())
+}
+
+pub fn get_mmr_cache(
+    pool: &DbPool,
+    provider: &str,
+    platform: &str,
+    identifier: &str,
+) -> AppResult<Option<(String, String)>> {
+    let conn = get_conn(pool)?;
+    let result = conn
+        .query_row(
+            "SELECT payload_json, fetched_at FROM mmr_cache
+             WHERE provider = ?1 AND platform = ?2 AND identifier = ?3",
+            params![provider, platform, identifier],
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+        )
+        .optional()
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
+    Ok(result)
+}
+
 // ─── Insights ──────────────────────────────────────────────────────────────
 
 pub fn get_insights(
