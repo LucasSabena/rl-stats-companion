@@ -31,7 +31,7 @@ import {
 import type { OverlayWindowState, OverlayConfigForm, OverlayPositionPreset } from "@/lib/types";
 
 const inputClass = cn(
-  "rounded-lg border bg-bg-secondary px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors",
+  "rounded-lg border bg-bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors",
   "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)]",
   "w-full"
 );
@@ -198,14 +198,14 @@ export function OverlayConfig() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-border-subtle bg-bg-tertiary p-4 text-sm text-text-muted">
+      <div className="rounded-lg border border-border-subtle bg-bg-panel p-4 text-sm text-text-muted">
         Cargando configuracion...
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="rounded-lg border border-border-subtle bg-bg-tertiary p-4 space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="rounded-lg border border-border-subtle bg-bg-panel p-4 space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {watched.enabled ? (
@@ -220,7 +220,7 @@ export function OverlayConfig() {
           onClick={handleToggleEnabled}
           className={cn(
             "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-            watched.enabled ? "bg-accent-secondary" : "bg-border-strong"
+            watched.enabled ? "bg-accent-secondary" : "bg-border-highlight"
           )}
         >
           <span
@@ -305,7 +305,7 @@ export function OverlayConfig() {
               max={100}
               value={Math.round(watched.opacity * 100)}
               onChange={(e) => setValue("opacity", Number(e.target.value) / 100)}
-              className="w-full h-1.5 bg-border-strong rounded-lg appearance-none cursor-pointer accent-accent-primary"
+              className="w-full h-1.5 bg-border-highlight rounded-lg appearance-none cursor-pointer accent-accent-primary"
             />
           </div>
 
@@ -339,31 +339,31 @@ export function OverlayConfig() {
               <span className="text-xs font-medium text-text-secondary">Datos visibles</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showScore")} />
                 <span className="text-xs text-text-secondary">Marcador</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showTimer")} />
                 <span className="text-xs text-text-secondary">Tiempo & Arena</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showPlayers")} />
                 <span className="text-xs text-text-secondary">Jugadores</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showStats")} />
                 <span className="text-xs text-text-secondary">Estadisticas (G/A/S)</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showNames")} />
                 <span className="text-xs text-text-secondary">Nombres</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showPlayerScore")} />
                 <span className="text-xs text-text-secondary">Puntos</span>
               </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
+              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
                 <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showBoost")} />
                 <span className="text-xs text-text-secondary">Boost</span>
               </label>

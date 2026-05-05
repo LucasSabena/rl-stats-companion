@@ -72,7 +72,7 @@ export function UpdateChecker() {
     : "Buscar";
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4">
+    <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-text-primary">Actualizaciones</p>

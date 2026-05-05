@@ -16,7 +16,7 @@ export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
   const team1Goals = goals.filter((g) => g.scorerTeam === 1);
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-bg-secondary p-5 shadow-level-1">
+    <div className="rounded-xl border border-border-subtle bg-bg-surface p-5 shadow-level-1">
       <div className="flex items-center gap-3 mb-5">
         <div className="flex items-center gap-1.5">
           <Goal size={18} className="text-yellow-400" />

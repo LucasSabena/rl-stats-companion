@@ -42,6 +42,7 @@ pub struct PlayerStats {
     pub demos: i32,
     pub speed: f64,
     pub boost: i32,
+    pub mmr: Option<i32>,
 }
 
 /// Live player data as received from UpdateState events.

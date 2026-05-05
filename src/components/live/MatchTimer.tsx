@@ -20,7 +20,7 @@ export const MatchTimer = memo(function MatchTimer({ timeRemaining, isOvertime }
           "rounded-xl border px-4 py-2 font-mono text-xl font-bold tracking-wider",
           isOvertime
             ? "border-accent-warning/30 bg-accent-warning-subtle text-accent-warning"
-            : "border-border-subtle bg-bg-secondary text-text-primary"
+            : "border-border-subtle bg-bg-surface text-text-primary"
         )}
       >
         {isOvertime ? `+${formatDuration(timeRemaining)}` : formatDuration(timeRemaining)}

@@ -160,6 +160,23 @@ pub static MIGRATIONS: &[Migration] = &[
 
         CREATE INDEX IF NOT EXISTS idx_mmr_cache_lookup ON mmr_cache(provider, platform, identifier);",
     },
+    Migration {
+        version: 13,
+        name: "add_mmr_to_match_players",
+        sql: "ALTER TABLE match_players ADD COLUMN mmr INTEGER;",
+    },
+    Migration {
+        version: 14,
+        name: "create_rlstats_cache_table",
+        sql: "CREATE TABLE IF NOT EXISTS rlstats_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            platform TEXT NOT NULL,
+            username TEXT NOT NULL,
+            profile_json TEXT NOT NULL,
+            fetched_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(platform, username)
+        );",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

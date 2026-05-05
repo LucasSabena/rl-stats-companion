@@ -14,7 +14,7 @@ export default function Step3({ onNext, onBack }: StepProps) {
       <h2 className="font-display text-2xl font-bold text-text-primary mb-10">Que ofrece RL Stats?</h2>
       <div className="grid grid-cols-1 gap-4 max-w-md mx-auto mb-12">
         {features.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="flex items-start gap-4 text-left p-4 rounded-xl bg-bg-tertiary border border-border-subtle">
+          <div key={title} className="flex items-start gap-4 text-left p-4 rounded-xl bg-bg-panel border border-border-subtle">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary-subtle">
               <Icon className="h-5 w-5 text-accent-primary" />
             </div>

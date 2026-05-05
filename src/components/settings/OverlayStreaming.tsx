@@ -30,7 +30,7 @@ const POLL_INTERVAL_MS = 3000;
 const COPY_FEEDBACK_MS = 2000;
 
 const inputClass = cn(
-  "rounded-md border bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
+  "rounded-md border bg-bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
   "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
 );
 
@@ -207,7 +207,7 @@ export function OverlayStreaming() {
   // -----------------------------------------------------------------------
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-tertiary p-4">
+    <div className="rounded-lg border border-border-subtle bg-bg-panel p-4">
       {/* ---- Header ---- */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
@@ -304,7 +304,7 @@ export function OverlayStreaming() {
                   return (
                     <div
                       key={item.url}
-                      className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-3 py-2"
+                      className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-3 py-2"
                     >
                       <span className="flex-1 min-w-0 text-xs font-medium text-text-secondary truncate">
                         {item.name}
@@ -341,7 +341,7 @@ export function OverlayStreaming() {
       )}
 
       {/* ---- Info box: how to use with OBS ---- */}
-      <div className="mt-4 rounded-md bg-bg-secondary p-3 text-xs text-text-secondary">
+      <div className="mt-4 rounded-md bg-bg-surface p-3 text-xs text-text-secondary">
         <div className="flex items-center gap-1.5 mb-1">
           <ExternalLink size={12} className="text-accent-info shrink-0" />
           <p className="font-medium text-accent-info">Como usar con OBS Studio:</p>

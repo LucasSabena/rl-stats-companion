@@ -10,8 +10,6 @@ import { TrackerSetup } from "@/components/settings/TrackerSetup";
 export function SettingsPage() {
   return (
     <PageContainer>
-      <h2 className="text-2xl font-bold text-text-primary">Ajustes</h2>
-
       <div className="space-y-8">
         <section>
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-tertiary">Streaming OBS</h3>

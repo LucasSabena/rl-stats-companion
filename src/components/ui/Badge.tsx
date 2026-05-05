@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type BadgeVariant = "live" | "win" | "loss" | "overtime" | "ranked" | "default" | "info" | "accent";
+export type BadgeVariant = "live" | "win" | "loss" | "overtime" | "ranked" | "default" | "info" | "accent" | "success" | "danger";
 
 interface BadgeProps {
   variant?: BadgeVariant;
@@ -19,6 +19,8 @@ export function Badge({ variant = "default", children, className, glow = false }
     default: "bg-bg-elevated text-text-secondary border border-border-default shadow-[var(--shadow-card-inner)]",
     info: "bg-accent-info-subtle text-accent-info border border-accent-info/20",
     accent: "bg-accent-primary-subtle text-accent-primary border border-accent-primary/20",
+    success: "bg-accent-success-subtle text-accent-success border border-accent-success/20",
+    danger: "bg-accent-danger-subtle text-accent-danger border border-accent-danger/20",
   };
 
   return (

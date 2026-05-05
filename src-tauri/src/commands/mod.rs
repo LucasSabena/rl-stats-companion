@@ -5,6 +5,8 @@ pub mod live;
 pub mod mmr;
 pub mod overlay;
 pub mod overlay_window;
+pub mod players;
+pub mod rlstats;
 pub mod settings;
 pub mod tracker;
 pub mod window;

@@ -25,6 +25,8 @@ import {
   type TrackerProfile,
   type LiveMmrSnapshot,
   type RlInstallation,
+  type PlayerDirectoryEntry,
+  type PlayerDetailRecord,
 } from "./types";
 import { formatLocalDateFromUnix } from "./utils";
 
@@ -343,6 +345,10 @@ function periodToDays(period: AnalyticsPeriod): number {
       return 7;
     case "month":
       return 30;
+    case "year":
+      return 365;
+    case "alltime":
+      return 36500;
     case "session":
       return 0;
   }
@@ -705,6 +711,52 @@ export async function refreshTrackerProfile(): Promise<TrackerProfile> {
   return invokeCommand<TrackerProfile>("refresh_tracker_profile");
 }
 
-export async function fetchLiveMmrSnapshot(): Promise<LiveMmrSnapshot> {
-  return invokeCommand<LiveMmrSnapshot>("fetch_live_mmr_snapshot");
+export async function fetchLiveMmrSnapshot(forceRefresh?: boolean): Promise<LiveMmrSnapshot> {
+  return invokeCommand<LiveMmrSnapshot>("fetch_live_mmr_snapshot", { forceRefresh: forceRefresh ?? false });
+}
+
+export async function setSessionMmrSnapshot(mmrByPrimaryId: Record<string, number | null>): Promise<void> {
+  return invokeCommand<void>("set_session_mmr_snapshot", { mmrByPrimaryId });
+}
+
+// ─── RLStats Profile ─────────────────────────────────────────────────────────
+
+export async function fetchRlstatsProfile(): Promise<TrackerProfile> {
+  return invokeCommand<TrackerProfile>("fetch_rlstats_profile");
+}
+
+export async function getCachedRlstatsProfile(): Promise<TrackerProfile | null> {
+  return invokeCommand<TrackerProfile | null>("get_cached_rlstats_profile");
+}
+
+export async function refreshRlstatsProfile(): Promise<TrackerProfile> {
+  return invokeCommand<TrackerProfile>("refresh_rlstats_profile");
+}
+
+// ─── Player Directory ─────────────────────────────────────────────────────────
+
+export async function getPlayerDirectory(filters?: {
+  search?: string;
+  relationship?: string;
+  sortBy?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<PlayerDirectoryEntry[]> {
+  const response = await invokeCommand<{ players: PlayerDirectoryEntry[] }>(
+    "get_player_directory",
+    {
+      filters: {
+        search: filters?.search ?? undefined,
+        relationship: filters?.relationship ?? undefined,
+        sort_by: filters?.sortBy ?? undefined,
+        limit: filters?.limit ?? 100,
+        offset: filters?.offset ?? 0,
+      },
+    }
+  );
+  return response.players;
+}
+
+export async function getPlayerDetail(playerId: number): Promise<PlayerDetailRecord | null> {
+  return invokeCommand<PlayerDetailRecord>("get_player_detail", { playerId });
 }

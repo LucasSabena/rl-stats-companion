@@ -25,6 +25,7 @@ export interface PlayerStats extends Player {
   maxSpeed?: number;
   avgSpeed?: number;
   timeInAir?: number;
+  mmr?: number | null;
 }
 
 export interface GameState {
@@ -72,10 +73,15 @@ export type RlEventType =
   | "StatfeedEvent"
   | "MatchCreated"
   | "MatchEnded"
-  | "ReplayStart"
-  | "ReplayEnd"
+  | "GoalReplayStart"
+  | "GoalReplayEnd"
   | "PlayerJoined"
-  | "PlayerLeft";
+  | "PlayerLeft"
+  | "CountdownBegin"
+  | "MatchPaused"
+  | "MatchUnpaused"
+  | "ClockUpdatedSeconds"
+  | "RoundStarted";
 
 export interface RlEvent {
   id: string;
@@ -129,7 +135,7 @@ export interface MatchFilters {
   offset?: number;
 }
 
-export type AnalyticsPeriod = "day" | "week" | "month" | "session";
+export type AnalyticsPeriod = "day" | "week" | "month" | "session" | "year" | "alltime";
 
 export interface AnalyticsData {
   period: AnalyticsPeriod;
@@ -454,6 +460,8 @@ export interface LiveMmrPlayer {
 
 export interface LiveMmrSnapshot {
   playlist: string | null;
+  playlistCandidates: string[];
+  playlistConfidence: string;
   fetchedAt: string;
   players: LiveMmrPlayer[];
 }
@@ -462,4 +470,63 @@ export interface RlInstallation {
   path: string;
   platform: "steam" | "epic";
   valid: boolean;
+}
+
+// ─── Player Directory ────────────────────────────────────────────────────────
+
+export interface PlayerDirectoryEntry {
+  player_id: number;
+  primary_id: string;
+  name: string;
+  total_matches: number;
+  matches_as_teammate: number;
+  matches_as_opponent: number;
+  first_seen: string;
+  last_seen: string;
+  wins_together: number;
+  losses_together: number;
+  wins_against: number;
+  losses_against: number;
+  avg_score_teammate: number;
+  avg_goals_teammate: number;
+  avg_assists_teammate: number;
+}
+
+export interface PlayerDetailRecord {
+  player_id: number;
+  primary_id: string;
+  name: string;
+  total_matches: number;
+  matches_as_teammate: number;
+  matches_as_opponent: number;
+  first_seen: string;
+  last_seen: string;
+  wins_together: number;
+  losses_together: number;
+  wins_against: number;
+  losses_against: number;
+  total_goals_together: number;
+  total_assists_together: number;
+  total_saves_together: number;
+  total_shots_together: number;
+  total_goals_against: number;
+  total_assists_against: number;
+  total_saves_against: number;
+  total_shots_against: number;
+  recent_matches: PlayerMatchEntry[];
+}
+
+export interface PlayerMatchEntry {
+  match_id: number;
+  match_guid: string;
+  start_time: string;
+  arena: string | null;
+  playlist: string | null;
+  relationship: "teammate" | "opponent";
+  goals: number;
+  assists: number;
+  saves: number;
+  shots: number;
+  score: number;
+  demos: number;
 }

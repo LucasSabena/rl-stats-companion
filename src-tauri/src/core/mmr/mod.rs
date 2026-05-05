@@ -1,0 +1,984 @@
+use crate::core::models::LivePlayer;
+use crate::core::storage::{get_mmr_cache, upsert_mmr_cache, DbPool};
+use crate::core::tracker_api::{PlaylistStats as TrackerPlaylistStats, TrackerClient, TrackerProfile};
+use crate::error::{AppError, AppResult};
+use chrono::{DateTime, NaiveDateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use tokio::task::JoinSet;
+use tracing::warn;
+
+const TRACKER_PROVIDER: &str = "tracker";
+const RLSTATS_PROVIDER: &str = "rlstats";
+const TRACKER_CACHE_TTL_MINUTES: i64 = 15;
+const RLSTATS_CACHE_TTL_MINUTES: i64 = 30;
+const RLSTATS_BASE: &str = "https://rlstats.net";
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveMmrSnapshot {
+    pub playlist: Option<String>,
+    pub playlist_candidates: Vec<String>,
+    pub playlist_confidence: String,
+    pub fetched_at: String,
+    pub players: Vec<LivePlayerMmr>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LivePlayerMmr {
+    pub primary_id: String,
+    pub player_name: String,
+    pub platform: String,
+    pub identifier: String,
+    pub playlist: Option<String>,
+    pub mmr: Option<i32>,
+    pub rank_name: Option<String>,
+    pub division: Option<String>,
+    pub matches_played: Option<i64>,
+    pub source: Option<String>,
+    pub cached: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct CachedMmrProfile {
+    provider: String,
+    platform: String,
+    identifier: String,
+    fetched_at: String,
+    playlists: HashMap<String, CachedPlaylistMmr>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+struct CachedPlaylistMmr {
+    mmr: Option<i32>,
+    rank_name: Option<String>,
+    division: Option<String>,
+    matches_played: Option<i64>,
+}
+
+#[derive(Clone, Debug)]
+struct ProviderIdentity {
+    source_primary_id: String,
+    player_name: String,
+    tracker_platform: String,
+    rlstats_platform: String,
+    identifier: String,
+}
+
+#[derive(Clone, Debug)]
+struct PlaylistInference {
+    primary: Option<String>,
+    candidates: Vec<String>,
+    confidence: &'static str,
+}
+
+pub async fn resolve_lobby_mmr(
+    db_pool: std::sync::Arc<DbPool>,
+    tracker_api_key: Option<String>,
+    players: Vec<LivePlayer>,
+) -> AppResult<LiveMmrSnapshot> {
+    let inference = infer_playlist(players.iter());
+    let fetched_at = Utc::now().to_rfc3339();
+
+    let mut join_set = JoinSet::new();
+    for player in players {
+        let db_pool = std::sync::Arc::clone(&db_pool);
+        let tracker_api_key = tracker_api_key.clone();
+        let inference = inference.clone();
+
+        join_set.spawn(async move {
+            resolve_player_mmr(db_pool, tracker_api_key, player, inference).await
+        });
+    }
+
+    let mut resolved = Vec::new();
+    while let Some(result) = join_set.join_next().await {
+        match result {
+            Ok(player) => resolved.push(player),
+            Err(error) => {
+                warn!(%error, "MMR lookup task failed");
+            }
+        }
+    }
+
+    resolved.sort_by(|left, right| {
+        left.platform
+            .cmp(&right.platform)
+            .then_with(|| left.player_name.cmp(&right.player_name))
+    });
+
+    Ok(LiveMmrSnapshot {
+        playlist: inference.primary,
+        playlist_candidates: inference.candidates,
+        playlist_confidence: inference.confidence.into(),
+        fetched_at,
+        players: resolved,
+    })
+}
+
+async fn resolve_player_mmr(
+    db_pool: std::sync::Arc<DbPool>,
+    tracker_api_key: Option<String>,
+    player: LivePlayer,
+    inference: PlaylistInference,
+) -> LivePlayerMmr {
+    let identity = match parse_primary_id(&player.id, &player.name) {
+        Ok(identity) => identity,
+        Err(error) => {
+            return LivePlayerMmr {
+                primary_id: player.id,
+                player_name: player.name,
+                platform: "unknown".into(),
+                identifier: String::new(),
+                playlist: inference.primary,
+                mmr: None,
+                rank_name: None,
+                division: None,
+                matches_played: None,
+                source: None,
+                cached: false,
+                error: Some(error.to_string()),
+            };
+        }
+    };
+
+    if let Some(ref resolved_playlist) = inference.primary {
+        for playlist_key in &inference.candidates {
+            if let Ok(entry) = resolve_with_tracker(
+                &db_pool,
+                tracker_api_key.clone(),
+                &identity,
+                playlist_key,
+            )
+            .await
+            {
+                return build_player_result(
+                    identity,
+                    Some(playlist_key.clone()),
+                    entry,
+                    maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
+                );
+            }
+
+            if let Ok(entry) = resolve_with_rlstats(&db_pool, &identity, playlist_key).await {
+                return build_player_result(
+                    identity,
+                    Some(playlist_key.clone()),
+                    entry,
+                    maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
+                );
+            }
+        }
+
+        return LivePlayerMmr {
+            primary_id: identity.source_primary_id,
+            player_name: identity.player_name,
+            platform: identity.tracker_platform,
+            identifier: identity.identifier,
+            playlist: Some(resolved_playlist.clone()),
+            mmr: None,
+            rank_name: None,
+            division: None,
+            matches_played: None,
+            source: None,
+            cached: false,
+            error: Some(if inference.confidence == "low" {
+                format!(
+                    "No se pudo resolver MMR. La playlist actual es ambigua en la Stats API; candidatos: {}.",
+                    inference.candidates.join(", ")
+                )
+            } else {
+                "No se pudo resolver MMR para este jugador con los proveedores disponibles.".into()
+            }),
+        };
+    }
+
+    LivePlayerMmr {
+        primary_id: identity.source_primary_id,
+        player_name: identity.player_name,
+        platform: identity.tracker_platform,
+        identifier: identity.identifier,
+        playlist: inference.primary,
+        mmr: None,
+        rank_name: None,
+        division: None,
+        matches_played: None,
+        source: None,
+        cached: false,
+        error: Some(
+            "No pudimos inferir la playlist actual con suficiente confianza desde la Stats API.".into(),
+        ),
+    }
+}
+
+fn build_player_result(
+    identity: ProviderIdentity,
+    playlist: Option<String>,
+    entry: ResolvedMmrEntry,
+    error: Option<String>,
+) -> LivePlayerMmr {
+    LivePlayerMmr {
+        primary_id: identity.source_primary_id,
+        player_name: identity.player_name,
+        platform: identity.tracker_platform,
+        identifier: identity.identifier,
+        playlist,
+        mmr: entry.mmr,
+        rank_name: entry.rank_name,
+        division: entry.division,
+        matches_played: entry.matches_played,
+        source: Some(entry.source),
+        cached: entry.cached,
+        error,
+    }
+}
+
+fn maybe_confidence_warning(
+    inference: &PlaylistInference,
+    resolved_playlist: &str,
+    selected_playlist: &str,
+) -> Option<String> {
+    if inference.confidence == "low" && resolved_playlist != selected_playlist {
+        return Some(format!(
+            "La playlist del lobby es una estimacion. Se uso '{}' porque la fuente primaria sugerida ('{}') no resolvio datos.",
+            selected_playlist, resolved_playlist
+        ));
+    }
+
+    if inference.confidence == "low" {
+        return Some(format!(
+            "La playlist del lobby es una estimacion basada en el tamano del match. Candidatos: {}.",
+            inference.candidates.join(", ")
+        ));
+    }
+
+    None
+}
+
+#[derive(Clone, Debug)]
+struct ResolvedMmrEntry {
+    source: String,
+    cached: bool,
+    mmr: Option<i32>,
+    rank_name: Option<String>,
+    division: Option<String>,
+    matches_played: Option<i64>,
+}
+
+async fn resolve_with_tracker(
+    db_pool: &DbPool,
+    tracker_api_key: Option<String>,
+    identity: &ProviderIdentity,
+    playlist_key: &str,
+) -> AppResult<ResolvedMmrEntry> {
+    if let Some(cached) = read_cached_profile(
+        db_pool,
+        TRACKER_PROVIDER,
+        &identity.tracker_platform,
+        &identity.identifier,
+        TRACKER_CACHE_TTL_MINUTES,
+    )? {
+        if let Some(entry) = cached.playlists.get(playlist_key) {
+            return Ok(ResolvedMmrEntry {
+                source: TRACKER_PROVIDER.into(),
+                cached: true,
+                mmr: entry.mmr,
+                rank_name: entry.rank_name.clone(),
+                division: entry.division.clone(),
+                matches_played: entry.matches_played,
+            });
+        }
+    }
+
+    let api_key = tracker_api_key.ok_or_else(|| {
+        AppError::ConfigError("Tracker Network no esta configurado para este dispositivo.".into())
+    })?;
+
+    let client = TrackerClient::new(Some(api_key))?;
+    let profile = client
+        .fetch_profile(&identity.tracker_platform, &identity.identifier)
+        .await?;
+
+    let cached_profile = map_tracker_profile(
+        &profile,
+        &identity.tracker_platform,
+        &identity.identifier,
+    );
+    store_cached_profile(db_pool, &cached_profile)?;
+
+    let entry = cached_profile
+        .playlists
+        .get(playlist_key)
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(ResolvedMmrEntry {
+        source: TRACKER_PROVIDER.into(),
+        cached: false,
+        mmr: entry.mmr,
+        rank_name: entry.rank_name,
+        division: entry.division,
+        matches_played: entry.matches_played,
+    })
+}
+
+async fn resolve_with_rlstats(
+    db_pool: &DbPool,
+    identity: &ProviderIdentity,
+    playlist_key: &str,
+) -> AppResult<ResolvedMmrEntry> {
+    if let Some(cached) = read_cached_profile(
+        db_pool,
+        RLSTATS_PROVIDER,
+        &identity.tracker_platform,
+        &identity.identifier,
+        RLSTATS_CACHE_TTL_MINUTES,
+    )? {
+        if let Some(entry) = cached.playlists.get(playlist_key) {
+            return Ok(ResolvedMmrEntry {
+                source: RLSTATS_PROVIDER.into(),
+                cached: true,
+                mmr: entry.mmr,
+                rank_name: entry.rank_name.clone(),
+                division: entry.division.clone(),
+                matches_played: entry.matches_played,
+            });
+        }
+    }
+
+    let client = reqwest::Client::builder()
+        .user_agent(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+        )
+        .timeout(std::time::Duration::from_secs(12))
+        .build()?;
+
+    let url = format!(
+        "{}/profile/{}/{}",
+        RLSTATS_BASE, identity.rlstats_platform, identity.identifier
+    );
+    let response = client.get(url).send().await?;
+    let status = response.status();
+    let body = response.text().await.unwrap_or_default();
+
+    if !status.is_success() {
+        return Err(AppError::ConnectionError(format!(
+            "RLStats devolvio HTTP {}",
+            status.as_u16()
+        )));
+    }
+
+    let cached_profile = parse_rlstats_profile(
+        &body,
+        &identity.tracker_platform,
+        &identity.identifier,
+    )?;
+    store_cached_profile(db_pool, &cached_profile)?;
+
+    let entry = cached_profile
+        .playlists
+        .get(playlist_key)
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(ResolvedMmrEntry {
+        source: RLSTATS_PROVIDER.into(),
+        cached: false,
+        mmr: entry.mmr,
+        rank_name: entry.rank_name,
+        division: entry.division,
+        matches_played: entry.matches_played,
+    })
+}
+
+fn map_tracker_profile(
+    profile: &TrackerProfile,
+    platform: &str,
+    identifier: &str,
+) -> CachedMmrProfile {
+    let mut playlists = HashMap::new();
+    insert_tracker_playlist(&mut playlists, "duel", profile.stats.ranked.duel.as_ref());
+    insert_tracker_playlist(&mut playlists, "doubles", profile.stats.ranked.double.as_ref());
+    insert_tracker_playlist(&mut playlists, "standard", profile.stats.ranked.standard.as_ref());
+    insert_tracker_playlist(&mut playlists, "hoops", profile.stats.extra.hoops.as_ref());
+    insert_tracker_playlist(&mut playlists, "rumble", profile.stats.extra.rumble.as_ref());
+    insert_tracker_playlist(&mut playlists, "dropshot", profile.stats.extra.dropshot.as_ref());
+    insert_tracker_playlist(&mut playlists, "snowday", profile.stats.extra.snowday.as_ref());
+    insert_tracker_playlist(&mut playlists, "casual", profile.stats.unranked.as_ref());
+
+    CachedMmrProfile {
+        provider: TRACKER_PROVIDER.into(),
+        platform: platform.into(),
+        identifier: identifier.into(),
+        fetched_at: Utc::now().to_rfc3339(),
+        playlists,
+    }
+}
+
+fn insert_tracker_playlist(
+    target: &mut HashMap<String, CachedPlaylistMmr>,
+    key: &str,
+    playlist: Option<&TrackerPlaylistStats>,
+) {
+    if let Some(playlist) = playlist {
+        target.insert(
+            key.into(),
+            CachedPlaylistMmr {
+                mmr: playlist.mmr.and_then(|value| i32::try_from(value).ok()),
+                rank_name: playlist.rank.as_ref().map(|rank| rank.tier.name.clone()),
+                division: playlist.rank.as_ref().map(|rank| rank.division.name.clone()),
+                matches_played: playlist.matches_played,
+            },
+        );
+    }
+}
+
+fn parse_rlstats_profile(
+    html: &str,
+    platform: &str,
+    identifier: &str,
+) -> AppResult<CachedMmrProfile> {
+    let columns = extract_rlstats_columns(html)?;
+    let first_row = extract_rlstats_first_row(html)?;
+    let values = split_csv_like(&first_row);
+
+    if values.len() < columns.len() + 1 {
+        return Err(AppError::ParseError(
+            "RLStats no devolvio suficientes valores para construir el perfil MMR.".into(),
+        ));
+    }
+
+    let table_rank_info = extract_rlstats_table_rank_info(html);
+
+    let mut playlists = HashMap::new();
+    for (column, token) in columns.into_iter().zip(values.into_iter().skip(1)) {
+        let token = token.trim().trim_matches('~');
+        let mmr = if token.is_empty() {
+            None
+        } else {
+            token.parse::<i32>().ok()
+        };
+
+        let (rank_name, division, mp) = table_rank_info
+            .get(column.as_str())
+            .cloned()
+            .unwrap_or((None, None, None));
+
+        playlists.insert(
+            column,
+            CachedPlaylistMmr {
+                mmr,
+                rank_name,
+                division,
+                matches_played: mp.map(|v| v as i64),
+            },
+        );
+    }
+
+    Ok(CachedMmrProfile {
+        provider: RLSTATS_PROVIDER.into(),
+        platform: platform.into(),
+        identifier: identifier.into(),
+        fetched_at: Utc::now().to_rfc3339(),
+        playlists,
+    })
+}
+
+fn extract_rlstats_table_rank_info(
+    html: &str,
+) -> HashMap<String, (Option<String>, Option<String>, Option<i32>)> {
+    let skills_start = match html.find("id=\"skills\"") {
+        Some(pos) => pos,
+        None => return HashMap::new(),
+    };
+
+    let history_start = html[skills_start..]
+        .find("id=\"history\"")
+        .map(|p| skills_start + p)
+        .unwrap_or(html.len());
+
+    let section = &html[skills_start..history_start];
+    let mut result = HashMap::new();
+
+    let mut rem = section;
+    let mut table_count = 0;
+    while let Some(table_start) = rem.find("<table") {
+        let after = &rem[table_start..];
+        let table_end = after.find("</table>").map(|p| table_start + p + 8).unwrap_or(rem.len());
+        let table_html = &rem[table_start..table_end];
+
+        if !table_html.contains("unranked-block") && !table_html.contains("Casual") {
+            parse_single_skill_table(table_html, table_count, &mut result);
+            table_count += 1;
+        }
+
+        rem = &rem[table_end..];
+    }
+
+    result
+}
+
+fn parse_single_skill_table(
+    table_html: &str,
+    table_index: usize,
+    out: &mut HashMap<String, (Option<String>, Option<String>, Option<i32>)>,
+) {
+    let rows = extract_rlstats_table_rows(table_html);
+    if rows.len() < 6 {
+        return;
+    }
+
+    let headers = extract_tr_cell_texts(&rows[0]);
+    let rank_names = extract_tr_cell_texts(&rows[1]);
+    let divisions = extract_tr_cell_texts(&rows[2]);
+    let matches_played_row = extract_tr_cell_texts(
+        rows.get(4).unwrap_or(&String::new()),
+    );
+
+    for i in 0..headers.len() {
+        let key = normalize_playlist_key_from_header(&headers[i]);
+        let key = match key {
+            Some(k) => k.to_string(),
+            None => continue,
+        };
+
+        let rank_name = rank_names.get(i).cloned();
+        let rank_name = rank_name.filter(|n| !n.is_empty() && n != "Unranked");
+
+        let division = divisions.get(i).cloned();
+        let division = division.filter(|d| !d.is_empty());
+
+        let mp = matches_played_row
+            .get(i)
+            .and_then(|s| s.split_whitespace().last().and_then(|w| w.parse::<i32>().ok()));
+
+        out.insert(key, (rank_name, division, mp));
+    }
+}
+
+fn extract_rlstats_table_rows(table_html: &str) -> Vec<String> {
+    let mut rows = Vec::new();
+    let mut remaining = table_html;
+
+    while let Some(tr_start) = remaining.find("<tr") {
+        let after = &remaining[tr_start..];
+        let tr_end = after.find("</tr>").map(|p| tr_start + p + 5).unwrap_or(remaining.len());
+        rows.push(remaining[tr_start..tr_end].to_string());
+        remaining = &remaining[tr_end..];
+    }
+
+    rows
+}
+
+fn extract_tr_cell_texts(row_html: &str) -> Vec<String> {
+    let mut values = Vec::new();
+    let mut remaining = row_html;
+
+    while let Some(tag_start) = remaining.find("<t") {
+        let after = &remaining[tag_start..];
+        let content_start = match after.find('>') {
+            Some(p) => tag_start + p + 1,
+            None => break,
+        };
+
+        let close = match after.find("</td>") {
+            Some(p) => p + 5,
+            None => match after.find("</th>") {
+                Some(p) => p + 5,
+                None => break,
+            },
+        };
+
+        let content = &remaining[content_start..tag_start + close - 5];
+        values.push(content.trim().to_string());
+        remaining = &remaining[tag_start + close..];
+    }
+
+    values
+}
+
+fn normalize_playlist_key_from_header(text: &str) -> Option<&'static str> {
+    let t = text.trim().to_lowercase();
+    if t.contains("duel") || t.contains("1v1 duel") {
+        Some("duel")
+    } else if t.contains("doubles") || t.contains("2v2 doubles") {
+        Some("doubles")
+    } else if t.contains("standard") || t.contains("3v3 standard") {
+        Some("standard")
+    } else if t.contains("tournament") {
+        Some("tournament")
+    } else if t.contains("heatseeker") {
+        Some("heatseeker")
+    } else if t.contains("hoops") {
+        Some("hoops")
+    } else if t.contains("rumble") {
+        Some("rumble")
+    } else if t.contains("dropshot") {
+        Some("dropshot")
+    } else if t.contains("snow") {
+        Some("snowday")
+    } else if t.contains("quad") || t.contains("4v4") {
+        Some("quads")
+    } else {
+        normalize_playlist_key(text)
+    }
+}
+
+fn extract_rlstats_columns(html: &str) -> AppResult<Vec<String>> {
+    let marker = "data.addColumn";
+    let mut search_start = 0usize;
+    let mut columns = Vec::new();
+
+    while let Some(relative_index) = html[search_start..].find(marker) {
+        let start = search_start + relative_index;
+        let statement_end = html[start..]
+            .find(");")
+            .map(|offset| start + offset)
+            .ok_or_else(|| {
+                AppError::ParseError(
+                    "RLStats devolvio una definicion de columnas inesperada.".into(),
+                )
+            })?;
+        let statement = &html[start..statement_end];
+
+        if let Some(label) = extract_last_quoted_literal(statement) {
+            if let Some(key) = normalize_playlist_key(&label) {
+                columns.push(key.to_string());
+            }
+        }
+
+        search_start = statement_end + 2;
+    }
+
+    if columns.is_empty() {
+        return Err(AppError::ParseError(
+            "No pudimos detectar columnas de MMR en RLStats.".into(),
+        ));
+    }
+
+    Ok(columns)
+}
+
+fn extract_last_quoted_literal(statement: &str) -> Option<String> {
+    let mut literals = Vec::new();
+    let mut chars = statement.char_indices().peekable();
+
+    while let Some((index, ch)) = chars.next() {
+        if ch != '\'' && ch != '"' {
+            continue;
+        }
+
+        let quote = ch;
+        let start = index + quote.len_utf8();
+        let mut escaped = false;
+
+        for (end_index, current) in chars.by_ref() {
+            if escaped {
+                escaped = false;
+                continue;
+            }
+
+            if current == '\\' {
+                escaped = true;
+                continue;
+            }
+
+            if current == quote {
+                literals.push(statement[start..end_index].to_string());
+                break;
+            }
+        }
+    }
+
+    literals.pop()
+}
+
+fn extract_rlstats_first_row(html: &str) -> AppResult<String> {
+    let marker = "data.addRows([";
+    let start = html
+        .find(marker)
+        .map(|index| index + marker.len())
+        .ok_or_else(|| AppError::ParseError("RLStats no expuso la serie de progreso MMR.".into()))?;
+
+    let after = &html[start..];
+    let row_start = after
+        .find('[')
+        .ok_or_else(|| AppError::ParseError("RLStats no expuso filas de progreso MMR.".into()))?;
+
+    let mut depth = 0i32;
+    let mut result = String::new();
+    for ch in after[row_start + 1..].chars() {
+        match ch {
+            '[' => {
+                depth += 1;
+                result.push(ch);
+            }
+            ']' if depth == 0 => return Ok(result),
+            ']' => {
+                depth -= 1;
+                result.push(ch);
+            }
+            _ => result.push(ch),
+        }
+    }
+
+    Err(AppError::ParseError(
+        "RLStats devolvio una fila MMR incompleta.".into(),
+    ))
+}
+
+fn split_csv_like(input: &str) -> Vec<String> {
+    let mut values = Vec::new();
+    let mut current = String::new();
+    let mut paren_depth = 0i32;
+
+    for ch in input.chars() {
+        match ch {
+            '(' => {
+                paren_depth += 1;
+                current.push(ch);
+            }
+            ')' => {
+                paren_depth -= 1;
+                current.push(ch);
+            }
+            ',' if paren_depth == 0 => {
+                values.push(current.trim().to_string());
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+
+    if !current.is_empty() {
+        values.push(current.trim().to_string());
+    }
+
+    values
+}
+
+fn normalize_playlist_key(label: &str) -> Option<&'static str> {
+    match label.trim() {
+        "Duel" => Some("duel"),
+        "Doubles" => Some("doubles"),
+        "Standard" => Some("standard"),
+        "Tournament" => Some("tournament"),
+        "Quads" => Some("quads"),
+        "Heatseeker" => Some("heatseeker"),
+        "Hoops" => Some("hoops"),
+        "Rumble" => Some("rumble"),
+        "Dropshot" => Some("dropshot"),
+        "Snow Day" => Some("snowday"),
+        _ => None,
+    }
+}
+
+fn parse_primary_id(primary_id: &str, player_name: &str) -> AppResult<ProviderIdentity> {
+    let mut parts = primary_id.split('|');
+    let platform_raw = parts
+        .next()
+        .ok_or_else(|| AppError::ParseError("PrimaryId sin plataforma.".into()))?;
+    let identifier = parts
+        .next()
+        .ok_or_else(|| AppError::ParseError("PrimaryId sin identificador.".into()))?;
+
+    let (tracker_platform, rlstats_platform) = match platform_raw.to_ascii_lowercase().as_str() {
+        "steam" => ("steam", "Steam"),
+        "epic" => ("epic", "Epic"),
+        "xbox" | "xbl" => ("xbl", "Xbox"),
+        "ps4" | "psn" | "playstation" => ("psn", "PS4"),
+        "switch" => ("switch", "Switch"),
+        other => {
+            return Err(AppError::ParseError(format!(
+                "Plataforma no soportada para MMR: {other}"
+            )));
+        }
+    };
+
+    Ok(ProviderIdentity {
+        source_primary_id: primary_id.to_string(),
+        player_name: player_name.to_string(),
+        tracker_platform: tracker_platform.to_string(),
+        rlstats_platform: rlstats_platform.to_string(),
+        identifier: identifier.to_string(),
+    })
+}
+
+fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> PlaylistInference {
+    let (blue_count, orange_count) = players.fold((0usize, 0usize), |(blue, orange), player| {
+        match player.team {
+            0 => (blue + 1, orange),
+            1 => (blue, orange + 1),
+            _ => (blue, orange),
+        }
+    });
+
+    let total = blue_count + orange_count;
+    let team_size = blue_count.max(orange_count);
+    match total {
+        2 => PlaylistInference {
+            primary: Some("duel".into()),
+            candidates: vec!["duel".into()],
+            confidence: "high",
+        },
+        3 | 4 if team_size == 2 => PlaylistInference {
+            primary: Some("doubles".into()),
+            candidates: vec!["doubles".into(), "hoops".into(), "heatseeker".into()],
+            confidence: "low",
+        },
+        5 | 6 if team_size == 3 => PlaylistInference {
+            primary: Some("standard".into()),
+            candidates: vec![
+                "standard".into(),
+                "rumble".into(),
+                "dropshot".into(),
+                "snowday".into(),
+            ],
+            confidence: "low",
+        },
+        7 | 8 if team_size >= 4 => PlaylistInference {
+            primary: Some("quads".into()),
+            candidates: vec!["quads".into()],
+            confidence: "high",
+        },
+        _ => PlaylistInference {
+            primary: None,
+            candidates: Vec::new(),
+            confidence: "unknown",
+        },
+    }
+}
+
+fn read_cached_profile(
+    db_pool: &DbPool,
+    provider: &str,
+    platform: &str,
+    identifier: &str,
+    ttl_minutes: i64,
+) -> AppResult<Option<CachedMmrProfile>> {
+    let cached = get_mmr_cache(db_pool, provider, platform, identifier)?;
+    let Some((payload_json, fetched_at)) = cached else {
+        return Ok(None);
+    };
+
+    if !is_cache_fresh(&fetched_at, ttl_minutes) {
+        return Ok(None);
+    }
+
+    let cached_profile: CachedMmrProfile = serde_json::from_str(&payload_json)
+        .map_err(|e| AppError::ParseError(format!("MMR cache invalido: {e}")))?;
+    Ok(Some(cached_profile))
+}
+
+fn store_cached_profile(db_pool: &DbPool, cached_profile: &CachedMmrProfile) -> AppResult<()> {
+    let payload_json = serde_json::to_string(cached_profile)
+        .map_err(|e| AppError::ParseError(format!("No se pudo serializar el cache MMR: {e}")))?;
+
+    upsert_mmr_cache(
+        db_pool,
+        &cached_profile.provider,
+        &cached_profile.platform,
+        &cached_profile.identifier,
+        &payload_json,
+        &cached_profile.fetched_at,
+    )?;
+
+    Ok(())
+}
+
+fn is_cache_fresh(fetched_at: &str, ttl_minutes: i64) -> bool {
+    match parse_datetime(fetched_at) {
+        Some(parsed) => parsed > Utc::now() - chrono::Duration::minutes(ttl_minutes),
+        None => false,
+    }
+}
+
+fn parse_datetime(value: &str) -> Option<DateTime<Utc>> {
+    if let Ok(parsed) = DateTime::parse_from_rfc3339(value) {
+        return Some(parsed.with_timezone(&Utc));
+    }
+
+    if let Ok(parsed) = NaiveDateTime::parse_from_str(value, "%Y-%m-%d %H:%M:%S") {
+        return Some(DateTime::from_naive_utc_and_offset(parsed, Utc));
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        extract_last_quoted_literal, extract_rlstats_columns, infer_playlist, parse_primary_id,
+        parse_rlstats_profile,
+    };
+    use crate::core::models::LivePlayer;
+
+    #[test]
+    fn parse_primary_id_maps_platforms() {
+        let identity = parse_primary_id("Epic|abc123|0", "Player").expect("identity");
+        assert_eq!(identity.tracker_platform, "epic");
+        assert_eq!(identity.rlstats_platform, "Epic");
+        assert_eq!(identity.identifier, "abc123");
+    }
+
+    #[test]
+    fn infer_playlist_detects_doubles() {
+        let players = vec![
+            LivePlayer { team: 0, ..Default::default() },
+            LivePlayer { team: 0, ..Default::default() },
+            LivePlayer { team: 1, ..Default::default() },
+            LivePlayer { team: 1, ..Default::default() },
+        ];
+
+        let inference = infer_playlist(players.iter());
+        assert_eq!(inference.primary.as_deref(), Some("doubles"));
+        assert_eq!(inference.confidence, "low");
+    }
+
+    #[test]
+    fn parse_rlstats_chart_extracts_latest_mmrs() {
+        let html = r#"
+            <script>
+                data.addColumn('number', "Duel");
+                data.addColumn('number', "Doubles");
+                data.addColumn('number', "Standard");
+                data.addColumn('number', "Hoops");
+                data.addRows([
+                    [new Date(1773318770*1000), 942, 1253, , 1056],
+                    [new Date(1773249936*1000), 940, 1240, , 1040],
+                ]);
+            </script>
+        "#;
+
+        let columns = extract_rlstats_columns(html).expect("columns");
+        assert_eq!(columns, vec!["duel", "doubles", "standard", "hoops"]);
+
+        let profile = parse_rlstats_profile(html, "epic", "abc123").expect("profile");
+        assert_eq!(profile.playlists["duel"].mmr, Some(942));
+        assert_eq!(profile.playlists["doubles"].mmr, Some(1253));
+        assert_eq!(profile.playlists["standard"].mmr, None);
+        assert_eq!(profile.playlists["hoops"].mmr, Some(1056));
+    }
+
+    #[test]
+    fn extract_rlstats_columns_handles_mixed_quotes_and_spacing() {
+        let html = r#"
+            <script>
+                data.addColumn( 'number' , 'Duel' );
+                data.addColumn("number", "Doubles");
+                data.addColumn('number', "Rumble");
+            </script>
+        "#;
+
+        let columns = extract_rlstats_columns(html).expect("columns");
+        assert_eq!(columns, vec!["duel", "doubles", "rumble"]);
+    }
+
+    #[test]
+    fn extract_last_quoted_literal_returns_last_string() {
+        let statement = "data.addColumn( 'number' , \"Doubles\" )";
+        assert_eq!(extract_last_quoted_literal(statement).as_deref(), Some("Doubles"));
+    }
+}

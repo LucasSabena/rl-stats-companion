@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { proPlayers } from "@/data/proConfigs";
 import { ProPlayerCard } from "@/components/pro-configs/ProPlayerCard";
+import { ProPlayerAvatar } from "@/components/pro-configs/ProPlayerAvatar";
 import { PageContainer } from "@/components/layout/PageContainer";
 import type { ProPlayer, Continent } from "@/lib/proConfigsTypes";
 import { Search, ChevronDown, ChevronRight, Globe } from "lucide-react";
@@ -74,8 +75,6 @@ export function ProConfigsPage() {
 
   return (
     <PageContainer>
-      <h2 className="text-2xl font-bold text-text-primary">Configuraciones Pro</h2>
-
       <div className="flex gap-6" style={{ minHeight: "calc(100vh - 12rem)" }}>
         {/* Sidebar list */}
         <div className="w-72 shrink-0 overflow-y-auto rounded-lg border border-border-subtle bg-surface-elevated p-3">
@@ -86,7 +85,7 @@ export function ProConfigsPage() {
               placeholder="Buscar jugador o equipo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-md border border-border-subtle bg-bg-primary py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+              className="w-full rounded-md border border-border-subtle bg-bg-base py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
             />
           </div>
 
@@ -139,9 +138,13 @@ export function ProConfigsPage() {
                                   : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                               }`}
                             >
-                              <span className={`inline-block h-2 w-2 rounded-full ${
-                                player.camera ? "bg-green-400" : "bg-text-tertiary"
-                              }`} />
+                              {player.imageUrl ? (
+                                <ProPlayerAvatar player={player} size="sm" />
+                              ) : (
+                                <span className={`inline-block h-2 w-2 rounded-full ${
+                                  player.camera ? "bg-green-400" : "bg-text-tertiary"
+                                }`} />
+                              )}
                               <span className="truncate">{player.name}</span>
                               <span className="ml-auto text-xs text-text-tertiary">{player.nationality}</span>
                             </button>

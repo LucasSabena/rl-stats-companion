@@ -89,7 +89,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
           type="checkbox"
           checked={selectedIds.has(p.id)}
           onChange={() => toggleSelect(p.id)}
-          className="h-4 w-4 rounded border-border-strong bg-bg-tertiary text-accent-primary focus:ring-accent-primary/30"
+          className="h-4 w-4 rounded border-border-highlight bg-bg-panel text-accent-primary focus:ring-accent-primary/30"
         />
       ),
     },
@@ -130,7 +130,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
           Estadisticas de jugadores
         </h3>
 
-        <div className="flex rounded-lg border border-border-subtle bg-bg-tertiary p-0.5">
+        <div className="flex rounded-lg border border-border-subtle bg-bg-panel p-0.5">
           <button
             onClick={() => setTab("table")}
             className={cn(
@@ -175,7 +175,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
             emptyMessage="No hay datos de jugadores"
           />
 
-          <div className="mt-6 rounded-xl border border-border-subtle bg-bg-secondary p-4">
+          <div className="mt-6 rounded-xl border border-border-subtle bg-bg-surface p-4">
             {selectedPlayers.length >= 2 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
@@ -198,7 +198,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "var(--color-bg-elevated)",
-                        border: "1px solid var(--color-border-strong)",
+                        border: "1px solid var(--color-border-highlight)",
                         borderRadius: "10px",
                         color: "var(--color-text-primary)",
                       }}

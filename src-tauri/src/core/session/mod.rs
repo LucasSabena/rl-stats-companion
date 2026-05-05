@@ -6,7 +6,7 @@ use crate::core::storage::{
     finish_match_conn, get_conn, get_or_create_player_conn, insert_match_conn,
     insert_match_event_conn, insert_match_player_conn, insert_session_conn,
     rebuild_daily_rollups_for_identity, upsert_daily_rollup_conn, DbPool, FinishMatchUpdate,
-    MatchPlayerRow,
+    MatchMmrSnapshot, MatchPlayerRow,
 };
 use crate::error::AppResult;
 use chrono::Utc;
@@ -40,6 +40,7 @@ pub struct SessionManager {
     winner_team_num: Option<i32>,
     max_player_count: usize,
     last_touch_team: Option<i32>,
+    mmr_snapshot: Option<MatchMmrSnapshot>,
 }
 
 impl SessionManager {
@@ -62,6 +63,7 @@ impl SessionManager {
             winner_team_num: None,
             max_player_count: 0,
             last_touch_team: None,
+            mmr_snapshot: None,
         }
     }
 
@@ -71,6 +73,11 @@ impl SessionManager {
 
     pub fn set_match_type(&mut self, mt: String) {
         self.match_type = Some(mt);
+    }
+
+    /// Store the MMR snapshot so it can be persisted with the finished match.
+    pub fn set_mmr_snapshot(&mut self, snapshot: MatchMmrSnapshot) {
+        self.mmr_snapshot = Some(snapshot);
     }
 
     pub fn live_state(&self) -> LiveMatchState {
@@ -127,9 +134,14 @@ impl SessionManager {
                         }
                     }
                     self.max_player_count = self.max_player_count.max(players.len());
-                    // UpdateState is a full snapshot of the current lobby state.
-                    // Replacing the map avoids keeping players that already left.
-                    self.players = players.clone();
+                    // Merge players from the snapshot into the session map.
+                    // We update existing players with their latest stats AND keep any
+                    // player who appeared in a previous snapshot but is no longer present
+                    // (e.g. teammate who left before MatchEnded). Without this, departed
+                    // players are lost and the match looks like it had fewer participants.
+                    for (key, player) in players.iter() {
+                        self.players.insert(key.clone(), player.clone());
+                    }
                     info!(
                         player_count = players.len(),
                         time = game.time,
@@ -243,6 +255,12 @@ impl SessionManager {
 
             let mut players_vec = Vec::new();
             for (primary_id, live) in &self.players {
+                let mmr = self
+                    .mmr_snapshot
+                    .as_ref()
+                    .and_then(|snap| snap.mmr_by_primary_id.get(primary_id))
+                    .copied()
+                    .flatten();
                 let player_stats = PlayerStats {
                     score: live.score,
                     goals: live.goals,
@@ -254,6 +272,7 @@ impl SessionManager {
                     demos: live.demos,
                     speed: live.speed,
                     boost: live.boost,
+                    mmr,
                 };
 
                 let player_id = get_or_create_player_conn(&conn, primary_id, &live.name)?;
@@ -414,6 +433,7 @@ impl SessionManager {
         self.winner_team_num = None;
         self.max_player_count = 0;
         self.last_touch_team = None;
+        self.mmr_snapshot = None;
     }
 
     fn has_meaningful_match_data(&self) -> bool {

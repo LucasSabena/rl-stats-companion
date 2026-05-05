@@ -325,18 +325,32 @@ async fn get_session_analytics_inner(
     let sessions = storage::get_match_sessions(pool, settings.session_gap_minutes)
         .map_err(|e| e.to_string())?;
 
-    let total_matches: i32 = sessions.iter().map(|s| s.match_count).sum();
-    let wins: i32 = sessions.iter().map(|s| s.wins).sum();
-    let losses: i32 = sessions.iter().map(|s| s.losses).sum();
-    let total_goals: i32 = sessions.iter().map(|s| s.goals_scored).sum();
-    let total_conceded: i32 = sessions.iter().map(|s| s.goals_conceded).sum();
-    let total_shots: i32 = sessions.iter().map(|s| s.total_shots).sum();
-    let total_saves: i32 = sessions.iter().map(|s| s.total_saves).sum();
+    // Use only the most recent session for summary stats
+    let recent = sessions.first();
 
-    let end = chrono::Utc::now();
-    let start = end - chrono::Duration::days(365);
-    let start_str = start.format("%Y-%m-%d").to_string();
-    let end_str = end.format("%Y-%m-%d").to_string();
+    let total_matches = recent.map(|s| s.match_count).unwrap_or(0);
+    let wins = recent.map(|s| s.wins).unwrap_or(0);
+    let losses = recent.map(|s| s.losses).unwrap_or(0);
+    let total_goals = recent.map(|s| s.goals_scored).unwrap_or(0);
+    let total_conceded = recent.map(|s| s.goals_conceded).unwrap_or(0);
+    let total_shots = recent.map(|s| s.total_shots).unwrap_or(0);
+    let total_saves = recent.map(|s| s.total_saves).unwrap_or(0);
+
+    let (start_str, end_str) = if let Some(s) = recent {
+        let start = chrono::DateTime::parse_from_rfc3339(&s.start_time).ok();
+        let end = chrono::DateTime::parse_from_rfc3339(&s.end_time).ok();
+        (
+            start.map(|d| d.format("%Y-%m-%d").to_string()).unwrap_or_else(|| {
+                chrono::Utc::now().format("%Y-%m-%d").to_string()
+            }),
+            end.map(|d| d.format("%Y-%m-%d").to_string()).unwrap_or_else(|| {
+                chrono::Utc::now().format("%Y-%m-%d").to_string()
+            }),
+        )
+    } else {
+        let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+        (today.clone(), today)
+    };
 
     let (avg_score, total_assists, peak_speed) = if let Some(ref local_id) = settings.local_primary_id {
         get_player_period_stats(pool, local_id, &start_str, &end_str).unwrap_or((0.0, 0, 0.0))
@@ -345,19 +359,19 @@ async fn get_session_analytics_inner(
     };
 
     let total_demos = if let Some(ref local_id) = settings.local_primary_id {
-        get_player_demos(pool, local_id).unwrap_or(0)
+        get_player_demos_in_range(pool, local_id, &start_str, &end_str).unwrap_or(0)
     } else {
         0
     };
 
     let avg_duration: f64 = if total_matches > 0 {
-        sessions.iter().map(|s| s.duration_seconds as f64).sum::<f64>() / total_matches as f64
+        recent.map(|s| s.duration_seconds as f64 / total_matches as f64).unwrap_or(0.0)
     } else {
         0.0
     };
 
     let streak = if let Some(ref local_id) = settings.local_primary_id {
-        metrics::calculate_streaks_for_sessions(pool, local_id)
+        metrics::calculate_streaks(pool, local_id, &start_str, &end_str)
             .unwrap_or(StreakData { best_streak: 0, current_streak: 0 })
     } else {
         StreakData { best_streak: 0, current_streak: 0 }
@@ -420,18 +434,23 @@ fn get_player_period_stats(
     Ok((avg_score, total_assists, peak_speed))
 }
 
-fn get_player_demos(
+fn get_player_demos_in_range(
     pool: &crate::core::storage::DbPool,
     local_primary_id: &str,
+    start_date: &str,
+    end_date: &str,
 ) -> Result<i32, String> {
     let conn = get_conn(pool).map_err(|e| e.to_string())?;
     let demos: i32 = conn
         .query_row(
             "SELECT COALESCE(SUM(mp.demos), 0)
              FROM match_players mp
+             JOIN matches m ON mp.match_id = m.id
              JOIN players p ON mp.player_id = p.id
-             WHERE p.primary_id = ?1",
-            rusqlite::params![local_primary_id],
+             WHERE p.primary_id = ?1
+               AND m.start_time >= ?2
+               AND m.start_time < date(?3, '+1 day')",
+            rusqlite::params![local_primary_id, start_date, end_date],
             |row| row.get(0),
         )
         .map_err(|e| e.to_string())?;

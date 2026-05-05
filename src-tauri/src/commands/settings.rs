@@ -319,6 +319,7 @@ fn import_data_json_internal(
                             demos,
                             speed,
                             boost,
+                            mmr: None,
                         },
                     },
                 )

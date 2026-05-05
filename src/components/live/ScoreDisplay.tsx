@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { getArenaDisplayName, getArenaImagePath } from "@/lib/arenaMap";
 
 interface ScoreDisplayProps {
   blueScore: number;
@@ -8,16 +9,29 @@ interface ScoreDisplayProps {
 }
 
 export const ScoreDisplay = memo(function ScoreDisplay({ blueScore, orangeScore, arena }: ScoreDisplayProps) {
+  const displayName = arena ? getArenaDisplayName(arena) : null;
+  const imagePath = arena ? getArenaImagePath(arena) : null;
+
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border-subtle bg-bg-secondary">
+    <div className="relative overflow-hidden rounded-xl border border-border-subtle bg-bg-surface">
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-team-blue-bg)] via-transparent to-[var(--color-team-orange-bg)] opacity-50" />
 
       <div className="relative flex flex-col items-center justify-center py-8">
-        {arena && (
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
-            {arena}
-          </p>
+        {displayName && (
+          <div className="mb-3 flex items-center gap-2">
+            {imagePath && (
+              <img
+                src={imagePath}
+                alt={displayName}
+                className="h-8 w-8 rounded object-cover border border-border-subtle bg-bg-panel"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            )}
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-text-tertiary">
+              {displayName}
+            </p>
+          </div>
         )}
         <div className="flex items-center gap-8">
           <div className="flex flex-col items-center gap-1">

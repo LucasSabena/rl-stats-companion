@@ -3,7 +3,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useQueryClient } from "@tanstack/react-query";
 import { getConnectionStatus, getLiveState } from "@/lib/api";
 import { useLiveStore } from "@/stores/liveStore";
-import type { LiveMatchState, Player, SessionSummary } from "@/lib/types";
+import type { LiveMatchState, Player, SessionSummary, RlEventType } from "@/lib/types";
 
 interface RawPlayer {
   id: string;
@@ -49,15 +49,15 @@ interface RawSessionSummary {
 
 interface RawLiveEvent {
   id: string;
-  type: "GoalScored" | "StatfeedEvent" | "MatchCreated" | "MatchEnded";
+  type: RlEventType;
   timestamp: number;
   data: Record<string, unknown>;
 }
 
 function mapPlayer(raw: RawPlayer): Player {
   return {
-    id: raw.id,
-    name: raw.name,
+    id: raw.id ?? "unknown",
+    name: raw.name ?? "Unknown",
     team: raw.team === 1 ? (1 as const) : (0 as const),
     score: raw.score,
     goals: raw.goals,
@@ -72,7 +72,14 @@ function mapPlayer(raw: RawPlayer): Player {
 }
 
 function mapLiveUpdate(raw: RawLiveUpdate): LiveMatchState {
-  const mappedPlayers = raw.players.map(mapPlayer);
+  const playersArray = Array.isArray(raw.players) ? raw.players : [];
+  let mappedPlayers = playersArray.map(mapPlayer);
+
+  // En entrenamiento (1 jugador), forzar team 0 para que aparezca en el panel azul
+  if (mappedPlayers.length === 1) {
+    mappedPlayers = mappedPlayers.map((p) => ({ ...p, team: 0 as const }));
+  }
+
   return {
     matchGuid: raw.match_guid,
     players: mappedPlayers,

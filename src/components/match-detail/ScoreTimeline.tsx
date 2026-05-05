@@ -96,7 +96,7 @@ export const ScoreTimeline = memo(function ScoreTimeline({
   if (displayEvents.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-bg-secondary p-6 shadow-level-1">
+    <div className="rounded-xl border border-border-subtle bg-bg-surface p-6 shadow-level-1">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-sm font-semibold text-text-primary">
           Cronología de eventos

@@ -59,7 +59,7 @@ export default function Step2PlayerIdentity({ onNext, onBack }: StepProps) {
           value={playerName}
           onChange={(e) => setLocalPlayerName(e.target.value)}
           placeholder="Ej: Si Locura"
-          className="w-full rounded-lg border border-border-subtle bg-bg-tertiary px-4 py-3 text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)] transition-colors"
+          className="w-full rounded-lg border border-border-subtle bg-bg-panel px-4 py-3 text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)] transition-colors"
         />
         <p className="mt-2 text-xs text-text-tertiary">
           Si mas adelante cambias de nick, podras actualizarlo desde Ajustes.
@@ -77,7 +77,7 @@ export default function Step2PlayerIdentity({ onNext, onBack }: StepProps) {
         <button
           onClick={handleNext}
           disabled={updateSettings.isPending}
-          className="bg-accent-primary hover:bg-accent-primary-hover disabled:bg-bg-tertiary disabled:text-text-muted text-white px-8 py-2.5 rounded-lg font-semibold transition-all duration-200"
+          className="bg-accent-primary hover:bg-accent-primary-hover disabled:bg-bg-panel disabled:text-text-muted text-white px-8 py-2.5 rounded-lg font-semibold transition-all duration-200"
         >
           {updateSettings.isPending ? "Guardando..." : "Siguiente"}
         </button>

@@ -27,7 +27,7 @@ export default function OnboardingOverlay({ onComplete }: OnboardingOverlayProps
                 "h-2.5 w-2.5 rounded-full transition-all duration-300",
                 i + 1 === step
                   ? "bg-accent-primary w-6"
-                  : "bg-border-strong"
+                  : "bg-border-highlight"
               )}
             />
           ))}

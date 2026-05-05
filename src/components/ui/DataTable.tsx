@@ -69,7 +69,7 @@ export function DataTable<T>({
     <div className={cn("overflow-x-auto rounded-xl border border-border-subtle", className)}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border-subtle bg-bg-secondary">
+          <tr className="border-b border-border-subtle bg-bg-surface">
             {columns.map((col) => (
               <th
                 key={col.key}

@@ -12,7 +12,7 @@ export function RankWidget() {
 
   return (
     <div className={cn(
-      "rounded-xl border border-border-subtle bg-bg-secondary/80 p-4",
+      "rounded-xl border border-border-subtle bg-bg-surface/80 p-4",
       "backdrop-blur-sm"
     )}>
       <div className="flex items-center gap-2 mb-3">

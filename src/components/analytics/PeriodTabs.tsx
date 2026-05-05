@@ -5,6 +5,8 @@ const periods: { value: AnalyticsPeriod; label: string }[] = [
   { value: "day", label: "Dia" },
   { value: "week", label: "Semana" },
   { value: "month", label: "Mes" },
+  { value: "year", label: "Año" },
+  { value: "alltime", label: "Siempre" },
   { value: "session", label: "Sesion" },
 ];
 
@@ -15,7 +17,7 @@ interface PeriodTabsProps {
 
 export function PeriodTabs({ active, onChange }: PeriodTabsProps) {
   return (
-    <div className="flex items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-tertiary p-0.5">
+    <div className="flex items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-panel p-0.5">
       {periods.map((period) => (
         <button
           key={period.value}

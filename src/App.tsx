@@ -13,6 +13,8 @@ const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage").then((module) =
 const SettingsPage = lazy(() => import("@/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage").then((module) => ({ default: module.ProfilePage })));
 const ProConfigsPage = lazy(() => import("@/pages/ProConfigsPage").then((module) => ({ default: module.ProConfigsPage })));
+const PlayerDirectoryPage = lazy(() => import("@/pages/PlayerDirectoryPage").then((module) => ({ default: module.PlayerDirectoryPage })));
+const PlayerDetailPage = lazy(() => import("@/pages/PlayerDetailPage").then((module) => ({ default: module.PlayerDetailPage })));
 const OnboardingOverlay = lazy(() => import("@/components/onboarding/OnboardingOverlay"));
 
 const queryClient = new QueryClient({
@@ -26,7 +28,7 @@ const queryClient = new QueryClient({
 });
 
 function AppFallback() {
-  return <div className="min-h-screen bg-bg-primary" />;
+  return <div className="min-h-screen bg-bg-base" />;
 }
 
 function AppContent() {
@@ -71,6 +73,8 @@ function AppContent() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/pro-configs" element={<ProConfigsPage />} />
+              <Route path="/players" element={<PlayerDirectoryPage />} />
+              <Route path="/players/:playerId" element={<PlayerDetailPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

@@ -23,18 +23,21 @@ export default function Step2({ onNext, onBack }: StepProps) {
     setDetectedPath(null);
 
     try {
-      await configureRlIni();
       const paths = await detectRlPath();
 
       if (paths.length > 0) {
-        const path = paths[0];
-        setDetectedPath(path);
-        setRlPath(path);
+        const installation = paths[0];
+        await configureRlIni(installation.path);
+        setDetectedPath(installation.path);
+        setRlPath(installation.path);
         if (settings) {
           await updateSettings.mutateAsync({
             ...settings,
-            rlPath: path,
-            platform: source === "steam" || source === "epic" ? source : settings.platform,
+            rlPath: installation.path,
+            platform:
+              source === "steam" || source === "epic"
+                ? source
+                : installation.platform ?? settings.platform,
           });
         }
       } else {
@@ -63,7 +66,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
         <button
           onClick={() => handleAutoDetect("steam")}
           disabled={detecting}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-tertiary border border-border-subtle hover:border-border-strong hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-panel border border-border-subtle hover:border-border-highlight hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Gamepad2 className="h-8 w-8 text-text-secondary" />
           <span className="text-sm font-semibold text-text-primary">Steam</span>
@@ -72,7 +75,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
         <button
           onClick={() => handleAutoDetect("epic")}
           disabled={detecting}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-tertiary border border-border-subtle hover:border-border-strong hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-panel border border-border-subtle hover:border-border-highlight hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Monitor className="h-8 w-8 text-text-secondary" />
           <span className="text-sm font-semibold text-text-primary">Epic Games</span>
@@ -98,7 +101,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
             setError("Para configurar manualmente, asegurate de que Rocket League este instalado y ejecuta la app como administrador.");
           }}
           disabled={detecting}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-tertiary border border-border-subtle hover:border-border-strong hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-panel border border-border-subtle hover:border-border-highlight hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FolderOpen className="h-8 w-8 text-text-secondary" />
           <span className="text-sm font-semibold text-text-primary">Manual</span>
@@ -136,7 +139,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="bg-accent-primary hover:bg-accent-primary-hover disabled:bg-bg-tertiary disabled:text-text-muted text-white px-8 py-2.5 rounded-lg font-semibold transition-all duration-200"
+          className="bg-accent-primary hover:bg-accent-primary-hover disabled:bg-bg-panel disabled:text-text-muted text-white px-8 py-2.5 rounded-lg font-semibold transition-all duration-200"
         >
           Siguiente
         </button>

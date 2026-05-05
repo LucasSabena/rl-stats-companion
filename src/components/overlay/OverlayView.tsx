@@ -3,8 +3,8 @@ import { listen } from "@tauri-apps/api/event";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
 import { useLiveStore } from "@/stores/liveStore";
 import { OverlayDismissButton } from "@/components/overlay/OverlayDismissButton";
-import { cn } from "@/lib/utils";
-import { formatDuration } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
+import { getArenaDisplayName } from "@/lib/arenaMap";
 import type { Player, OverlayDisplaySettings } from "@/lib/types";
 
 const DEFAULT_DISPLAY: OverlayDisplaySettings = {
@@ -184,7 +184,7 @@ function OverlayTopBar({
             isConnected ? "bg-accent-secondary" : "bg-accent-warning"
           )}
         />
-        {arena && <span className="uppercase tracking-wider">{arena}</span>}
+        {arena && <span className="uppercase tracking-wider">{getArenaDisplayName(arena)}</span>}
       </div>
       <div
         className={cn(

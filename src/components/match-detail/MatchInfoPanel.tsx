@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { cn, formatDateTime, formatDuration } from "@/lib/utils";
 import { Globe, Monitor, Clock, Calendar, MapPin, Trophy } from "lucide-react";
+import { getArenaDisplayName } from "@/lib/arenaMap";
 import type { MatchDetail, MatchType } from "@/lib/types";
 
 interface MatchInfoPanelProps {
@@ -36,7 +37,7 @@ export const MatchInfoPanel = memo(function MatchInfoPanel({ match }: MatchInfoP
     : "text-text-secondary";
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-bg-secondary p-5 shadow-level-1">
+    <div className="rounded-xl border border-border-subtle bg-bg-surface p-5 shadow-level-1">
       <h3 className="font-display mb-4 flex items-center gap-2 text-sm font-semibold text-text-primary">
         <Trophy size={16} className="text-accent-warning" />
         Informacion de la partida
@@ -54,7 +55,7 @@ export const MatchInfoPanel = memo(function MatchInfoPanel({ match }: MatchInfoP
           value={match.isOnline ? "Online" : "Local"}
           icon={match.isOnline ? <Globe size={12} /> : <Monitor size={12} />}
         />
-        <InfoItem label="Arena" value={match.arena ?? "---"} icon={<MapPin size={12} />} />
+        <InfoItem label="Arena" value={getArenaDisplayName(match.arena)} icon={<MapPin size={12} />} />
         <InfoItem
           label="Duracion"
           value={match.durationSeconds ? formatDuration(match.durationSeconds) : "---"}
@@ -87,7 +88,7 @@ function InfoItem({
   valueClassName?: string;
 }) {
   return (
-    <div className="rounded-lg bg-bg-tertiary/80 p-3">
+    <div className="rounded-lg bg-bg-panel/80 p-3">
       <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
         {icon}
         {label}

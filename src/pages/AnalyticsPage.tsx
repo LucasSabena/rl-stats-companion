@@ -398,7 +398,7 @@ function InsightsPanel({
                     <span className="text-text-tertiary">{c.label}</span>
                     <span className="text-text-secondary">{c.pct}%</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-bg-tertiary">
+                  <div className="h-1.5 w-full rounded-full bg-bg-panel">
                     <div
                       className={`h-full rounded-full ${c.color}`}
                       style={{ width: `${Math.min(c.pct, 100)}%` }}
@@ -517,7 +517,7 @@ export function AnalyticsPage() {
               </h3>
               <button
                 onClick={() => setSelectedSession(null)}
-                className="rounded-lg p-1.5 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary"
+                className="rounded-lg p-1.5 text-text-tertiary hover:bg-bg-panel hover:text-text-primary"
               >
                 <X size={18} />
               </button>

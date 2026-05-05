@@ -1,4 +1,5 @@
 import type { ProPlayer } from "@/lib/proConfigsTypes";
+import { ProPlayerAvatar } from "./ProPlayerAvatar";
 import { ExternalLink, Monitor, Gamepad2, Headphones, Crosshair } from "lucide-react";
 
 interface Props {
@@ -12,17 +13,22 @@ export function ProPlayerCard({ player }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary">{player.name}</h2>
-          {player.fullName && (
-            <p className="text-sm text-text-tertiary">{player.fullName}</p>
+        <div className="flex items-center gap-4">
+          {player.imageUrl && (
+            <ProPlayerAvatar player={player} size="lg" />
           )}
-          <div className="mt-2 flex items-center gap-3 text-sm text-text-secondary">
-            <span>{player.nationality}</span>
-            <span className="text-text-tertiary">·</span>
-            <span className="font-medium text-accent-primary">{player.team}</span>
-            <span className="text-text-tertiary">·</span>
-            <span>{player.continent}</span>
+          <div>
+            <h2 className="text-2xl font-bold text-text-primary">{player.name}</h2>
+            {player.fullName && (
+              <p className="text-sm text-text-tertiary">{player.fullName}</p>
+            )}
+            <div className="mt-2 flex items-center gap-3 text-sm text-text-secondary">
+              <span>{player.nationality}</span>
+              <span className="text-text-tertiary">·</span>
+              <span className="font-medium text-accent-primary">{player.team}</span>
+              <span className="text-text-tertiary">·</span>
+              <span>{player.continent}</span>
+            </div>
           </div>
         </div>
         <a

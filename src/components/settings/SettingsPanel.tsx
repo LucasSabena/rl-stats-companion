@@ -12,7 +12,7 @@ import { AlertTriangle, FolderSearch, MonitorUp } from "lucide-react";
 import { settingsSchema, type SettingsFormInput, type SettingsFormValues } from "@/lib/schemas";
 
 const inputClass = cn(
-  "w-full rounded-lg border bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-colors",
+  "w-full rounded-lg border bg-bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-colors",
   "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)]"
 );
 
@@ -100,7 +100,7 @@ export function SettingsPanel() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <section className="rounded-lg border border-border-subtle bg-bg-secondary/50 p-5">
+      <section className="rounded-lg border border-border-subtle bg-bg-surface/50 p-5">
         <div className="mb-4 flex items-center gap-2">
           <FolderSearch className="h-4 w-4 text-accent-primary" />
           <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Rocket League</h3>
@@ -144,7 +144,7 @@ export function SettingsPanel() {
                   render={({ field }) => (
                     <button type="button" onClick={() => field.onChange(type)}
                       className={cn("rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
-                        field.value === type ? "bg-accent-primary text-white" : "bg-bg-primary text-text-tertiary hover:text-text-secondary border border-border-subtle")}>
+                        field.value === type ? "bg-accent-primary text-white" : "bg-bg-base text-text-tertiary hover:text-text-secondary border border-border-subtle")}>
                       {type === "ranked" ? "Ranked" : type === "casual" ? "Casual" : type === "tournament" ? "Torneo" : "Otro"}
                     </button>
                   )} />
@@ -154,7 +154,7 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border-subtle bg-bg-secondary/50 p-5">
+      <section className="rounded-lg border border-border-subtle bg-bg-surface/50 p-5">
         <div className="mb-4 flex items-center gap-2">
           <MonitorUp className="h-4 w-4 text-accent-primary" />
           <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Sistema</h3>
@@ -164,7 +164,7 @@ export function SettingsPanel() {
             <Controller name="autoStart" control={control}
               render={({ field }) => (
                 <input id="autoStart" type="checkbox" checked={field.value} onChange={(e) => field.onChange(e.target.checked)}
-                  className="h-4 w-4 rounded border-border-strong bg-bg-secondary text-accent-primary focus:ring-accent-primary" />
+                  className="h-4 w-4 rounded border-border-highlight bg-bg-surface text-accent-primary focus:ring-accent-primary" />
               )} />
             <label htmlFor="autoStart" className="text-sm text-text-secondary">Iniciar con Windows</label>
           </div>

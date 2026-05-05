@@ -17,6 +17,7 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
   const rankLabel = mmr?.rankName
     ? `${mmr.rankName}${mmr.division ? ` ${mmr.division}` : ""}`
     : null;
+  const sourceLabel = mmr?.source === "tracker" ? "Tracker" : mmr?.source === "rlstats" ? "RLStats" : null;
 
   return (
     <div
@@ -24,7 +25,7 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
         "rounded-xl border p-4 transition-all duration-200",
         isCurrentUser
           ? "border-accent-primary/30 bg-accent-primary-muted glow-blue"
-          : "border-border-subtle bg-bg-secondary hover:border-border-default"
+          : "border-border-subtle bg-bg-surface hover:border-border-default"
       )}
     >
       {/* Header: name + score */}
@@ -38,7 +39,7 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
                 : "bg-team-orange-bg text-team-orange"
             )}
           >
-            {player.name.charAt(0).toUpperCase()}
+            {(player.name || "?").charAt(0).toUpperCase()}
           </div>
           <div>
             <span className="text-sm font-semibold text-text-primary">{player.name}</span>
@@ -51,7 +52,9 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
               {mmrLoading && !hasMmr ? <span>Buscando MMR...</span> : null}
               {mmrLabel ? <span className="font-mono font-semibold text-text-secondary">{mmrLabel}</span> : null}
               {rankLabel ? <span>{rankLabel}</span> : null}
+              {sourceLabel ? <span>{sourceLabel}</span> : null}
               {mmr?.cached ? <span className="uppercase tracking-wide">cache</span> : null}
+              {mmr?.error ? <span className="text-accent-warning">{mmr.error}</span> : null}
             </div>
           </div>
         </div>
@@ -84,7 +87,7 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
       {/* Boost bar */}
       <div className="mt-3">
         <div
-          className="h-1.5 w-full overflow-hidden rounded-full bg-bg-tertiary"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-bg-panel"
           role="progressbar"
           aria-valuenow={Math.round(player.boostAmount)}
           aria-valuemin={0}
@@ -100,7 +103,7 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
                   ? "bg-accent-warning"
                   : "bg-accent-danger"
             )}
-            style={{ width: `${player.boostAmount}%` }}
+            style={{ width: `${Math.max(0, Math.min(100, player.boostAmount))}%` }}
           />
         </div>
       </div>

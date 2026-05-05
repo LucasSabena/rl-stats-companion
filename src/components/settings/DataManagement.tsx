@@ -75,7 +75,7 @@ export function DataManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4">
+      <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
         <div className="flex items-center gap-3">
           <Database size={20} className="text-text-tertiary" />
           <div>

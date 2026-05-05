@@ -53,7 +53,7 @@ export const TeamPanel = memo(function TeamPanel({ team, players, mmrByPlayerId,
       </div>
 
       {(averageMmr !== null || mmrLoading) && (
-        <div className="mb-3 flex items-center justify-between rounded-lg border border-border-subtle/60 bg-bg-secondary/50 px-3 py-2 text-xs text-text-tertiary">
+        <div className="mb-3 flex items-center justify-between rounded-lg border border-border-subtle/60 bg-bg-surface/50 px-3 py-2 text-xs text-text-tertiary">
           <span>MMR promedio</span>
           <span className="font-mono font-semibold text-text-secondary">
             {averageMmr !== null ? averageMmr : "Buscando..."}
@@ -62,14 +62,18 @@ export const TeamPanel = memo(function TeamPanel({ team, players, mmrByPlayerId,
       )}
 
       <div className="space-y-2">
-        {players.map((player) => (
-          <PlayerCard
-            key={player.id}
-            player={player}
-            mmr={mmrByPlayerId?.[player.id] ?? null}
-            mmrLoading={mmrLoading}
-          />
-        ))}
+        {players.length === 0 ? (
+          <p className="py-4 text-center text-xs text-text-muted">Sin jugadores</p>
+        ) : (
+          players.map((player) => (
+            <PlayerCard
+              key={player.id}
+              player={player}
+              mmr={mmrByPlayerId?.[player.id] ?? null}
+              mmrLoading={mmrLoading}
+            />
+          ))
+        )}
       </div>
     </div>
   );

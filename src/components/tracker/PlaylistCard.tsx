@@ -24,7 +24,7 @@ export function PlaylistCard({ name, stats, className }: PlaylistCardProps) {
 
   if (!stats || (!stats.rank && stats.mmr == null)) {
     return (
-      <div className={cn("rounded-xl border border-border-subtle bg-bg-secondary p-3", className)}>
+      <div className={cn("rounded-xl border border-border-subtle bg-bg-surface p-3", className)}>
         <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</p>
         <span className="text-sm text-text-tertiary italic">Sin datos</span>
       </div>
@@ -32,7 +32,7 @@ export function PlaylistCard({ name, stats, className }: PlaylistCardProps) {
   }
 
   return (
-    <div className={cn("rounded-xl border border-border-subtle bg-bg-secondary p-3 transition-all duration-200 hover:border-border-default", className)}>
+    <div className={cn("rounded-xl border border-border-subtle bg-bg-surface p-3 transition-all duration-200 hover:border-border-default", className)}>
       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</p>
 
       <RankBadge rank={stats.rank} mmr={stats.mmr} size="sm" />

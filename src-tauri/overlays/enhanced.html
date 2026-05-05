@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Enhanced Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue-primary: #168cff;
+  --blue-secondary: #dff1ff;
+  --orange-primary: #ff8f1f;
+  --orange-secondary: #fff0df;
+  --text: #ffffff;
+  --text-dim: rgba(255,255,255,0.55);
+  --bg-panel: rgba(8,12,20,0.78);
+  --bg-dark: rgba(4,6,12,0.65);
+  --radius: 6px;
+  --font-display: 'Rajdhani', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --stage-w: 1600;
+  --stage-h: 900;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: var(--font-display);
+  color: var(--text);
+}
+
+#stage {
+  position: relative;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* ── Scoreboard ── */
+.scorebug {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: opacity 0.35s ease;
+  z-index: 10;
+}
+.scorebug.hidden { opacity: 0; pointer-events: none; }
+
+/* scoreboard title */
+.scorebug-title {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.scorebug-title:empty { display: none; }
+
+/* series markers */
+.series-row {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+.series-row:empty { display: none; }
+.series-dots { display: flex; gap: 3px; }
+.series-dot {
+  width: 14px; height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.12);
+  transition: background 0.3s;
+}
+.series-dot.won { background: currentColor; }
+.series-blue .series-dot.won { color: var(--blue-primary); }
+.series-orange .series-dot.won { color: var(--orange-primary); }
+
+.team-plate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  min-width: 180px;
+  position: relative;
+}
+.team-plate.blue {
+  background: linear-gradient(135deg, var(--blue-primary), rgba(22,140,255,0.65));
+  color: #fff;
+}
+.team-plate.orange {
+  background: linear-gradient(135deg, var(--orange-primary), rgba(255,143,31,0.65));
+  color: #fff;
+  flex-direction: row-reverse;
+}
+
+.team-logo-slot {
+  width: 32px; height: 32px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.25);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.team-logo-slot img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.team-logo-slot:empty::after {
+  content: '';
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+}
+
+.team-name {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.score-clock {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-dark);
+  padding: 0 4px;
+}
+.score-digit {
+  width: 52px; height: 62px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text);
+  text-shadow: 0 0 20px rgba(255,255,255,0.25);
+  position: relative;
+}
+.score-digit.pulse {
+  animation: scorePulse 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes scorePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); color: #fff; text-shadow: 0 0 40px rgba(255,255,255,0.6); }
+  100% { transform: scale(1); }
+}
+
+.clock-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px;
+  min-width: 70px;
+}
+.clock-time {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text);
+  line-height: 1;
+}
+.clock-ot {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--orange-primary);
+  background: rgba(255,143,31,0.2);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-top: 3px;
+  display: none;
+  animation: otBlink 1.5s ease-in-out infinite;
+}
+.clock-ot.active { display: inline-block; }
+@keyframes otBlink {
+  0%,100%{opacity:1}50%{opacity:.5}
+}
+
+/* ── Ball Speed Badge ── */
+.ball-badge {
+  position: absolute;
+  right: 32px;
+  bottom: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  min-width: 80px;
+  border-left: 3px solid rgba(255,255,255,0.2);
+  transition: opacity 0.35s ease;
+  z-index: 5;
+}
+.ball-badge.hidden { opacity: 0; }
+.ball-badge.blue-touch { border-left-color: var(--blue-primary); }
+.ball-badge.orange-touch { border-left-color: var(--orange-primary); }
+.ball-badge-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+}
+.ball-badge-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  line-height: 1;
+}
+.ball-badge-unit {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* ── Compact Rosters ── */
+.roster-compact {
+  position: absolute;
+  top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 5;
+  transition: opacity 0.35s ease;
+}
+.roster-compact.hidden { opacity: 0; }
+.roster-compact.blue-side { left: 24px; }
+.roster-compact.orange-side { right: 24px; }
+
+.roster-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 4px;
+  padding: 4px 10px;
+  min-width: 180px;
+  border-left: 3px solid transparent;
+}
+.roster-compact.blue-side .roster-card { border-left-color: var(--blue-primary); }
+.roster-compact.orange-side .roster-card { border-left-color: var(--orange-primary); flex-direction: row-reverse; text-align: right; }
+
+.roster-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+  flex: 1;
+}
+.roster-boost {
+  font-size: 15px;
+  font-weight: 700;
+  min-width: 36px;
+  text-align: center;
+  color: #fff;
+}
+.roster-boost-bar-wrap {
+  width: 40px; height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.roster-boost-bar {
+  height: 100%; border-radius: 2px;
+  transition: width 0.2s ease;
+}
+.roster-compact.blue-side .roster-boost-bar { background: var(--blue-primary); }
+.roster-compact.orange-side .roster-boost-bar { background: var(--orange-primary); }
+
+/* ── Goal Celebration ── */
+.goal-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.goal-overlay.active {
+  opacity: 1;
+  transform: scale(1);
+}
+.goal-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(8,12,20,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 24px 48px;
+  border: 2px solid transparent;
+  box-shadow: 0 0 60px rgba(0,0,0,0.5);
+}
+.goal-panel.blue-goal {
+  border-color: var(--blue-primary);
+  box-shadow: 0 0 80px rgba(22,140,255,0.3);
+}
+.goal-panel.orange-goal {
+  border-color: var(--orange-primary);
+  box-shadow: 0 0 80px rgba(255,143,31,0.3);
+}
+.goal-team-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--text-dim);
+}
+.goal-word {
+  font-size: 80px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 0 40px currentColor;
+}
+.blue-goal .goal-word { color: var(--blue-primary); }
+.orange-goal .goal-word { color: var(--orange-primary); }
+.goal-scorer {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* ── Kickoff Countdown ── */
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  pointer-events: none;
+  opacity: 0;
+}
+.countdown-overlay.active { opacity: 1; }
+.countdown-ring {
+  position: absolute;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  border: 4px solid rgba(255,255,255,0.15);
+  box-shadow: 0 0 40px rgba(0,0,0,0.4);
+}
+.countdown-number {
+  font-size: 90px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 60px rgba(255,255,255,0.4), 0 4px 12px rgba(0,0,0,0.6);
+  position: relative;
+  z-index: 1;
+}
+.countdown-number.tick {
+  animation: countTick 0.15s ease-out;
+}
+@keyframes countTick {
+  0% { transform: scale(1.4); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Disconnected ── */
+.disconnected-banner {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #ff4444;
+  text-shadow: 0 0 12px rgba(255,68,68,0.5);
+  animation: otBlink 1s ease-in-out infinite;
+  display: none;
+  z-index: 30;
+}
+.disconnected-banner.visible { display: block; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="disconnected-banner" id="disconnected">Connecting...</div>
+
+  <!-- Scorebug -->
+  <div class="scorebug" id="scorebug">
+    <div class="scorebug-title" id="scorebugTitle"></div>
+    <div class="team-plate blue">
+      <div class="team-logo-slot" id="blueLogo"></div>
+      <div class="team-name" id="blueName">BLUE</div>
+    </div>
+    <div class="score-digit" id="scoreBlue">0</div>
+    <div class="score-clock">
+      <div class="clock-center">
+        <div class="clock-time" id="clock">5:00</div>
+        <div class="clock-ot" id="otBadge">OT</div>
+      </div>
+    </div>
+    <div class="score-digit" id="scoreOrange">0</div>
+    <div class="team-plate orange">
+      <div class="team-logo-slot" id="orangeLogo"></div>
+      <div class="team-name" id="orangeName">ORANGE</div>
+    </div>
+    <div class="series-row" id="seriesRow"></div>
+  </div>
+
+  <!-- Compact Rosters -->
+  <div class="roster-compact blue-side" id="blueRoster"></div>
+  <div class="roster-compact orange-side" id="orangeRoster"></div>
+
+  <!-- Ball Speed Badge -->
+  <div class="ball-badge" id="ballBadge">
+    <div class="ball-badge-label">Ball Speed</div>
+    <div class="ball-badge-value" id="ballSpeed">0</div>
+    <div class="ball-badge-unit">km/h</div>
+  </div>
+
+  <!-- Goal Celebration -->
+  <div class="goal-overlay" id="goalOverlay"></div>
+
+  <!-- Kickoff Countdown -->
+  <div class="countdown-overlay" id="countdownOverlay">
+    <div class="countdown-ring"></div>
+    <div class="countdown-number" id="countdownNumber">3</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var WS_URL = 'ws://127.0.0.1:9528/ws';
+  var ws;
+  var prevBlue = -1;
+  var prevOrange = -1;
+  var lastState = null;
+  var goalTimer = null;
+  var countdownTimer = null;
+  var countdownInterval = null;
+  var countdownStartTimer = null;
+
+  // config (can be overridden via URL params)
+  var config = {
+    titleText: '',
+    blueTeamName: 'BLUE',
+    orangeTeamName: 'ORANGE',
+    blueLogoUrl: '',
+    orangeLogoUrl: '',
+    seriesLength: 0,
+    blueSeriesWins: 0,
+    orangeSeriesWins: 0,
+  };
+
+  var COUNTDOWN_DELAY = 850;
+  var COUNTDOWN_STEP = 1000;
+  var COUNTDOWN_STEPS = ['3', '2', '1'];
+  var GOAL_DURATION = 3000;
+
+  function $(id) { return document.getElementById(id); }
+
+  function parseConfig() {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('title')) config.titleText = params.get('title');
+    if (params.get('blueName')) config.blueTeamName = params.get('blueName');
+    if (params.get('orangeName')) config.orangeTeamName = params.get('orangeName');
+    if (params.get('blueLogo')) config.blueLogoUrl = params.get('blueLogo');
+    if (params.get('orangeLogo')) config.orangeLogoUrl = params.get('orangeLogo');
+    if (params.get('series')) config.seriesLength = parseInt(params.get('series')) || 0;
+    applyConfig();
+  }
+
+  function applyConfig() {
+    $('scorebugTitle').textContent = config.titleText;
+    $('blueName').textContent = config.blueTeamName;
+    $('orangeName').textContent = config.orangeTeamName;
+    if (config.blueLogoUrl) setLogo('blueLogo', config.blueLogoUrl);
+    if (config.orangeLogoUrl) setLogo('orangeLogo', config.orangeLogoUrl);
+    renderSeries();
+  }
+
+  function setLogo(id, url) {
+    var el = $(id);
+    el.innerHTML = '<img src="' + url + '" alt="" crossorigin="anonymous">';
+  }
+
+  function renderSeries() {
+    if (!config.seriesLength) { $('seriesRow').textContent = ''; return; }
+    var winsNeeded = Math.ceil(config.seriesLength / 2);
+    var html = '';
+    html += '<div class="series-dots series-blue">';
+    for (var i = 0; i < winsNeeded; i++) {
+      html += '<div class="series-dot' + (i < config.blueSeriesWins ? ' won' : '') + '"></div>';
+    }
+    html += '</div>';
+    html += '<span>BO' + config.seriesLength + '</span>';
+    html += '<div class="series-dots series-orange">';
+    for (var i = 0; i < winsNeeded; i++) {
+      html += '<div class="series-dot' + (i < config.orangeSeriesWins ? ' won' : '') + '"></div>';
+    }
+    html += '</div>';
+    $('seriesRow').innerHTML = html;
+  }
+
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = function() {
+      $('disconnected').classList.remove('visible');
+    };
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      switch (msg.type) {
+        case 'connected':
+          $('disconnected').classList.remove('visible');
+          break;
+        case 'snapshot':
+          $('disconnected').classList.remove('visible');
+          handleSnapshot(msg.data);
+          break;
+        case 'goal':
+          handleGoal(msg.data);
+          break;
+        case 'match_started':
+          resetOverlay();
+          break;
+        case 'match_ended':
+          break;
+        case 'replay_start':
+          break;
+        case 'replay_end':
+          break;
+        case 'match_paused':
+          break;
+        case 'match_unpaused':
+          break;
+        case 'countdown_begin':
+          showCountdown();
+          break;
+      }
+    };
+    ws.onclose = function() {
+      $('disconnected').classList.add('visible');
+      setTimeout(connect, 2000);
+    };
+    ws.onerror = function() { ws.close(); };
+  }
+
+  function fmtTime(seconds) {
+    seconds = Math.max(0, Math.floor(seconds || 0));
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function handleSnapshot(d) {
+    if (!d) return;
+    lastState = d;
+
+    // scores
+    var b = d.scoreBlue || 0;
+    var o = d.scoreOrange || 0;
+    if (b !== prevBlue) {
+      $('scoreBlue').textContent = b;
+      pulse($('scoreBlue'));
+      prevBlue = b;
+    }
+    if (o !== prevOrange) {
+      $('scoreOrange').textContent = o;
+      pulse($('scoreOrange'));
+      prevOrange = o;
+    }
+
+    // clock + OT
+    $('clock').textContent = fmtTime(d.timeRemaining);
+    if (d.isOvertime) {
+      $('otBadge').classList.add('active');
+    } else {
+      $('otBadge').classList.remove('active');
+    }
+
+    // ball speed
+    var kmh = Math.round((d.ballSpeed || 0) * 3.6);
+    $('ballSpeed').textContent = kmh;
+    var badge = $('ballBadge');
+    badge.classList.remove('blue-touch', 'orange-touch');
+    if (d.lastTouchTeam === 0) badge.classList.add('blue-touch');
+    else if (d.lastTouchTeam === 1) badge.classList.add('orange-touch');
+
+    // rosters
+    if (d.players) {
+      renderRoster('blueRoster', d.players.filter(function(p) { return p.team === 0; }));
+      renderRoster('orangeRoster', d.players.filter(function(p) { return p.team === 1; }));
+    }
+  }
+
+  function renderRoster(id, players) {
+    players.sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+    var html = '';
+    for (var i = 0; i < Math.min(players.length, 3); i++) {
+      var p = players[i];
+      var boost = (p.boost != null && p.boost >= 0) ? p.boost : null;
+      html += '<div class="roster-card">';
+      html += '<div class="roster-name">' + escapeHtml(p.name || 'Unknown') + '</div>';
+      html += '<div class="roster-boost">' + (boost !== null ? boost : '--') + '</div>';
+      html += '<div class="roster-boost-bar-wrap"><div class="roster-boost-bar" style="width:' + (boost || 0) + '%"></div></div>';
+      html += '</div>';
+    }
+    $(id).innerHTML = html;
+  }
+
+  function pulse(el) {
+    el.classList.remove('pulse');
+    void el.offsetWidth;
+    el.classList.add('pulse');
+  }
+
+  function handleGoal(data) {
+    var team = data.teamNum === 1 ? 'orange' : 'blue';
+    var scorer = data.scorerName || 'Player';
+    var overlay = $('goalOverlay');
+    overlay.innerHTML = '<div class="goal-panel ' + team + '-goal">' +
+      '<div class="goal-team-label">' + (team === 'blue' ? config.blueTeamName : config.orangeTeamName) + '</div>' +
+      '<div class="goal-word">GOAL</div>' +
+      '<div class="goal-scorer">' + escapeHtml(scorer) + '</div>' +
+      '</div>';
+    overlay.classList.add('active');
+    hideModules(true);
+
+    clearTimeout(goalTimer);
+    goalTimer = setTimeout(function() {
+      overlay.classList.remove('active');
+      hideModules(false);
+      setTimeout(function() { overlay.innerHTML = ''; }, 500);
+    }, GOAL_DURATION);
+  }
+
+  function hideModules(hide) {
+    var mods = ['scorebug', 'blueRoster', 'orangeRoster', 'ballBadge'];
+    for (var i = 0; i < mods.length; i++) {
+      var el = $(mods[i]);
+      if (el) {
+        if (hide) el.classList.add('hidden');
+        else el.classList.remove('hidden');
+      }
+    }
+  }
+
+  function showCountdown() {
+    clearKickoffCountdown();
+    countdownStartTimer = setTimeout(function() {
+      startCountdownVisual();
+    }, COUNTDOWN_DELAY);
+  }
+
+  function startCountdownVisual() {
+    var steps = COUNTDOWN_STEPS;
+    var stepMs = COUNTDOWN_STEP;
+    var idx = 0;
+
+    $('countdownOverlay').classList.add('active');
+    $('countdownNumber').textContent = steps[0];
+    tickPulse($('countdownNumber'));
+
+    countdownInterval = setInterval(function() {
+      idx++;
+      if (idx < steps.length) {
+        $('countdownNumber').textContent = steps[idx];
+        tickPulse($('countdownNumber'));
+      } else {
+        $('countdownNumber').textContent = 'GO!';
+        tickPulse($('countdownNumber'));
+        countdownTimer = setTimeout(clearKickoffCountdown, 720);
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }, stepMs);
+  }
+
+  function tickPulse(el) {
+    el.classList.remove('tick');
+    void el.offsetWidth;
+    el.classList.add('tick');
+  }
+
+  function clearKickoffCountdown() {
+    clearTimeout(countdownStartTimer);
+    clearTimeout(countdownTimer);
+    clearInterval(countdownInterval);
+    countdownStartTimer = null;
+    countdownTimer = null;
+    countdownInterval = null;
+    $('countdownOverlay').classList.remove('active');
+  }
+
+  function resetOverlay() {
+    prevBlue = -1;
+    prevOrange = -1;
+    lastState = null;
+    clearTimeout(goalTimer);
+    clearKickoffCountdown();
+    $('goalOverlay').classList.remove('active');
+    $('goalOverlay').innerHTML = '';
+    hideModules(false);
+    $('scoreBlue').textContent = '0';
+    $('scoreOrange').textContent = '0';
+    $('clock').textContent = '5:00';
+    $('otBadge').classList.remove('active');
+    $('ballSpeed').textContent = '0';
+    $('blueRoster').innerHTML = '';
+    $('orangeRoster').innerHTML = '';
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  parseConfig();
+  connect();
+})();
+</script>
+</body>
+</html>

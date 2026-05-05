@@ -66,10 +66,10 @@ export function Select({
         onClick={() => setOpen(!open)}
         className={cn(
           height,
-          "flex items-center gap-1.5 rounded-md border bg-bg-secondary px-3",
+          "flex items-center gap-1.5 rounded-md border bg-bg-surface px-3",
           textSize,
           "border-border-subtle text-text-primary",
-          "hover:border-border-strong transition-colors duration-150",
+          "hover:border-border-highlight transition-colors duration-150",
           "focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50",
           open && "border-accent-primary ring-1 ring-accent-primary/50"
         )}
@@ -94,7 +94,7 @@ export function Select({
       {open && (
         <div
           className={cn(
-            "absolute z-40 mt-1 min-w-[var(--radix-popover-trigger-width)] rounded-lg border border-border-subtle bg-bg-secondary py-1 shadow-level-3 animate-in fade-in-0 zoom-in-95 origin-top",
+            "absolute z-40 mt-1 min-w-[var(--radix-popover-trigger-width)] rounded-lg border border-border-subtle bg-bg-surface py-1 shadow-level-3 animate-in fade-in-0 zoom-in-95 origin-top",
             align === "right" ? "right-0" : "left-0"
           )}
         >

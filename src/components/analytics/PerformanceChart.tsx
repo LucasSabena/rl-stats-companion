@@ -63,7 +63,7 @@ export const PerformanceChart = memo(function PerformanceChart({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-display text-sm font-semibold text-text-primary">Evolucion</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-tertiary p-0.5">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-panel p-0.5">
             {METRICS.map((m) => (
               <button
                 key={m.key}
@@ -126,7 +126,7 @@ export const PerformanceChart = memo(function PerformanceChart({
               <Tooltip
                 contentStyle={{
                   backgroundColor: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-border-strong)",
+                  border: "1px solid var(--color-border-highlight)",
                   borderRadius: "10px",
                   color: "var(--color-text-primary)",
                 }}
@@ -175,7 +175,7 @@ export const PerformanceChart = memo(function PerformanceChart({
               <Tooltip
                 contentStyle={{
                   backgroundColor: "var(--color-bg-elevated)",
-                  border: "1px solid var(--color-border-strong)",
+                  border: "1px solid var(--color-border-highlight)",
                   borderRadius: "10px",
                   color: "var(--color-text-primary)",
                 }}

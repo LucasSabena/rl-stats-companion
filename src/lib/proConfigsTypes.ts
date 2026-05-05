@@ -47,6 +47,7 @@ export interface ProPlayer {
   team: string;
   teamLogo?: string;
   liquipediaUrl: string;
+  imageUrl?: string;
   camera?: CameraSettings;
   controls?: ControlSettings;
   deadzone?: DeadzoneSettings;

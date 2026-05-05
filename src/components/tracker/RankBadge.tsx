@@ -1,7 +1,7 @@
 import type { RankInfo } from "@/lib/types";
 
 const RANK_COLORS: Record<string, string> = {
-  Unranked: "bg-bg-tertiary text-text-tertiary",
+  Unranked: "bg-bg-panel text-text-tertiary",
   Bronze: "bg-amber-900/30 text-amber-400",
   Silver: "bg-gray-400/20 text-gray-300",
   Gold: "bg-yellow-500/20 text-yellow-400",

@@ -53,7 +53,7 @@ export const TeamRoster = memo(function TeamRoster({
   if (teamPlayers.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-bg-secondary p-5 shadow-level-1">
+    <div className="rounded-xl border border-border-subtle bg-bg-surface p-5 shadow-level-1">
       <div className="mb-4 flex items-center gap-2">
         <div className={cn("h-3 w-3 rounded-full", colorBg)} />
         <h3 className={cn("font-display text-sm font-bold uppercase tracking-wider", colorText)}>
@@ -70,7 +70,7 @@ export const TeamRoster = memo(function TeamRoster({
           return (
             <div
               key={player.id}
-              className="flex items-center gap-3 rounded-lg bg-bg-tertiary/80 p-3 transition-colors hover:bg-surface-hover/80"
+              className="flex items-center gap-3 rounded-lg bg-bg-panel/80 p-3 transition-colors hover:bg-surface-hover/80"
             >
               <div
                 className={cn(

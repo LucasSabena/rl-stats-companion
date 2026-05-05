@@ -109,7 +109,7 @@ export function HistoryPage() {
   };
 
   const selectBaseClasses =
-    "h-10 w-full rounded-md border bg-bg-secondary px-3 text-sm text-text-primary border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50";
+    "h-10 w-full rounded-md border bg-bg-surface px-3 text-sm text-text-primary border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50";
 
   return (
     <PageContainer>

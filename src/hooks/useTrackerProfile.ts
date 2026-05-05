@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
-import { fetchTrackerProfile, getCachedProfile, refreshTrackerProfile } from "@/lib/api";
+import {
+  fetchTrackerProfile,
+  getCachedProfile,
+  refreshTrackerProfile,
+  fetchRlstatsProfile,
+  getCachedRlstatsProfile,
+  refreshRlstatsProfile,
+} from "@/lib/api";
 import type { TrackerProfile } from "@/lib/types";
 
 const QUERY_KEY = ["tracker-profile"] as const;
@@ -13,7 +20,10 @@ export function useTrackerProfile() {
     queryKey: QUERY_KEY,
     queryFn: async () => {
       const cached = await getCachedProfile();
-      return cached;
+      if (cached) return cached;
+
+      const rlstatsCached = await getCachedRlstatsProfile();
+      return rlstatsCached;
     },
     staleTime: 4 * 60 * 1000,
     retry: 1,
@@ -36,7 +46,13 @@ export function useRefreshTrackerProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: refreshTrackerProfile,
+    mutationFn: async () => {
+      try {
+        return await refreshTrackerProfile();
+      } catch {
+        return await refreshRlstatsProfile();
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(QUERY_KEY, data);
     },
@@ -47,7 +63,13 @@ export function useFetchTrackerProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: fetchTrackerProfile,
+    mutationFn: async () => {
+      try {
+        return await fetchTrackerProfile();
+      } catch {
+        return await fetchRlstatsProfile();
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData(QUERY_KEY, data);
     },

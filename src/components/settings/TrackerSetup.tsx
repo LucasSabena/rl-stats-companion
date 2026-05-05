@@ -89,7 +89,7 @@ export function TrackerSetup() {
   }
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4">
+    <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
@@ -125,7 +125,7 @@ export function TrackerSetup() {
             value={profileUrl}
             onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="https://rocketleague.tracker.network/rocket-league/profile/steam/tu-nombre/overview"
-            className="w-full rounded-md border border-border-subtle bg-bg-primary px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+            className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
           />
           <p className="mt-1 text-[10px] text-text-tertiary">
             Anda a{" "}
@@ -158,7 +158,7 @@ export function TrackerSetup() {
               value={localKey || apiKey}
               onChange={(e) => setLocalKey(e.target.value)}
               placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-              className="w-full rounded-md border border-border-subtle bg-bg-primary px-3 py-2 pr-9 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+              className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 pr-9 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
             />
             <button
               type="button"
@@ -201,7 +201,7 @@ export function TrackerSetup() {
           <select
             value={localPlatform || platform}
             onChange={(e) => setLocalPlatform(e.target.value as TrackerPlatform)}
-            className="w-full rounded-md border border-border-subtle bg-bg-primary px-3 py-2 text-sm text-text-primary focus:border-accent-primary focus:outline-none"
+            className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 text-sm text-text-primary focus:border-accent-primary focus:outline-none"
           >
             {PLATFORMS.map((p) => (
               <option key={p.value} value={p.value}>{p.label}</option>
@@ -217,7 +217,7 @@ export function TrackerSetup() {
             value={localUsername || username}
             onChange={(e) => setLocalUsername(e.target.value)}
             placeholder="Nombre exacto en el juego"
-            className="w-full rounded-md border border-border-subtle bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+            className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
           />
         </div>
 

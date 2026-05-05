@@ -52,7 +52,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
         ref={contentRef}
         tabIndex={-1}
         className={cn(
-          "w-full rounded-xl border border-border-strong bg-bg-secondary shadow-level-4 animate-scale-in",
+          "w-full rounded-xl border border-border-highlight bg-bg-surface shadow-level-4 animate-scale-in",
           sizes[size]
         )}
       >

@@ -73,7 +73,7 @@ export function ContextMenu({ children, items, onOpenChange }: ContextMenuProps)
           data-context-menu
           style={{ left: pos.x, top: pos.y }}
           className={cn(
-            "fixed z-50 min-w-[10rem] overflow-hidden rounded-xl border border-border-strong bg-bg-elevated py-1.5 shadow-level-3 animate-scale-in"
+            "fixed z-50 min-w-[10rem] overflow-hidden rounded-xl border border-border-highlight bg-bg-elevated py-1.5 shadow-level-3 animate-scale-in"
           )}
         >
           {items.map((item, index) => {

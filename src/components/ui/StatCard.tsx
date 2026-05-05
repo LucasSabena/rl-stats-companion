@@ -25,7 +25,7 @@ const accentIconStyles = {
   orange: "text-accent-secondary bg-accent-secondary-subtle",
   green: "text-accent-success bg-accent-success-subtle",
   purple: "text-accent-purple bg-accent-purple-subtle",
-  default: "text-text-tertiary bg-bg-tertiary",
+  default: "text-text-tertiary bg-bg-panel",
 };
 
 export function StatCard({ label, value, icon: Icon, trend, trendValue, className, accent = "default" }: StatCardProps) {
@@ -40,7 +40,7 @@ export function StatCard({ label, value, icon: Icon, trend, trendValue, classNam
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-subtle bg-bg-secondary p-4 transition-all duration-200 ease-out",
+        "rounded-xl border border-border-subtle bg-bg-surface p-4 transition-all duration-200 ease-out",
         "hover:border-border-default hover:shadow-level-2",
         "border-l-[3px]",
         accentStyles[accent],

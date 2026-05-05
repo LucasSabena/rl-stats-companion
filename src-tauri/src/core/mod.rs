@@ -7,6 +7,7 @@ pub mod obs_text;
 pub mod overlay;
 pub mod parser;
 pub mod process_watcher;
+pub mod rlstats_api;
 pub mod session;
 pub mod settings;
 pub mod storage;

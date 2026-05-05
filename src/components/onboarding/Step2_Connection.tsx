@@ -13,7 +13,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
         La app se conecta directamente al stream de datos de Rocket League en tu PC
         mediante una conexion TCP local en el puerto <span className="text-accent-primary font-mono font-semibold">49123</span>.
       </p>
-      <div className="bg-bg-tertiary rounded-xl p-6 max-w-md mx-auto mb-12 text-left border border-border-subtle">
+      <div className="bg-bg-panel rounded-xl p-6 max-w-md mx-auto mb-12 text-left border border-border-subtle">
         <h3 className="font-display text-sm font-semibold text-text-primary uppercase mb-3">Como funciona</h3>
         <ul className="space-y-3 text-sm text-text-secondary">
           <li className="flex items-start gap-2">

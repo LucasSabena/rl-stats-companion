@@ -23,6 +23,7 @@ use crate::core::process_watcher::ProcessWatcher;
 use crate::core::session::{MatchPhase, SessionManager};
 use crate::core::settings::get_settings;
 use crate::core::storage::{init_storage, DbPool};
+use crate::core::rlstats_api::RlstatsClient;
 use crate::core::tracker_api::TrackerClient;
 
 pub struct AppState {
@@ -54,6 +55,7 @@ pub fn run() {
             commands::live::get_live_state,
             commands::live::get_connection_status,
             commands::mmr::fetch_live_mmr_snapshot,
+            commands::mmr::set_session_mmr_snapshot,
             commands::history::get_matches,
             commands::history::get_match_detail,
             commands::history::delete_match_cmd,
@@ -63,6 +65,8 @@ pub fn run() {
             commands::analytics::get_daily_rollups,
             commands::analytics::get_session_matches,
             commands::analytics::get_insights,
+            commands::players::get_player_directory,
+            commands::players::get_player_detail,
             commands::settings::get_settings_cmd,
             commands::settings::set_settings_cmd,
             commands::settings::configure_rl_ini_cmd,
@@ -78,6 +82,9 @@ pub fn run() {
             commands::tracker::fetch_tracker_profile,
             commands::tracker::get_cached_profile,
             commands::tracker::refresh_tracker_profile,
+            commands::rlstats::fetch_rlstats_profile,
+            commands::rlstats::get_cached_rlstats_profile,
+            commands::rlstats::refresh_rlstats_profile,
             commands::overlay::start_overlay_server,
             commands::overlay::stop_overlay_server,
             commands::overlay::get_overlay_server_status,
@@ -294,7 +301,9 @@ async fn process_events(
             let _ = app_handle.emit("live-event", live_event);
         }
 
-        {
+        // Only emit live-update for UpdateState events to avoid flickering
+        // from high-frequency non-state events (goals, statfeed, etc.)
+        if matches!(&event, RlEvent::UpdateState { .. }) {
             let live_data = session.live_state();
             let _ = app_handle.emit("live-update", &live_data);
 
@@ -459,16 +468,25 @@ async fn tracker_refresh_loop(db_pool: Arc<DbPool>, app_handle: tauri::AppHandle
         };
 
         let api_key = settings.tracker_api_key.clone();
-        let client = match TrackerClient::new(api_key) {
-            Ok(c) => c,
-            Err(e) => {
-                tracing::error!(error = %e, "Failed to create TrackerClient for auto-refresh");
-                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
-                continue;
-            }
+        let interval_secs = (settings.tracker_refresh_interval_min.max(1) as u64) * 60;
+
+        let fetch_result = if api_key.is_some() {
+            let client = match TrackerClient::new(api_key) {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::error!(error = %e, "Failed to create TrackerClient for auto-refresh");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                    continue;
+                }
+            };
+            client.fetch_profile(&platform, &username).await
+        } else {
+            Err(crate::error::AppError::ConfigError(
+                "No Tracker API key configured, using RLStats directly.".into(),
+            ))
         };
 
-        match client.fetch_profile(&platform, &username).await {
+        match fetch_result {
             Ok(profile) => {
                 if let Ok(profile_json) = serde_json::to_string(&profile) {
                     if let Err(e) = crate::core::storage::upsert_tracker_cache(
@@ -483,12 +501,50 @@ async fn tracker_refresh_loop(db_pool: Arc<DbPool>, app_handle: tauri::AppHandle
                     }
                 }
             }
-            Err(e) => {
-                tracing::warn!(error = %e, "Auto-refresh tracker profile failed");
+            Err(tracker_err) => {
+                tracing::warn!(error = %tracker_err, "Auto-refresh tracker profile failed, trying RLStats");
+
+                let rlstats_platform = match platform.to_lowercase().as_str() {
+                    "steam" => "Steam",
+                    "epic" => "Epic",
+                    "xbl" => "Xbox",
+                    "psn" => "PS4",
+                    _ => {
+                        tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
+                        continue;
+                    }
+                };
+
+                match RlstatsClient::new() {
+                    Ok(rl_client) => {
+                        match rl_client.fetch_profile_html(rlstats_platform, &username).await {
+                            Ok(html) => {
+                                match crate::core::rlstats_api::parse_profile_html(&html, &platform, &username) {
+                                    Ok(profile) => {
+                                        if let Ok(profile_json) = serde_json::to_string(&profile) {
+                                            if let Err(e) = crate::core::storage::upsert_rlstats_cache(
+                                                &db_pool,
+                                                &platform,
+                                                &username,
+                                                &profile_json,
+                                            ) {
+                                                tracing::error!(error = %e, "Failed to cache rlstats profile");
+                                            } else {
+                                                let _ = app_handle.emit("tracker-profile-updated", &profile);
+                                            }
+                                        }
+                                    }
+                                    Err(e) => tracing::error!(error = %e, "Failed to parse RLStats profile"),
+                                }
+                            }
+                            Err(e) => tracing::error!(error = %e, "Failed to fetch RLStats profile"),
+                        }
+                    }
+                    Err(e) => tracing::error!(error = %e, "Failed to create RLStats client"),
+                }
             }
         }
 
-        let interval_secs = (settings.tracker_refresh_interval_min.max(1) as u64) * 60;
         tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
     }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useLiveStore } from "@/stores/liveStore";
 import { TeamPanel } from "./TeamPanel";
+import { PlayerCard } from "./PlayerCard";
 import { EventFeed } from "./EventFeed";
 import { MatchTimer } from "./MatchTimer";
 import { ScoreDisplay } from "./ScoreDisplay";
@@ -10,9 +11,10 @@ import { Badge } from "@/components/ui/Badge";
 import { RankWidget } from "@/components/tracker/RankWidget";
 import { useLiveMmr } from "@/hooks/useLiveMmr";
 import { cn } from "@/lib/utils";
-import { Radio, X } from "lucide-react";
+import { Radio, X, RefreshCw } from "lucide-react";
 
 function getMatchSizeLabel(playerCount: number): string {
+  if (playerCount === 1) return "Entrenamiento";
   if (playerCount <= 2) return "1v1";
   if (playerCount <= 4) return "2v2";
   if (playerCount <= 6) return "3v3";
@@ -65,7 +67,7 @@ function MatchEndBanner() {
 
   if (winner === null) {
     label = `Empate ${score_blue} - ${score_orange}`;
-    bgClass = "border-border-subtle bg-bg-secondary";
+    bgClass = "border-border-subtle bg-bg-surface";
   } else if (winner === 0) {
     label = `Victoria! ${score_blue} - ${score_orange}`;
     bgClass = "border-accent-success/30 bg-accent-success-subtle";
@@ -106,10 +108,11 @@ function MatchEndBanner() {
 export function LiveDashboard() {
   const currentMatch = useLiveStore((state) => state.currentMatch);
   const connectionStatus = useLiveStore((state) => state.connectionStatus);
-  const { data: liveMmr, isFetching: isFetchingMmr } = useLiveMmr();
+  const { data: liveMmr, isFetching: isFetchingMmr, forceRefresh } = useLiveMmr();
 
   const bluePlayers = currentMatch?.players.filter((player) => player.team === 0) ?? [];
   const orangePlayers = currentMatch?.players.filter((player) => player.team === 1) ?? [];
+  const otherPlayers = currentMatch?.players.filter((player) => player.team !== 0 && player.team !== 1) ?? [];
   const mmrByPlayerId = Object.fromEntries(
     (liveMmr?.players ?? []).map((player) => [player.primaryId, player])
   );
@@ -166,6 +169,35 @@ export function LiveDashboard() {
 
       <RankWidget />
 
+      {liveMmr && (
+        <div className="rounded-xl border border-border-subtle bg-bg-secondary/70 px-4 py-3 text-xs text-text-tertiary">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>
+              Playlist {liveMmr.playlistConfidence === "high" ? "detectada" : liveMmr.playlistConfidence === "low" ? "estimada" : "desconocida"}:
+              <span className="ml-1 font-semibold text-text-secondary">{liveMmr.playlist ?? "sin resolver"}</span>
+            </span>
+            {liveMmr.playlistCandidates.length > 1 && (
+              <span>
+                Candidatos: <span className="text-text-secondary">{liveMmr.playlistCandidates.join(", ")}</span>
+              </span>
+            )}
+            <span>Actualizado: {new Date(liveMmr.fetchedAt).toLocaleTimeString("es-AR")}</span>
+            {currentMatch?.matchType === "online" && (
+              <button
+                onClick={forceRefresh}
+                disabled={isFetchingMmr}
+                className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
+                aria-label="Actualizar MMR"
+                type="button"
+              >
+                <RefreshCw size={12} className={cn(isFetchingMmr && "animate-spin")} />
+                <span>{isFetchingMmr ? "Actualizando..." : "Actualizar"}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-2">
         <TeamPanel
           team="blue"
@@ -180,6 +212,27 @@ export function LiveDashboard() {
           mmrLoading={isFetchingMmr}
         />
       </div>
+
+      {otherPlayers.length > 0 && (
+        <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
+          <div className="mb-3 flex items-center gap-2.5">
+            <div className="h-3 w-3 rounded-full bg-text-muted" />
+            <h3 className="font-display text-sm font-bold uppercase tracking-wide text-text-secondary">
+              Otros jugadores
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {otherPlayers.map((player) => (
+              <PlayerCard
+                key={player.id}
+                player={player}
+                mmr={mmrByPlayerId[player.id] ?? null}
+                mmrLoading={isFetchingMmr}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <EventFeed />
     </div>

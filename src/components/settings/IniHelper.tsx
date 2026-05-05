@@ -3,12 +3,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { configureRlIni } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { useUIStore } from "@/stores/uiStore";
+import { useSettings } from "@/hooks/useSettings";
 import { FileJson } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { iniSettingsSchema, type IniSettingsFormValues } from "@/lib/schemas";
 
 export function IniHelper() {
   const addToast = useUIStore((state) => state.addToast);
+  const { data: settings } = useSettings();
 
   const {
     register,
@@ -24,7 +26,11 @@ export function IniHelper() {
 
   const onSubmit = async (data: IniSettingsFormValues) => {
     try {
-      await configureRlIni();
+      if (!settings?.rlPath) {
+        throw new Error("Primero configura la ruta de Rocket League en Ajustes.");
+      }
+
+      await configureRlIni(settings.rlPath, data.port);
       addToast({
         type: "success",
         title: "Configuración aplicada",
@@ -40,7 +46,7 @@ export function IniHelper() {
   };
 
   const inputClass = cn(
-    "w-full rounded-md border bg-bg-secondary px-3 py-2 text-sm text-text-primary",
+    "w-full rounded-md border bg-bg-surface px-3 py-2 text-sm text-text-primary",
     "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
   );
 
@@ -48,7 +54,7 @@ export function IniHelper() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-lg border border-border-subtle bg-bg-secondary p-4">
+      <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-info/10 text-accent-info">
             <FileJson size={20} />
@@ -91,7 +97,7 @@ export function IniHelper() {
                 id="ini-enabled"
                 type="checkbox"
                 {...register("enabled")}
-                className="h-4 w-4 rounded border-border-strong bg-bg-secondary text-accent-primary focus:ring-accent-primary"
+                className="h-4 w-4 rounded border-border-highlight bg-bg-surface text-accent-primary focus:ring-accent-primary"
               />
               <label
                 htmlFor="ini-enabled"

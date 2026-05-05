@@ -35,7 +35,7 @@ const modeOptions = [
 ];
 
 const dateInputClasses = cn(
-  "h-9 rounded-md border bg-bg-secondary px-3 text-sm text-text-primary",
+  "h-9 rounded-md border bg-bg-surface px-3 text-sm text-text-primary",
   "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50",
   "[color-scheme:dark]"
 );
@@ -134,7 +134,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
     : "";
 
   return (
-    <div className="mt-6 rounded-xl border border-border-subtle bg-bg-tertiary/50 p-5">
+    <div className="mt-6 rounded-xl border border-border-subtle bg-bg-panel/50 p-5">
       <div className="flex items-center gap-2 mb-4">
         <SlidersHorizontal size={16} className="text-text-muted" />
         <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
@@ -161,7 +161,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Nombre de jugador..."
               className={cn(
-                "h-9 w-48 rounded-md border bg-bg-secondary pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted",
+                "h-9 w-48 rounded-md border bg-bg-surface pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted",
                 "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
               )}
             />
