@@ -267,5 +267,5 @@ export function getArenaImagePath(arena: string | null | undefined): string | nu
   if (!arena) return null;
   const resolved = resolveArenaKey(arena);
   if (!resolved) return null;
-  return `/arenas/${resolved}.png`;
+  return `/arenas/${resolved}.webp`;
 }
