@@ -30,8 +30,9 @@ const POLL_INTERVAL_MS = 3000;
 const COPY_FEEDBACK_MS = 2000;
 
 const inputClass = cn(
-  "rounded-md border bg-bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted",
-  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
+  "rounded-lg border bg-bg-base px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-all duration-200",
+  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20",
+  "hover:border-border-highlight"
 );
 
 // ---------------------------------------------------------------------------
@@ -207,11 +208,11 @@ export function OverlayStreaming() {
   // -----------------------------------------------------------------------
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-panel p-4">
-      {/* ---- Header ---- */}
+    <div className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
+      {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {/* Status dot */}
             <span className="relative flex h-2.5 w-2.5 shrink-0">
               <span
@@ -225,18 +226,25 @@ export function OverlayStreaming() {
               )}
             </span>
 
-            <RadioTower size={18} className={isRunning ? "text-accent-primary" : "text-text-secondary"} />
-            <h4 className="text-sm font-semibold text-text-primary">
-              {isRunning ? "Streaming activo" : "Streaming OBS"}
-            </h4>
+            <div className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+              isRunning ? "bg-accent-primary-subtle" : "bg-bg-elevated"
+            )}>
+              <RadioTower size={18} className={isRunning ? "text-accent-primary" : "text-text-muted"} />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-text-primary">
+                {isRunning ? "Streaming activo" : "Streaming OBS"}
+              </h4>
 
-            {/* Tooltip */}
-            <Tooltip content="Transmite datos en vivo a OBS Studio mediante overlays de navegador locales.">
-              <Monitor size={14} className="cursor-help text-text-muted hover:text-text-secondary transition-colors" />
-            </Tooltip>
+              {/* Tooltip */}
+              <Tooltip content="Transmite datos en vivo a OBS Studio mediante overlays de navegador locales.">
+                <Monitor size={13} className="mt-0.5 cursor-help text-text-muted hover:text-text-secondary transition-colors" />
+              </Tooltip>
+            </div>
           </div>
 
-          <p className="mt-1 text-xs text-text-tertiary">
+          <p className="mt-2 text-xs text-text-muted">
             {isRunning
               ? `Servidor overlay corriendo en el puerto ${activePort}. ${connectedClients > 0 ? `${connectedClients} cliente(s) conectado(s).` : "Esperando conexiones..."}`
               : "Inicia el servidor local para que OBS Studio capture los datos de tus partidas en tiempo real."}
@@ -257,9 +265,9 @@ export function OverlayStreaming() {
         </Button>
       </div>
 
-      {/* ---- Port input (shown when stopped) ---- */}
+      {/* ── Port input (shown when stopped) ── */}
       {!isRunning && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-3 rounded-lg border border-dashed border-border-subtle bg-bg-base/50 px-4 py-3">
           <label htmlFor="overlay-port" className="text-xs font-medium text-text-secondary shrink-0">
             Puerto:
           </label>
@@ -277,11 +285,11 @@ export function OverlayStreaming() {
         </div>
       )}
 
-      {/* ---- Connected clients + URLs (shown when running) ---- */}
+      {/* ── Connected clients + URLs (shown when running) ── */}
       {isRunning && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-5 space-y-4">
           {/* Client count */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-lg bg-bg-base px-3 py-2">
             <Wifi
               size={14}
               className={cn(connectedClients > 0 ? "text-accent-primary" : "text-text-muted")}
@@ -297,19 +305,19 @@ export function OverlayStreaming() {
           {/* URL list */}
           {urls.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-text-secondary">URLs de overlay</p>
-              <div className="space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">URLs de overlay</p>
+              <div className="space-y-2">
                 {urls.map((item) => {
                   const isCopied = copiedUrl === item.url;
                   return (
                     <div
                       key={item.url}
-                      className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-3 py-2"
+                      className="group/url flex items-center gap-3 rounded-lg border border-border-subtle bg-bg-base px-3.5 py-2.5 transition-all duration-200 hover:border-border-default"
                     >
-                      <span className="flex-1 min-w-0 text-xs font-medium text-text-secondary truncate">
+                      <span className="flex-1 min-w-0 text-xs font-semibold text-text-secondary truncate">
                         {item.name}
                       </span>
-                      <code className="max-w-[240px] truncate text-xs text-text-tertiary select-all">
+                      <code className="max-w-[200px] truncate text-[11px] font-mono text-text-tertiary select-all">
                         {item.url}
                       </code>
                       <Tooltip content={isCopied ? "Copiado!" : "Copiar URL"}>
@@ -340,16 +348,18 @@ export function OverlayStreaming() {
         </div>
       )}
 
-      {/* ---- Info box: how to use with OBS ---- */}
-      <div className="mt-4 rounded-md bg-bg-surface p-3 text-xs text-text-secondary">
-        <div className="flex items-center gap-1.5 mb-1">
-          <ExternalLink size={12} className="text-accent-info shrink-0" />
-          <p className="font-medium text-accent-info">Como usar con OBS Studio:</p>
+      {/* ── Info box: how to use with OBS ── */}
+      <div className="mt-5 rounded-lg border border-accent-info/20 bg-accent-info/5 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent-info/10">
+            <ExternalLink size={12} className="text-accent-info" />
+          </div>
+          <p className="text-xs font-semibold text-accent-info">Como usar con OBS Studio:</p>
         </div>
-        <ol className="list-decimal pl-4 space-y-0.5 text-text-tertiary">
+        <ol className="list-decimal pl-5 space-y-1 text-xs text-text-tertiary">
           <li>Inicia el servidor de streaming con el boton de arriba.</li>
-          <li>Abre OBS Studio y agrega una nueva fuente de tipo <strong>Navegador</strong>.</li>
-          <li>Copia la URL del overlay que quieras mostrar y pegala en el campo <strong>URL</strong> de la fuente.</li>
+          <li>Abre OBS Studio y agrega una nueva fuente de tipo <strong className="text-text-secondary">Navegador</strong>.</li>
+          <li>Copia la URL del overlay que quieras mostrar y pegala en el campo <strong className="text-text-secondary">URL</strong> de la fuente.</li>
           <li>Ajusta la anchura y altura segun el diseno del overlay.</li>
           <li>Asegurate de que el puerto ({activePort}) no este bloqueado por tu firewall local.</li>
         </ol>

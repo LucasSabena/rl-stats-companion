@@ -2,7 +2,7 @@ use std::sync::Arc;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
+    Emitter, Listener, Manager, WebviewUrl, WebviewWindowBuilder,
 };
 #[cfg(not(debug_assertions))]
 use tauri_plugin_updater::UpdaterExt;
@@ -22,7 +22,7 @@ use crate::core::overlay::OverlayServer;
 use crate::core::process_watcher::ProcessWatcher;
 use crate::core::profiles::{get_db_path_for_profile, init_profiles};
 use crate::core::session::{MatchPhase, SessionManager};
-use crate::core::settings::get_settings;
+use crate::core::settings::{get_settings, set_settings};
 use crate::core::storage::{init_storage, DbPool};
 use crate::core::rlstats_api::RlstatsClient;
 use crate::core::tracker_api::TrackerClient;
@@ -49,6 +49,12 @@ pub fn run() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
@@ -113,8 +119,25 @@ pub fn run() {
             {
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    if let Ok(updater) = handle.updater() {
-                        let _: Result<_, _> = updater.check().await;
+                    match handle.updater() {
+                        Ok(updater) => match updater.check().await {
+                            Ok(Some(update)) => {
+                                info!(
+                                    version = %update.version,
+                                    "Update available: {}",
+                                    update.version
+                                );
+                            }
+                            Ok(None) => {
+                                info!("App is up to date");
+                            }
+                            Err(e) => {
+                                tracing::warn!(error = %e, "Background update check failed");
+                            }
+                        },
+                        Err(e) => {
+                            tracing::warn!(error = %e, "Failed to create updater handle");
+                        }
                     }
                 });
             }
@@ -127,6 +150,13 @@ pub fn run() {
 
             let active_profile_id = init_profiles(&app_dir)
                 .expect("Failed to initialize profiles");
+
+            // Attempt recovery from a legacy app-data directory even if profiles.json
+            // already exists. This handles Tauri identifier changes.
+            if let Ok(true) = crate::core::profiles::try_migrate_from_legacy(&app_dir) {
+                info!("Migrated data from legacy directory");
+            }
+
             let db_path = get_db_path_for_profile(&app_dir, &active_profile_id);
 
             info!(profile_id = %active_profile_id, db_path = %db_path.display(), "Initializing storage");
@@ -201,7 +231,8 @@ pub fn run() {
             }
 
             let watcher = ProcessWatcher::new();
-            let game_running_flag = watcher.start();
+            let app_handle_for_watcher = app.handle().clone();
+            let game_running_flag = watcher.start(app_handle_for_watcher);
 
             let ingestor = start_ingestor(port, Arc::clone(&game_running_flag));
             let ingestor_status = Arc::clone(&ingestor.status);
@@ -237,17 +268,75 @@ pub fn run() {
                 _tray: Box::new(tray),
             });
 
-            // Restore overlay window if it was enabled last session
+            // Restore overlay window if it was enabled last session and game is running
+            // Also setup game status listener to auto-show/hide overlay
             if settings.overlay_enabled {
                 let app_handle = app.handle().clone();
                 let pool = db_pool.clone();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     let app_settings = get_settings(&pool).unwrap_or_default();
-                    if app_settings.overlay_enabled {
+                    
+                    // Only restore overlay if game is currently running
+                    let game_running = app_settings.game_running;
+                    if app_settings.overlay_enabled && game_running {
                         if let Err(e) = create_overlay_window_inner(&app_handle, &app_settings).await {
                             tracing::warn!(error = %e, "Failed to restore overlay window on startup");
                         }
+                    }
+                });
+            }
+
+            // Setup game status change listener to auto-show/hide overlay
+            {
+                let app_handle = app.handle().clone();
+                let pool = db_pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    let app_handle_for_listener = app_handle.clone();
+                    let pool_for_closure = pool.clone();
+                    
+                    let _receiver = app_handle_for_listener.listen("game-status-changed", move |event| {
+                        let payload: serde_json::Value = serde_json::from_str(event.payload()).unwrap_or_default();
+                        let game_running = payload.get("running").and_then(|v| v.as_bool()).unwrap_or(false);
+                        let pool = pool_for_closure.clone();
+                        let app_handle = app_handle.clone();
+                        
+                        tauri::async_runtime::spawn(async move {
+                            // Update game_running in settings
+                            if let Ok(mut app_settings) = get_settings(&pool) {
+                                app_settings.game_running = game_running;
+                                let _ = set_settings(&pool, &app_settings);
+                            }
+                            
+                            if let Ok(app_settings) = get_settings(&pool) {
+                                if !app_settings.overlay_enabled {
+                                    return;
+                                }
+                                
+                                let overlay_win = app_handle.get_webview_window("overlay");
+                                
+                                if game_running {
+                                    // Game started: show overlay if enabled
+                                    if overlay_win.is_none() {
+                                        if let Err(e) = create_overlay_window_inner(&app_handle, &app_settings).await {
+                                            tracing::warn!(error = %e, "Failed to create overlay window when game started");
+                                        }
+                                    } else if let Some(ref win) = overlay_win {
+                                        let _ = win.show();
+                                    }
+                                } else {
+                                    // Game closed: hide overlay
+                                    if let Some(ref win) = overlay_win {
+                                        let _ = win.hide();
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    
+                    // Keep task alive
+                    loop {
+                        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
                     }
                 });
             }
@@ -602,6 +691,7 @@ async fn create_overlay_window_inner(
             "showNames": settings.overlay_show_names,
             "showPlayerScore": settings.overlay_show_player_score,
             "showBoost": settings.overlay_show_boost,
+            "showMmr": settings.overlay_show_mmr,
         }),
     );
     let _ = win.emit("overlay-opacity-changed", settings.overlay_opacity);

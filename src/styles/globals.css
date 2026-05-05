@@ -83,6 +83,11 @@
 
   --color-overlay: rgba(0, 0, 0, 0.8);
   --color-ring: rgba(59, 130, 246, 0.5);
+
+  /* ── Boost Indicators ── */
+  --color-boost-full: #10b981;
+  --color-boost-mid: #f59e0b;
+  --color-boost-low: #ef4444;
 }
 
 /* ============================================
@@ -187,7 +192,57 @@
     background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
+
+  /* ── Boost Bar Colors ── */
+  .bg-boost-full { background-color: var(--color-boost-full); }
+  .bg-boost-mid { background-color: var(--color-boost-mid); }
+  .bg-boost-low { background-color: var(--color-boost-low); }
+
+  /* ── Overlay HUD Panel ── */
+  .overlay-hud {
+    background: rgba(5, 7, 10, 0.65);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03),
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* ── Overtime Pulse ── */
+  @keyframes overtime-pulse {
+    0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+    50% { opacity: 0.7; text-shadow: 0 0 16px rgba(245, 158, 11, 0.6); }
+  }
+  .animate-overtime { animation: overtime-pulse 1.5s ease-in-out infinite; }
+
+  /* ── Score Glow ── */
+  @keyframes score-glow-blue {
+    0%, 100% { text-shadow: 0 0 12px rgba(59, 130, 246, 0.2); }
+    50% { text-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+  }
+  @keyframes score-glow-orange {
+    0%, 100% { text-shadow: 0 0 12px rgba(249, 115, 22, 0.2); }
+    50% { text-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+  }
+  .score-glow-blue { animation: score-glow-blue 2s ease-in-out infinite; }
+  .score-glow-orange { animation: score-glow-orange 2s ease-in-out infinite; }
+
+  /* ── Player Row Hover (interactive mode) ── */
+  .player-row-hover {
+    transition: background-color 0.15s ease;
+  }
+  .player-row-hover:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  /* ── MMR Badge Colors ── */
+  .mmr-high { color: var(--color-boost-full); }
+  .mmr-mid { color: var(--color-boost-mid); }
+  .mmr-low { color: var(--color-text-tertiary); }
 }
 
 /* ============================================

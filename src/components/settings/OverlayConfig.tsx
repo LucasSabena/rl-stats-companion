@@ -31,8 +31,9 @@ import {
 import type { OverlayWindowState, OverlayConfigForm, OverlayPositionPreset } from "@/lib/types";
 
 const inputClass = cn(
-  "rounded-lg border bg-bg-surface px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted transition-colors",
-  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)]",
+  "rounded-lg border bg-bg-base px-2.5 py-2 text-xs text-text-primary placeholder:text-text-muted transition-all duration-200",
+  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20",
+  "hover:border-border-highlight",
   "w-full"
 );
 
@@ -70,6 +71,7 @@ export function OverlayConfig() {
       showNames: true,
       showPlayerScore: true,
       showBoost: false,
+      showMmr: false,
     },
   });
 
@@ -103,6 +105,7 @@ export function OverlayConfig() {
           showNames: appSettings.overlayShowNames ?? true,
           showPlayerScore: appSettings.overlayShowPlayerScore ?? true,
           showBoost: appSettings.overlayShowBoost ?? false,
+          showMmr: appSettings.overlayShowMmr ?? false,
         });
       } catch {
         addToast({ type: "error", title: "Error", message: "No se pudo cargar la config del overlay" });
@@ -176,6 +179,7 @@ export function OverlayConfig() {
         overlayShowNames: data.showNames,
         overlayShowPlayerScore: data.showPlayerScore,
         overlayShowBoost: data.showBoost,
+        overlayShowMmr: data.showMmr,
       });
 
       if (state?.visible) {
@@ -198,34 +202,45 @@ export function OverlayConfig() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-border-subtle bg-bg-panel p-4 text-sm text-text-muted">
+      <div className="rounded-xl border border-border-subtle bg-bg-surface/60 p-5 text-sm text-text-muted">
         Cargando configuracion...
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="rounded-lg border border-border-subtle bg-bg-panel p-4 space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl border border-border-subtle bg-bg-surface/60 p-5 space-y-5">
+      {/* ── Header with toggle ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {watched.enabled ? (
-            <Monitor size={18} className="text-accent-secondary" />
-          ) : (
-            <MonitorOff size={18} className="text-text-secondary" />
-          )}
-          <h4 className="text-sm font-semibold text-text-primary">Overlay in-game</h4>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+            watched.enabled ? "bg-accent-secondary-subtle" : "bg-bg-elevated"
+          )}>
+            {watched.enabled ? (
+              <Monitor size={18} className="text-accent-secondary" />
+            ) : (
+              <MonitorOff size={18} className="text-text-muted" />
+            )}
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-text-primary">Overlay in-game</h4>
+            <p className="text-xs text-text-muted">Datos en tiempo real sobre Rocket League</p>
+          </div>
         </div>
         <button
           type="button"
           onClick={handleToggleEnabled}
+          role="switch"
+          aria-checked={watched.enabled}
           className={cn(
-            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-            watched.enabled ? "bg-accent-secondary" : "bg-border-highlight"
+            "relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200 active:scale-95",
+            watched.enabled ? "bg-accent-secondary shadow-[0_0_8px_rgba(249,115,22,0.4)]" : "bg-border-highlight"
           )}
         >
           <span
             className={cn(
-              "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+              "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-all duration-200",
               watched.enabled ? "translate-x-6" : "translate-x-1"
             )}
           />
@@ -233,159 +248,185 @@ export function OverlayConfig() {
       </div>
 
       {!watched.enabled && (
-        <p className="text-xs text-text-muted">
-          Activa el overlay para mostrar datos en tiempo real sobre Rocket League.
-          Los clicks atraviesan el overlay y llegan al juego.
-        </p>
+        <div className="rounded-lg border border-dashed border-border-subtle bg-bg-base/50 px-4 py-3">
+          <p className="text-xs text-text-muted">
+            Activa el overlay para mostrar datos en tiempo real sobre Rocket League.
+            Los clicks atraviesan el overlay y llegan al juego.
+          </p>
+        </div>
       )}
 
       {watched.enabled && (
         <>
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Move size={14} className="text-text-tertiary" />
-              <span className="text-xs font-medium text-text-secondary">Posicion</span>
-            </div>
-            <div className="grid grid-cols-5 gap-1.5 mb-2">
-              {(["top-left", "top-right", "bottom-left", "bottom-right", "custom"] as const).map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => handlePresetChange(preset)}
-                  className={cn(
-                    "rounded-md border px-2 py-1.5 text-[10px] font-medium transition-colors",
-                    watched.positionPreset === preset
-                      ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
-                      : "border-border-subtle text-text-tertiary hover:text-text-secondary"
-                  )}
-                >
-                  {preset === "top-left" ? "Arr-Izq"
-                   : preset === "top-right" ? "Arr-Der"
-                   : preset === "bottom-left" ? "Abj-Izq"
-                   : preset === "bottom-right" ? "Abj-Der"
-                   : "Custom"}
-                </button>
-              ))}
-            </div>
-            {watched.positionPreset === "custom" && (
-              <div className="flex gap-2">
-                <input type="number" placeholder="X" {...register("positionX", { valueAsNumber: true })} className={cn(inputClass, "w-20")} />
-                <input type="number" placeholder="Y" {...register("positionY", { valueAsNumber: true })} className={cn(inputClass, "w-20")} />
+          {/* ── Position + Size grid ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Position */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-elevated">
+                  <Move size={12} className="text-text-tertiary" />
+                </div>
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Posicion</span>
               </div>
-            )}
+              {/* Position preset grid - visual representation */}
+              <div className="grid grid-cols-5 gap-1.5">
+                {(["top-left", "top-right", "bottom-left", "bottom-right", "custom"] as const).map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => handlePresetChange(preset)}
+                    className={cn(
+                      "rounded-lg border px-2 py-2 text-[10px] font-medium transition-all duration-200 active:scale-95",
+                      watched.positionPreset === preset
+                        ? "border-accent-primary bg-accent-primary/10 text-accent-primary shadow-[0_0_8px_rgba(59,130,246,0.2)]"
+                        : "border-border-subtle text-text-tertiary hover:text-text-secondary hover:bg-bg-elevated"
+                    )}
+                  >
+                    {preset === "top-left" ? "↖ Arr-Izq"
+                     : preset === "top-right" ? "↗ Arr-Der"
+                     : preset === "bottom-left" ? "↙ Abj-Izq"
+                     : preset === "bottom-right" ? "↘ Abj-Der"
+                     : "✎ Custom"}
+                  </button>
+                ))}
+              </div>
+              {watched.positionPreset === "custom" && (
+                <div className="flex gap-2">
+                  <input type="number" placeholder="X" {...register("positionX", { valueAsNumber: true })} className={cn(inputClass, "w-20")} />
+                  <input type="number" placeholder="Y" {...register("positionY", { valueAsNumber: true })} className={cn(inputClass, "w-20")} />
+                </div>
+              )}
+            </div>
+
+            {/* Size */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-elevated">
+                  <Grip size={12} className="text-text-tertiary" />
+                </div>
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Tamano</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-medium text-text-muted block mb-1.5">Ancho (px)</label>
+                  <input type="number" min={280} max={800} {...register("width", { valueAsNumber: true })} className={cn(inputClass, "text-center")} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-text-muted block mb-1.5">Alto (px)</label>
+                  <input type="number" min={200} max={600} {...register("height", { valueAsNumber: true })} className={cn(inputClass, "text-center")} />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Grip size={14} className="text-text-tertiary" />
-              <span className="text-xs font-medium text-text-secondary">Tamano</span>
-            </div>
-            <div className="flex gap-2">
-              <div>
-                <label className="text-[10px] text-text-muted block mb-0.5">Ancho</label>
-                <input type="number" min={280} max={800} {...register("width", { valueAsNumber: true })} className={cn(inputClass, "w-20")} />
+          {/* ── Opacity slider ── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-elevated">
+                  <Eye size={12} className="text-text-tertiary" />
+                </div>
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Opacidad</span>
               </div>
-              <div>
-                <label className="text-[10px] text-text-muted block mb-0.5">Alto</label>
-                <input type="number" min={200} max={600} {...register("height", { valueAsNumber: true })} className={cn(inputClass, "w-20")} />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Eye size={14} className="text-text-tertiary" />
-              <span className="text-xs font-medium text-text-secondary">
-                Opacidad: {Math.round(watched.opacity * 100)}%
+              <span className="rounded-md bg-bg-elevated px-2 py-1 text-xs font-mono font-medium text-accent-primary">
+                {Math.round(watched.opacity * 100)}%
               </span>
             </div>
-            <input
-              type="range"
-              min={10}
-              max={100}
-              value={Math.round(watched.opacity * 100)}
-              onChange={(e) => setValue("opacity", Number(e.target.value) / 100)}
-              className="w-full h-1.5 bg-border-highlight rounded-lg appearance-none cursor-pointer accent-accent-primary"
-            />
+            <div className="relative">
+              <input
+                type="range"
+                min={10}
+                max={100}
+                value={Math.round(watched.opacity * 100)}
+                onChange={(e) => setValue("opacity", Number(e.target.value) / 100)}
+                className="w-full h-2 bg-border-highlight rounded-lg appearance-none cursor-pointer accent-accent-primary"
+              />
+              <div className="flex justify-between mt-1">
+                <span className="text-[9px] text-text-muted">10%</span>
+                <span className="text-[9px] text-text-muted">100%</span>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Users size={14} className="text-text-tertiary" />
-              <span className="text-xs font-medium text-text-secondary">Jugadores a mostrar</span>
+          {/* ── Player Scope ── */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-elevated">
+                <Users size={12} className="text-text-tertiary" />
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Jugadores a mostrar</span>
             </div>
-            <div className="flex gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               {(["all", "team"] as const).map((scope) => (
                 <button
                   key={scope}
                   type="button"
                   onClick={() => setValue("playerScope", scope)}
                   className={cn(
-                    "rounded-md border px-3 py-1.5 text-xs transition-colors flex items-center gap-1.5",
+                    "rounded-lg border px-3 py-2.5 text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2 active:scale-95",
                     watched.playerScope === scope
-                      ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
-                      : "border-border-subtle text-text-tertiary hover:text-text-secondary"
+                      ? "border-accent-primary bg-accent-primary/10 text-accent-primary shadow-[0_0_8px_rgba(59,130,246,0.2)]"
+                      : "border-border-subtle text-text-tertiary hover:text-text-secondary hover:bg-bg-elevated"
                   )}
                 >
-                  {scope === "all" ? <><UsersRound size={13} /> Todos</> : <><User size={13} /> Solo mi equipo</>}
+                  {scope === "all" ? <><UsersRound size={14} /> Todos</> : <><User size={14} /> Solo mi equipo</>}
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Settings2 size={14} className="text-text-tertiary" />
-              <span className="text-xs font-medium text-text-secondary">Datos visibles</span>
+          {/* ── Visible data checkboxes ── */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-elevated">
+                <Settings2 size={12} className="text-text-tertiary" />
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Datos visibles</span>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showScore")} />
-                <span className="text-xs text-text-secondary">Marcador</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showTimer")} />
-                <span className="text-xs text-text-secondary">Tiempo & Arena</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showPlayers")} />
-                <span className="text-xs text-text-secondary">Jugadores</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showStats")} />
-                <span className="text-xs text-text-secondary">Estadisticas (G/A/S)</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showNames")} />
-                <span className="text-xs text-text-secondary">Nombres</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showPlayerScore")} />
-                <span className="text-xs text-text-secondary">Puntos</span>
-              </label>
-              <label className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface px-2.5 py-1.5 cursor-pointer hover:bg-surface-hover transition-colors">
-                <input type="checkbox" className="h-3.5 w-3.5 rounded accent-accent-primary" {...register("showBoost")} />
-                <span className="text-xs text-text-secondary">Boost</span>
-              </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: "showScore", label: "Marcador" },
+                { key: "showTimer", label: "Tiempo & Arena" },
+                { key: "showPlayers", label: "Jugadores" },
+                { key: "showStats", label: "Estadisticas (G/A/S)" },
+                { key: "showNames", label: "Nombres" },
+                { key: "showPlayerScore", label: "Puntos" },
+                { key: "showBoost", label: "Boost" },
+                { key: "showMmr", label: "MMR" },
+              ].map(({ key, label }) => (
+                <label
+                  key={key}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-all duration-200",
+                    "border-border-subtle hover:bg-bg-elevated"
+                  )}
+                >
+                  <input type="checkbox" className="h-4 w-4 rounded border-border-highlight bg-bg-base accent-accent-primary transition-colors" {...register(key as keyof OverlayConfigForm)} />
+                  <span className="text-xs text-text-secondary">{label}</span>
+                </label>
+              ))}
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <Type size={14} className="text-text-tertiary" />
-              <span className="text-xs font-medium text-text-secondary">Tamano de fuente</span>
+          {/* ── Font Scale ── */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-bg-elevated">
+                <Type size={12} className="text-text-tertiary" />
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Tamano de fuente</span>
             </div>
-            <div className="flex gap-1.5">
+            <div className="grid grid-cols-3 gap-2">
               {(["small", "medium", "large"] as const).map((scale) => (
                 <button
                   key={scale}
                   type="button"
                   onClick={() => setValue("fontScale", scale)}
                   className={cn(
-                    "rounded-md border px-3 py-1 text-xs transition-colors",
+                    "rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200 active:scale-95",
                     watched.fontScale === scale
-                      ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
-                      : "border-border-subtle text-text-tertiary hover:text-text-secondary"
+                      ? "border-accent-primary bg-accent-primary/10 text-accent-primary shadow-[0_0_8px_rgba(59,130,246,0.2)]"
+                      : "border-border-subtle text-text-tertiary hover:text-text-secondary hover:bg-bg-elevated"
                   )}
                 >
                   {scale === "small" ? "Chico" : scale === "medium" ? "Mediano" : "Grande"}
@@ -394,10 +435,11 @@ export function OverlayConfig() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          {/* ── Click-through toggle ── */}
+          <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-bg-base px-4 py-3">
             <div>
-              <p className="text-xs font-medium text-text-secondary">Click-through</p>
-              <p className="text-[10px] text-text-muted">
+              <p className="text-xs font-semibold text-text-secondary">Click-through</p>
+              <p className="text-[11px] text-text-muted">
                 {watched.clickthrough
                   ? "Los clicks pasan al juego."
                   : "El overlay captura clicks."}
@@ -406,21 +448,24 @@ export function OverlayConfig() {
             <button
               type="button"
               onClick={() => setValue("clickthrough", !watched.clickthrough)}
+              role="switch"
+              aria-checked={watched.clickthrough}
               className={cn(
-                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                "relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-200 active:scale-95",
                 watched.clickthrough ? "bg-accent-secondary" : "bg-accent-warning"
               )}
             >
               <span
                 className={cn(
-                  "inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform",
+                  "inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-all duration-200",
                   watched.clickthrough ? "translate-x-4" : "translate-x-0.5"
                 )}
               />
             </button>
           </div>
 
-          <div className="flex gap-2 pt-1">
+          {/* ── Action buttons ── */}
+          <div className="flex gap-2 pt-2">
             <Button type="button" variant="secondary" size="sm" onClick={handlePreview} isLoading={previewing} disabled={previewing}>
               <Move size={14} className="mr-1" />
               Reposicionar (8s)

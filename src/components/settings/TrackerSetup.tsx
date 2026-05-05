@@ -89,35 +89,39 @@ export function TrackerSetup() {
   }
 
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <Link size={14} className="text-text-tertiary" />
-            Tracker Network
-          </h4>
-          <p className="mt-1 text-xs text-text-tertiary">
-            Vincula tu perfil de tracker.network para ver MMR, rangos y estadisticas.
-          </p>
+    <div className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-primary-subtle transition-colors group-hover:bg-accent-primary/20">
+            <Link size={16} className="text-accent-primary" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-text-primary">
+              Tracker Network
+            </h4>
+            <p className="text-xs text-text-muted">
+              Vincula tu perfil de tracker.network para ver MMR, rangos y estadisticas.
+            </p>
+          </div>
         </div>
         {testStatus === "success" && (
-          <Badge variant="live" className="gap-1 bg-accent-secondary/20 text-accent-secondary">
+          <Badge variant="live" className="gap-1.5 bg-accent-success/15 text-accent-success border border-accent-success/30">
             <CheckCircle size={12} />
             Conectado
           </Badge>
         )}
         {testStatus === "error" && (
-          <Badge variant="default" className="gap-1 bg-accent-danger/20 text-accent-danger">
+          <Badge variant="default" className="gap-1.5 bg-accent-danger/15 text-accent-danger border border-accent-danger/30">
             <XCircle size={12} />
             Error
           </Badge>
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-5">
         {/* Profile URL */}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-tertiary">
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-text-secondary">
             Link del perfil
           </label>
           <input
@@ -125,32 +129,38 @@ export function TrackerSetup() {
             value={profileUrl}
             onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="https://rocketleague.tracker.network/rocket-league/profile/steam/tu-nombre/overview"
-            className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+            className="w-full rounded-lg border border-border-subtle bg-bg-base px-3.5 py-2.5 font-mono text-xs text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all duration-200 hover:border-border-highlight"
           />
-          <p className="mt-1 text-[10px] text-text-tertiary">
+          <p className="text-[11px] text-text-muted">
             Anda a{" "}
-            <a href="https://rocketleague.tracker.network/" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">
+            <a href="https://rocketleague.tracker.network/" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline transition-colors">
               rocketleague.tracker.network
             </a>
             , busca tu perfil, y pega el link aca.
           </p>
           {parsed && (
-            <p className="mt-1 text-[10px] text-accent-secondary">
-              Detectado: {localPlatform.toUpperCase()} / {localUsername}
-            </p>
+            <div className="flex items-center gap-1.5 rounded-md bg-accent-success/10 px-2.5 py-1.5">
+              <CheckCircle size={12} className="text-accent-success shrink-0" />
+              <p className="text-[11px] text-accent-success">
+                Detectado: <span className="font-semibold">{localPlatform.toUpperCase()}</span> / {localUsername}
+              </p>
+            </div>
           )}
           {profileUrl && !parsed && (
-            <p className="mt-1 text-[10px] text-accent-warning">
-              No se pudo extraer plataforma y usuario. Completa abajo manualmente.
-            </p>
+            <div className="flex items-center gap-1.5 rounded-md bg-accent-warning/10 px-2.5 py-1.5">
+              <XCircle size={12} className="text-accent-warning shrink-0" />
+              <p className="text-[11px] text-accent-warning">
+                No se pudo extraer plataforma y usuario. Completa abajo manualmente.
+              </p>
+            </div>
           )}
         </div>
 
         {/* API Key */}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-tertiary flex items-center gap-1">
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-text-secondary flex items-center gap-2">
             API Key
-            <span className="rounded bg-accent-info/20 px-1 py-px text-[9px] text-accent-info">requerido</span>
+            <span className="rounded-md bg-accent-info/15 px-1.5 py-0.5 text-[10px] font-semibold text-accent-info border border-accent-info/20">requerido</span>
           </label>
           <div className="relative">
             <input
@@ -158,83 +168,94 @@ export function TrackerSetup() {
               value={localKey || apiKey}
               onChange={(e) => setLocalKey(e.target.value)}
               placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-              className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 pr-9 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
+              className="w-full rounded-lg border border-border-subtle bg-bg-base px-3.5 py-2.5 pr-10 font-mono text-xs text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all duration-200 hover:border-border-highlight"
             />
             <button
               type="button"
               onClick={() => setShowKey(!showKey)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
               aria-label={showKey ? "Ocultar" : "Mostrar"}
             >
-              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+              {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
-          <div className="mt-1.5 flex items-start gap-1.5 rounded-md bg-accent-info/10 px-2.5 py-2">
-            <Info size={12} className="mt-px shrink-0 text-accent-info" />
-            <div className="text-[10px] leading-relaxed text-text-tertiary">
-              <p className="font-medium text-text-secondary mb-0.5">Como obtener la API Key:</p>
-              <ol className="list-decimal pl-3 space-y-0.5">
-                <li>Anda a{" "}
-                  <a href="https://tracker.gg/developers" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">
-                    tracker.gg/developers
-                  </a>
-                </li>
-                <li>Hace clic en <strong>Create an app</strong></li>
-                <li>Completa nombre, descripcion y URL del proyecto</li>
-                <li>Copia la API Key generada</li>
-                <li><strong>Importante:</strong> si la app aparece como "not approved", editala y envia para aprobacion (es gratuito para proyectos hobby/open-source)</li>
-              </ol>
+          <div className="rounded-lg border border-accent-info/20 bg-accent-info/5 px-4 py-3">
+            <div className="flex items-start gap-2.5">
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-accent-info/10 mt-0.5">
+                <Info size={11} className="text-accent-info" />
+              </div>
+              <div className="text-[11px] leading-relaxed text-text-tertiary">
+                <p className="font-semibold text-text-secondary mb-1">Como obtener la API Key:</p>
+                <ol className="list-decimal pl-4 space-y-0.5">
+                  <li>Anda a{" "}
+                    <a href="https://tracker.gg/developers" target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline transition-colors">
+                      tracker.gg/developers
+                    </a>
+                  </li>
+                  <li>Hace clic en <strong className="text-text-secondary">Create an app</strong></li>
+                  <li>Completa nombre, descripcion y URL del proyecto</li>
+                  <li>Copia la API Key generada</li>
+                  <li><strong className="text-text-secondary">Importante:</strong> si la app aparece como "not approved", editala y envia para aprobacion (es gratuito para proyectos hobby/open-source)</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="flex items-center gap-2">
-          <div className="h-px flex-1 bg-border-subtle" />
-          <span className="text-[10px] text-text-tertiary">o completa manual</span>
-          <div className="h-px flex-1 bg-border-subtle" />
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border-subtle" />
+          <span className="text-[10px] font-medium uppercase tracking-widest text-text-tertiary">o completa manual</span>
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border-subtle" />
         </div>
 
-        {/* Platform */}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-tertiary">Plataforma</label>
-          <select
-            value={localPlatform || platform}
-            onChange={(e) => setLocalPlatform(e.target.value as TrackerPlatform)}
-            className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 text-sm text-text-primary focus:border-accent-primary focus:outline-none"
-          >
-            {PLATFORMS.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
-        </div>
+        {/* Platform + Username grid */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Platform */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-text-secondary">Plataforma</label>
+            <select
+              value={localPlatform || platform}
+              onChange={(e) => setLocalPlatform(e.target.value as TrackerPlatform)}
+              className="w-full rounded-lg border border-border-subtle bg-bg-base px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 appearance-none cursor-pointer bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM3Yjg5YTgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSI2IDkgMTIgMTUgMTggOSIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right:12px_center] bg-no-repeat pr-10 transition-all duration-200 hover:border-border-highlight"
+            >
+              {PLATFORMS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Username */}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-tertiary">Usuario</label>
-          <input
-            type="text"
-            value={localUsername || username}
-            onChange={(e) => setLocalUsername(e.target.value)}
-            placeholder="Nombre exacto en el juego"
-            className="w-full rounded-md border border-border-subtle bg-bg-base px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
-          />
+          {/* Username */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-text-secondary">Usuario</label>
+            <input
+              type="text"
+              value={localUsername || username}
+              onChange={(e) => setLocalUsername(e.target.value)}
+              placeholder="Nombre exacto en el juego"
+              className="w-full rounded-lg border border-border-subtle bg-bg-base px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 transition-all duration-200 hover:border-border-highlight"
+            />
+          </div>
         </div>
 
         {testError && (
-          <p className="rounded-md bg-accent-danger/10 px-3 py-2 text-xs text-accent-danger whitespace-pre-wrap">
-            {testError}
-          </p>
+          <div className="rounded-lg border border-accent-danger/20 bg-accent-danger/5 px-4 py-3">
+            <p className="text-xs text-accent-danger whitespace-pre-wrap">
+              {testError}
+            </p>
+          </div>
         )}
         {testStatus === "success" && !testError && (
-          <p className="rounded-md bg-accent-secondary/10 px-3 py-2 text-xs text-accent-secondary">
-            Perfil vinculado. Tus rangos ya estan en la pagina de Perfil.
-          </p>
+          <div className="rounded-lg border border-accent-success/20 bg-accent-success/5 px-4 py-3">
+            <p className="text-xs text-accent-success">
+              Perfil vinculado. Tus rangos ya estan en la pagina de Perfil.
+            </p>
+          </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 pt-1">
           <Button variant="primary" size="sm" onClick={handleTestConnection} disabled={testStatus === "loading"}>
-            {testStatus === "loading" ? <><RefreshCw size={14} className="mr-1.5 animate-spin" />Buscando...</> : "Conectar"}
+            {testStatus === "loading" ? <><RefreshCw size={14} className="mr-1.5 animate-spin" />Buscando...</> : <><Link size={14} className="mr-1.5" />Conectar</>}
           </Button>
           <Button variant="ghost" size="sm" onClick={handleSave} disabled={updateSettings.isPending}>
             Guardar

@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import {
   type LiveMatchState,
@@ -407,6 +408,10 @@ async function invokeCommand<T>(command: string, args?: Record<string, unknown>)
   }
 }
 
+export async function restartApp(): Promise<void> {
+  return relaunch();
+}
+
 // Live match
 export async function getLiveState(): Promise<LiveMatchState | null> {
   const state = await invokeCommand<RawLiveMatchState | null>("get_live_state");
@@ -772,8 +777,8 @@ export async function getActiveProfile(): Promise<Profile> {
   return invokeCommand<Profile>("get_active_profile_cmd");
 }
 
-export async function createProfile(name: string): Promise<Profile> {
-  return invokeCommand<Profile>("create_profile_cmd", { name });
+export async function createProfile(name: string, playerName: string): Promise<Profile> {
+  return invokeCommand<Profile>("create_profile_cmd", { name, playerName });
 }
 
 export async function deleteProfile(id: string): Promise<void> {

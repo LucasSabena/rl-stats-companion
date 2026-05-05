@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
+use tauri::Emitter;
 use tracing::info;
 
 const RL_PROCESS_NAMES: &[&str] = &["RocketLeague.exe", "RocketLeague-Win64-Shipping.exe"];
@@ -24,7 +25,8 @@ impl ProcessWatcher {
     }
 
     /// Start background thread that polls for the Rocket League process every 2 seconds.
-    pub fn start(self) -> Arc<AtomicBool> {
+    /// Emits Tauri events when game state changes so the overlay can show/hide.
+    pub fn start(self, app_handle: tauri::AppHandle) -> Arc<AtomicBool> {
         let game_running = Arc::clone(&self.game_running);
         thread::spawn(move || {
             let mut last_state = false;
@@ -35,6 +37,11 @@ impl ProcessWatcher {
                     last_state = running;
                     game_running.store(running, Ordering::SeqCst);
                     info!(running, "Rocket League process state changed");
+                    
+                    // Emit Tauri event so frontend and overlay can react
+                    let _ = app_handle.emit("game-status-changed", serde_json::json!({
+                        "running": running
+                    }));
                 }
                 thread::sleep(Duration::from_secs(2));
             }

@@ -12,8 +12,14 @@ import { AlertTriangle, FolderSearch, MonitorUp } from "lucide-react";
 import { settingsSchema, type SettingsFormInput, type SettingsFormValues } from "@/lib/schemas";
 
 const inputClass = cn(
-  "w-full rounded-lg border bg-bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted transition-colors",
-  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)]"
+  "w-full rounded-lg border bg-bg-base px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted transition-all duration-200",
+  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20",
+  "hover:border-border-highlight"
+);
+
+const selectClass = cn(
+  inputClass,
+  "cursor-pointer appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM3Yjg5YTgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSI2IDkgMTIgMTUgMTggOSIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right:12px_center] bg-no-repeat pr-10"
 );
 
 export function SettingsPanel() {
@@ -99,13 +105,16 @@ export function SettingsPanel() {
   if (isError || !settings) return <EmptyState icon={AlertTriangle} title="Error cargando ajustes" description="No se pudieron cargar los ajustes." actionLabel="Reintentar" onAction={() => refetch()} />;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <section className="rounded-lg border border-border-subtle bg-bg-surface/50 p-5">
-        <div className="mb-4 flex items-center gap-2">
-          <FolderSearch className="h-4 w-4 text-accent-primary" />
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Rocket League</h3>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* ── Rocket League Section ── */}
+      <section className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
+        <div className="mb-5 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-primary-subtle transition-colors group-hover:bg-accent-primary/20">
+            <FolderSearch className="h-4 w-4 text-accent-primary" />
+          </div>
+          <h3 className="text-sm font-semibold tracking-wide text-text-secondary">Rocket League</h3>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-secondary">Nombre dentro del juego</label>
             <input
@@ -122,14 +131,17 @@ export function SettingsPanel() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-secondary">Ruta de instalacion</label>
             <div className="flex gap-2">
-              <input type="text" {...register("rlPath")} className={inputClass} placeholder="Se detecta automaticamente..." />
-              <Button type="button" variant="secondary" size="sm" onClick={handleDetectPath} isLoading={isDetecting} disabled={isDetecting}>Buscar</Button>
+              <input type="text" {...register("rlPath")} className={cn(inputClass, "flex-1")} placeholder="Se detecta automaticamente..." />
+              <Button type="button" variant="secondary" size="sm" onClick={handleDetectPath} isLoading={isDetecting} disabled={isDetecting} className="shrink-0">
+                <FolderSearch size={14} className="mr-1" />
+                Buscar
+              </Button>
             </div>
             {errors.rlPath && <p className="text-xs text-accent-danger">{errors.rlPath.message}</p>}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-secondary">Plataforma</label>
-            <select {...register("platform")} className={cn(inputClass, "cursor-pointer")}>
+            <select {...register("platform")} className={selectClass}>
               <option value="">Detectar automaticamente</option>
               <option value="steam">Steam</option>
               <option value="epic">Epic Games</option>
@@ -138,13 +150,17 @@ export function SettingsPanel() {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-secondary">Tipo de partida por defecto</label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {(["ranked", "casual", "tournament", "other"] as const).map((type) => (
                 <Controller key={type} name="defaultMatchType" control={control}
                   render={({ field }) => (
                     <button type="button" onClick={() => field.onChange(type)}
-                      className={cn("rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
-                        field.value === type ? "bg-accent-primary text-white" : "bg-bg-base text-text-tertiary hover:text-text-secondary border border-border-subtle")}>
+                      className={cn(
+                        "rounded-lg px-4 py-2 text-xs font-medium transition-all duration-200 active:scale-95",
+                        field.value === type
+                          ? "bg-accent-primary text-white shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+                          : "bg-bg-base text-text-tertiary hover:text-text-secondary hover:bg-bg-elevated border border-border-subtle"
+                      )}>
                       {type === "ranked" ? "Ranked" : type === "casual" ? "Casual" : type === "tournament" ? "Torneo" : "Otro"}
                     </button>
                   )} />
@@ -154,20 +170,45 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-border-subtle bg-bg-surface/50 p-5">
-        <div className="mb-4 flex items-center gap-2">
-          <MonitorUp className="h-4 w-4 text-accent-primary" />
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Sistema</h3>
+      {/* ── System Section ── */}
+      <section className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
+        <div className="mb-5 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-primary-subtle transition-colors group-hover:bg-accent-primary/20">
+            <MonitorUp className="h-4 w-4 text-accent-primary" />
+          </div>
+          <h3 className="text-sm font-semibold tracking-wide text-text-secondary">Sistema</h3>
         </div>
         <div className="space-y-5">
-          <div className="flex items-center gap-3">
+          {/* Auto-start toggle */}
+          <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-bg-base px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-text-secondary">Iniciar con Windows</p>
+              <p className="text-xs text-text-muted">Arrancar RL Stats al encender el equipo</p>
+            </div>
             <Controller name="autoStart" control={control}
               render={({ field }) => (
-                <input id="autoStart" type="checkbox" checked={field.value} onChange={(e) => field.onChange(e.target.checked)}
-                  className="h-4 w-4 rounded border-border-highlight bg-bg-surface text-accent-primary focus:ring-accent-primary" />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={field.value}
+                  id="autoStart"
+                  onClick={() => field.onChange(!field.value)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-200",
+                    field.value ? "bg-accent-primary shadow-[0_0_8px_rgba(59,130,246,0.4)]" : "bg-border-highlight"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-all duration-200",
+                      field.value ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
               )} />
-            <label htmlFor="autoStart" className="text-sm text-text-secondary">Iniciar con Windows</label>
           </div>
+
+          {/* Session gap */}
           <div className="space-y-2">
             <label htmlFor="sessionGapMinutes" className="text-sm font-medium text-text-secondary">
               Brecha entre sesiones (minutos)
@@ -181,7 +222,7 @@ export function SettingsPanel() {
                   max={120}
                   value={field.value}
                   onChange={(e) => field.onChange(Number(e.target.value))}
-                  className={cn(inputClass, "w-24 text-center")}
+                  className={cn(inputClass, "w-28 text-center")}
                 />
               )} />
             <p className="text-xs text-text-muted">
@@ -194,7 +235,7 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      <Button type="submit" isLoading={updateSettings.isPending} disabled={updateSettings.isPending}>Guardar ajustes</Button>
+      <Button type="submit" isLoading={updateSettings.isPending} disabled={updateSettings.isPending} className="w-full">Guardar ajustes</Button>
     </form>
   );
 }

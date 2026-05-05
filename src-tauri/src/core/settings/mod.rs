@@ -43,6 +43,8 @@ pub struct AppSettings {
     pub overlay_show_names: bool,
     pub overlay_show_player_score: bool,
     pub overlay_show_boost: bool,
+    pub overlay_show_mmr: bool,
+    pub game_running: bool,
 }
 
 impl Default for AppSettings {
@@ -80,6 +82,8 @@ impl Default for AppSettings {
             overlay_show_names: true,
             overlay_show_player_score: true,
             overlay_show_boost: false,
+            overlay_show_mmr: false,
+            game_running: false,
         }
     }
 }
@@ -155,6 +159,11 @@ impl AppSettings {
                 "overlay_show_boost",
                 self.overlay_show_boost.to_string(),
             ),
+            (
+                "overlay_show_mmr",
+                self.overlay_show_mmr.to_string(),
+            ),
+            ("game_running", self.game_running.to_string()),
         ]
     }
 }
@@ -259,6 +268,12 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
             }
             "overlay_show_boost" => {
                 settings.overlay_show_boost = value.parse().unwrap_or(false)
+            }
+            "overlay_show_mmr" => {
+                settings.overlay_show_mmr = value.parse().unwrap_or(false)
+            }
+            "game_running" => {
+                settings.game_running = value.parse().unwrap_or(false)
             }
             _ => {}
         }
@@ -444,7 +459,7 @@ pub fn get_rl_installation_paths(platform_filter: Option<&str>) -> Vec<RlInstall
             }
         }
 
-        let mut valid_root = root.clone();
+        let valid_root = root.clone();
 
         // Si es una ruta configurada desde Documents/OneDrive, intentamos derivar
         // donde está realmente el juego basándonos en si el ejecutable existe,

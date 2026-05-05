@@ -75,25 +75,40 @@ export function DataManagement() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
-        <div className="flex items-center gap-3">
-          <Database size={20} className="text-text-tertiary" />
-          <div>
-            <p className="text-sm font-medium text-text-primary">Almacenamiento</p>
+      {/* ── Storage Stats Card ── */}
+      <div className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-primary-subtle transition-colors group-hover:bg-accent-primary/20">
+            <Database size={20} className="text-accent-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text-primary">Almacenamiento</p>
             <p className="text-xs text-text-secondary">
               {stats
                 ? `${stats.totalMatches} partidas · ${(stats.databaseSizeBytes / 1024 / 1024).toFixed(1)} MB`
                 : "Cargando..."}
             </p>
             {stats?.dbPath && (
-              <p className="mt-1 break-all text-[11px] text-text-tertiary">
-                Base de datos: {stats.dbPath}
+              <p className="mt-1 truncate text-[11px] font-mono text-text-tertiary">
+                {stats.dbPath}
               </p>
             )}
           </div>
+          {stats?.dbPath && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigator.clipboard.writeText(stats.dbPath ?? "")}
+              className="shrink-0"
+            >
+              <FolderOpen size={14} className="mr-1" />
+              Copiar ruta
+            </Button>
+          )}
         </div>
       </div>
 
+      {/* ── Hidden file input ── */}
       <input
         ref={fileInputRef}
         type="file"
@@ -108,27 +123,20 @@ export function DataManagement() {
         }}
       />
 
-      <div className="flex flex-wrap gap-3">
-        <Button variant="secondary" leftIcon={Download} onClick={handleExport}>
-          Exportar datos
+      {/* ── Action Buttons ── */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Button variant="secondary" leftIcon={Download} onClick={handleExport} className="justify-center">
+          Exportar
         </Button>
-        <Button variant="secondary" leftIcon={Upload} onClick={() => fileInputRef.current?.click()} isLoading={isImporting}>
-          Importar datos
+        <Button variant="secondary" leftIcon={Upload} onClick={() => fileInputRef.current?.click()} isLoading={isImporting} className="justify-center">
+          Importar
         </Button>
-        {stats?.dbPath && (
-          <Button
-            variant="ghost"
-            leftIcon={FolderOpen}
-            onClick={() => navigator.clipboard.writeText(stats.dbPath ?? "")}
-          >
-            Copiar ruta DB
-          </Button>
-        )}
-        <Button variant="danger" leftIcon={Trash2} onClick={() => setConfirmOpen(true)}>
+        <Button variant="danger" leftIcon={Trash2} onClick={() => setConfirmOpen(true)} className="col-span-2 sm:col-span-2 justify-center">
           Borrar todo
         </Button>
       </div>
 
+      {/* ── Confirmation Modal ── */}
       <Modal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}

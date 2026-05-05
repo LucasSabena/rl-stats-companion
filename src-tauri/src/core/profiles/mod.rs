@@ -30,6 +30,91 @@ pub fn get_db_path_for_profile(app_dir: &Path, profile_id: &str) -> PathBuf {
     app_dir.join(format!("rl_stats_{}.db", profile_id))
 }
 
+/// Look for a legacy rl_stats.db in sibling app-data directories.
+/// This handles Tauri identifier changes (e.g., com.example.old -> com.example.new).
+fn find_legacy_db_in_sibling_dirs(app_dir: &Path) -> Option<PathBuf> {
+    let parent = app_dir.parent()?;
+    let mut best_candidate: Option<PathBuf> = None;
+    let mut best_size: u64 = 0;
+
+    for entry in fs::read_dir(parent).ok()? {
+        let entry = entry.ok()?;
+        let path = entry.path();
+        if !path.is_dir() || path == app_dir {
+            continue;
+        }
+        let legacy_db = path.join("rl_stats.db");
+        if legacy_db.exists() {
+            if let Ok(meta) = fs::metadata(&legacy_db) {
+                let size = meta.len();
+                // Only consider databases that actually have data (> 8KB = more than just empty schema)
+                if size > 8192 && size > best_size {
+                    best_size = size;
+                    best_candidate = Some(legacy_db);
+                }
+            }
+        }
+    }
+
+    best_candidate
+}
+
+/// Copy a legacy database (and its WAL/SHM siblings) from a sibling directory
+/// into the current app data dir as the default profile database.
+fn copy_legacy_db_from_sibling(app_dir: &Path, legacy_db: &Path) -> AppResult<()> {
+    let default_db = get_db_path_for_profile(app_dir, "default");
+    let legacy_parent = legacy_db.parent().ok_or_else(|| {
+        AppError::ConfigError("Legacy DB has no parent directory".into())
+    })?;
+
+    info!(from = %legacy_db.display(), to = %default_db.display(), "Copying legacy database from sibling directory");
+
+    fs::copy(legacy_db, &default_db).map_err(|e| {
+        AppError::IoError(format!("Failed to copy legacy DB: {e}"))
+    })?;
+
+    // Copy WAL and SHM if they exist — these may contain uncheckpointed data.
+    let legacy_wal = legacy_parent.join("rl_stats.db-wal");
+    let legacy_shm = legacy_parent.join("rl_stats.db-shm");
+    if legacy_wal.exists() {
+        fs::copy(&legacy_wal, app_dir.join("rl_stats_default.db-wal")).map_err(|e| {
+            AppError::IoError(format!("Failed to copy legacy WAL: {e}"))
+        })?;
+    }
+    if legacy_shm.exists() {
+        fs::copy(&legacy_shm, app_dir.join("rl_stats_default.db-shm")).map_err(|e| {
+            AppError::IoError(format!("Failed to copy legacy SHM: {e}"))
+        })?;
+    }
+
+    info!("Legacy database copied successfully");
+    Ok(())
+}
+
+/// Attempt to migrate data from a legacy app-data directory when the Tauri
+/// identifier has changed. This should be called even if profiles.json already
+/// exists, in case the default profile was created empty before the legacy DB
+/// was discovered.
+pub fn try_migrate_from_legacy(app_dir: &Path) -> AppResult<bool> {
+    let default_db = get_db_path_for_profile(app_dir, "default");
+
+    // If the default DB already has real data (> 8KB), assume migration is done.
+    if default_db.exists() {
+        if let Ok(meta) = fs::metadata(&default_db) {
+            if meta.len() > 8192 {
+                return Ok(false);
+            }
+        }
+    }
+
+    if let Some(legacy_db) = find_legacy_db_in_sibling_dirs(app_dir) {
+        copy_legacy_db_from_sibling(app_dir, &legacy_db)?;
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
 /// Reads the manifest from disk.
 fn read_manifest(path: &Path) -> AppResult<ProfilesManifest> {
     let content = fs::read_to_string(path)?;
@@ -83,6 +168,9 @@ pub fn init_profiles(app_dir: &Path) -> AppResult<String> {
     if legacy_db.exists() {
         info!("Migrating legacy database to default profile");
         fs::rename(&legacy_db, &default_db)?;
+    } else {
+        // If no local legacy DB, search sibling directories (Tauri identifier may have changed).
+        let _ = try_migrate_from_legacy(app_dir)?;
     }
 
     let default_profile = Profile {

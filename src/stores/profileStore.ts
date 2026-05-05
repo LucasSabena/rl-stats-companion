@@ -8,6 +8,7 @@ import {
   switchProfile as apiSwitchProfile,
   deleteProfile as apiDeleteProfile,
   renameProfile as apiRenameProfile,
+  restartApp,
 } from "@/lib/api";
 import { getErrorMessage } from "@/lib/api";
 
@@ -18,10 +19,11 @@ interface ProfileState {
   error: string | null;
 
   fetchProfiles: () => Promise<void>;
-  createProfile: (name: string) => Promise<void>;
+  createProfile: (name: string, playerName: string) => Promise<void>;
   switchProfile: (id: string) => Promise<void>;
   deleteProfile: (id: string) => Promise<void>;
   renameProfile: (id: string, newName: string) => Promise<void>;
+  restartApp: () => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -54,13 +56,13 @@ export const useProfileStore = create<ProfileState>()(
       }
     },
 
-    createProfile: async (name) => {
+    createProfile: async (name, playerName) => {
       set((state) => {
         state.isLoading = true;
         state.error = null;
       });
       try {
-        const profile = await apiCreateProfile(name);
+        const profile = await apiCreateProfile(name, playerName);
         set((state) => {
           state.profiles.push(profile);
           state.activeProfile = profile;
@@ -73,6 +75,10 @@ export const useProfileStore = create<ProfileState>()(
         });
         throw error;
       }
+    },
+
+    restartApp: async () => {
+      await restartApp();
     },
 
     switchProfile: async (id) => {

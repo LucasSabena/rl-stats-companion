@@ -1,7 +1,9 @@
 use crate::core::profiles::{
-    create_profile, delete_profile, get_active_profile, list_profiles, rename_profile,
-    switch_profile, Profile,
+    create_profile, delete_profile, get_active_profile, get_db_path_for_profile, list_profiles,
+    rename_profile, switch_profile, Profile,
 };
+use crate::core::settings::{set_settings, AppSettings};
+use crate::core::storage::init_storage;
 use crate::error::AppResult;
 use tauri::Manager;
 use tracing::info;
@@ -28,11 +30,21 @@ pub async fn get_active_profile_cmd(app_handle: tauri::AppHandle) -> AppResult<P
 #[tauri::command]
 pub async fn create_profile_cmd(
     name: String,
+    player_name: Option<String>,
     app_handle: tauri::AppHandle,
 ) -> AppResult<Profile> {
     let app_dir = app_data_dir(&app_handle)?;
     let profile = create_profile(&app_dir, &name)?;
-    info!(profile_id = %profile.id, profile_name = %profile.name, "Created profile");
+
+    let db_path = get_db_path_for_profile(&app_dir, &profile.id);
+    let pool = init_storage(&db_path)?;
+    let settings = AppSettings {
+        player_name: player_name.unwrap_or_default(),
+        ..Default::default()
+    };
+    set_settings(&pool, &settings)?;
+
+    info!(profile_id = %profile.id, profile_name = %profile.name, "Created profile and initialized settings");
     Ok(profile)
 }
 

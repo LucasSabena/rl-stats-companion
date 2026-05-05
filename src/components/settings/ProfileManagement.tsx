@@ -1,8 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useProfileStore } from "@/stores/profileStore";
 import { User, Trash2, Edit3, Plus, AlertCircle } from "lucide-react";
+import {
+  CreateProfileModal,
+  DeleteProfileModal,
+  SwitchProfileModal,
+  RenameProfileModal,
+} from "@/components/settings/ProfileModals";
 
 export function ProfileManagement() {
   const {
@@ -14,58 +20,104 @@ export function ProfileManagement() {
     switchProfile,
     deleteProfile,
     renameProfile,
+    restartApp,
   } = useProfileStore();
 
   useEffect(() => {
     void fetchProfiles();
   }, [fetchProfiles]);
 
-  function handleCreate() {
-    const name = window.prompt("Nombre del nuevo perfil:");
-    if (!name) return;
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isSwitchOpen, setIsSwitchOpen] = useState(false);
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
+  const [pendingProfileName, setPendingProfileName] = useState<string>("");
+  const [renameCurrentName, setRenameCurrentName] = useState<string>("");
+  const [createError, setCreateError] = useState("");
+  const [renameError, setRenameError] = useState("");
+
+  const openDelete = (id: string, name: string) => {
+    setPendingProfileId(id);
+    setPendingProfileName(name);
+    setIsDeleteOpen(true);
+  };
+
+  const openSwitch = (id: string, name: string) => {
+    setPendingProfileId(id);
+    setPendingProfileName(name);
+    setIsSwitchOpen(true);
+  };
+
+  const openRename = (id: string, name: string) => {
+    setPendingProfileId(id);
+    setRenameCurrentName(name);
+    setRenameError("");
+    setIsRenameOpen(true);
+  };
+
+  const handleCreateConfirm = async (name: string, playerName: string) => {
     const trimmed = name.trim();
+    const trimmedPlayerName = playerName.trim();
     if (!trimmed) return;
     if (profiles.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
-      window.alert("Ya existe un perfil con ese nombre.");
+      setCreateError("Ya existe un perfil con ese nombre.");
       return;
     }
-    void createProfile(trimmed);
-  }
-
-  function handleSwitch(profileId: string) {
-    void switchProfile(profileId).then(() => {
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    });
-  }
-
-  function handleRename(profileId: string, currentName: string) {
-    const name = window.prompt("Nuevo nombre:", currentName);
-    if (!name) return;
-    const trimmed = name.trim();
-    if (!trimmed || trimmed === currentName) return;
-    if (profiles.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
-      window.alert("Ya existe un perfil con ese nombre.");
-      return;
+    setCreateError("");
+    try {
+      await createProfile(trimmed, trimmedPlayerName);
+      const created = useProfileStore.getState().activeProfile;
+      if (created) {
+        await switchProfile(created.id);
+      }
+      setIsCreateOpen(false);
+      await restartApp();
+    } catch {
+      // Error is already handled in the store
     }
-    void renameProfile(profileId, trimmed);
-  }
+  };
 
-  function handleDelete(profileId: string, profileName: string) {
+  const handleSwitchConfirm = async () => {
+    if (!pendingProfileId) return;
+    await switchProfile(pendingProfileId);
+    setIsSwitchOpen(false);
+    await restartApp();
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingProfileId) return;
     if (profiles.length <= 1) {
-      window.alert("No puedes eliminar el último perfil.");
+      setIsDeleteOpen(false);
       return;
     }
-    if (activeProfile?.id === profileId) {
-      window.alert("No puedes eliminar el perfil activo. Cambia de perfil primero.");
+    if (activeProfile?.id === pendingProfileId) {
+      setIsDeleteOpen(false);
       return;
     }
-    const confirmed = window.confirm(`¿Eliminar el perfil "${profileName}"? Esta acción no se puede deshacer.`);
-    if (confirmed) {
-      void deleteProfile(profileId);
+    await deleteProfile(pendingProfileId);
+    setIsDeleteOpen(false);
+  };
+
+  const handleRenameConfirm = async (newName: string) => {
+    if (!pendingProfileId) return;
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      setRenameError("El nombre no puede estar vacío.");
+      return;
     }
-  }
+    if (trimmed === renameCurrentName) {
+      setIsRenameOpen(false);
+      return;
+    }
+    if (profiles.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
+      setRenameError("Ya existe un perfil con ese nombre.");
+      return;
+    }
+    setRenameError("");
+    await renameProfile(pendingProfileId, trimmed);
+    setIsRenameOpen(false);
+  };
 
   return (
     <div className="space-y-4">
@@ -74,7 +126,7 @@ export function ProfileManagement() {
           <h4 className="text-base font-semibold text-text-primary">Perfiles de jugador</h4>
           <p className="text-sm text-text-secondary">Cada perfil tiene su propio historial y configuración.</p>
         </div>
-        <Button variant="secondary" leftIcon={Plus} onClick={handleCreate} isLoading={isLoading}>
+        <Button variant="secondary" leftIcon={Plus} onClick={() => setIsCreateOpen(true)} isLoading={isLoading}>
           Crear nuevo perfil
         </Button>
       </div>
@@ -124,7 +176,7 @@ export function ProfileManagement() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleSwitch(profile.id)}
+                      onClick={() => openSwitch(profile.id, profile.name)}
                       isLoading={isLoading}
                     >
                       Activar
@@ -134,7 +186,7 @@ export function ProfileManagement() {
                     variant="ghost"
                     size="sm"
                     leftIcon={Edit3}
-                    onClick={() => handleRename(profile.id, profile.name)}
+                    onClick={() => openRename(profile.id, profile.name)}
                     isLoading={isLoading}
                   >
                     Renombrar
@@ -143,7 +195,7 @@ export function ProfileManagement() {
                     variant="ghost"
                     size="sm"
                     leftIcon={Trash2}
-                    onClick={() => handleDelete(profile.id, profile.name)}
+                    onClick={() => openDelete(profile.id, profile.name)}
                     disabled={isActive || profiles.length <= 1}
                     isLoading={isLoading}
                   >
@@ -155,6 +207,42 @@ export function ProfileManagement() {
           })}
         </div>
       )}
+
+      <CreateProfileModal
+        isOpen={isCreateOpen}
+        onClose={() => {
+          setIsCreateOpen(false);
+          setCreateError("");
+        }}
+        onConfirm={handleCreateConfirm}
+        isLoading={isLoading}
+        error={createError}
+      />
+      <DeleteProfileModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        profileName={pendingProfileName}
+        isLoading={isLoading}
+      />
+      <SwitchProfileModal
+        isOpen={isSwitchOpen}
+        onClose={() => setIsSwitchOpen(false)}
+        onConfirm={handleSwitchConfirm}
+        profileName={pendingProfileName}
+        isLoading={isLoading}
+      />
+      <RenameProfileModal
+        isOpen={isRenameOpen}
+        onClose={() => {
+          setIsRenameOpen(false);
+          setRenameError("");
+        }}
+        onConfirm={handleRenameConfirm}
+        currentName={renameCurrentName}
+        isLoading={isLoading}
+        error={renameError}
+      />
     </div>
   );
 }

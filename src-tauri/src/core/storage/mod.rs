@@ -88,6 +88,11 @@ pub fn init_storage<P: AsRef<Path>>(db_path: P) -> AppResult<DbPool> {
     )
     .map_err(|e| AppError::StorageError(e.to_string()))?;
 
+    // Force checkpoint so all WAL data is committed to the main DB file.
+    // This prevents data from being stranded in .db-wal files.
+    conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")
+        .map_err(|e| AppError::StorageError(format!("WAL checkpoint failed: {e}")))?;
+
     // Run versioned migrations instead of ad-hoc CREATE TABLE IF NOT EXISTS.
     migrations::run_migrations(&conn)?;
     info!("Storage initialized successfully");

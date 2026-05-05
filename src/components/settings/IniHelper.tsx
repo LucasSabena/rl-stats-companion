@@ -46,65 +46,70 @@ export function IniHelper() {
   };
 
   const inputClass = cn(
-    "w-full rounded-md border bg-bg-surface px-3 py-2 text-sm text-text-primary",
-    "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
+    "w-full rounded-lg border bg-bg-base px-3.5 py-2.5 text-sm text-text-primary transition-all duration-200",
+    "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20",
+    "hover:border-border-highlight"
   );
 
   const errorClass = "mt-1 text-xs text-accent-danger";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="rounded-lg border border-border-subtle bg-bg-surface p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-info/10 text-accent-info">
+      <div className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-info/10 text-accent-info transition-colors group-hover:bg-accent-info/15">
             <FileJson size={20} />
           </div>
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-5">
             <div>
               <h3 className="text-sm font-semibold text-text-primary">
                 Configurar Stats API
               </h3>
-              <p className="mt-1 text-xs text-text-secondary">
-                Activa automáticamente la API de estadísticas de Rocket League
-                editando el archivo de configuración del juego.
+              <p className="mt-1 text-xs text-text-muted">
+                Activa automaticamente la API de estadisticas de Rocket League
+                editando el archivo de configuracion del juego.
               </p>
             </div>
 
-            {/* Port field */}
-            <div className="space-y-1">
-              <label
-                htmlFor="ini-port"
-                className="text-xs font-medium text-text-secondary"
-              >
-                Puerto
-              </label>
-              <input
-                id="ini-port"
-                type="number"
-                min={1}
-                max={65535}
-                {...register("port", { valueAsNumber: true })}
-                className={inputClass}
-              />
-              {errors.port && (
-                <p className={errorClass}>{errors.port.message}</p>
-              )}
-            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Port field */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="ini-port"
+                  className="text-xs font-medium text-text-secondary"
+                >
+                  Puerto
+                </label>
+                <input
+                  id="ini-port"
+                  type="number"
+                  min={1}
+                  max={65535}
+                  {...register("port", { valueAsNumber: true })}
+                  className={inputClass}
+                />
+                {errors.port && (
+                  <p className={errorClass}>{errors.port.message}</p>
+                )}
+              </div>
 
-            {/* Enabled checkbox */}
-            <div className="flex items-center gap-3">
-              <input
-                id="ini-enabled"
-                type="checkbox"
-                {...register("enabled")}
-                className="h-4 w-4 rounded border-border-highlight bg-bg-surface text-accent-primary focus:ring-accent-primary"
-              />
-              <label
-                htmlFor="ini-enabled"
-                className="text-sm text-text-secondary"
-              >
-                Habilitar Stats API
-              </label>
+              {/* Enabled checkbox */}
+              <div className="flex items-end">
+                <label
+                  htmlFor="ini-enabled"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border-subtle bg-bg-base px-4 py-2.5 transition-all duration-200 hover:border-border-default"
+                >
+                  <input
+                    id="ini-enabled"
+                    type="checkbox"
+                    {...register("enabled")}
+                    className="h-4 w-4 rounded border-border-highlight bg-bg-surface accent-accent-primary transition-colors"
+                  />
+                  <span className="text-sm text-text-secondary">
+                    Habilitar Stats API
+                  </span>
+                </label>
+              </div>
             </div>
 
             <Button
@@ -114,6 +119,7 @@ export function IniHelper() {
               isLoading={isSubmitting}
               disabled={isSubmitting}
             >
+              <FileJson size={14} className="mr-1.5" />
               Configurar RL.ini
             </Button>
           </div>

@@ -17,6 +17,7 @@ export interface Player {
   touches: number;
   boostAmount: number;
   speed: number;
+  mmr?: number | null;
 }
 
 export interface PlayerStats extends Player {
@@ -289,6 +290,7 @@ export interface AppSettings {
   overlayShowNames?: boolean;
   overlayShowPlayerScore?: boolean;
   overlayShowBoost?: boolean;
+  overlayShowMmr?: boolean;
 }
 
 // ─── Overlay Window ─────────────────────────────────────────────────────────
@@ -314,6 +316,7 @@ export interface OverlayDisplaySettings {
   showNames: boolean;
   showPlayerScore: boolean;
   showBoost: boolean;
+  showMmr: boolean;
 }
 
 export type OverlayPositionPreset = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "custom";
@@ -336,6 +339,7 @@ export interface OverlayConfigForm {
   showNames: boolean;
   showPlayerScore: boolean;
   showBoost: boolean;
+  showMmr: boolean;
 }
 
 export interface UpdateInfo {
