@@ -20,6 +20,7 @@ use crate::core::models::RlEvent;
 use crate::core::obs_text;
 use crate::core::overlay::OverlayServer;
 use crate::core::process_watcher::ProcessWatcher;
+use crate::core::profiles::{get_db_path_for_profile, init_profiles};
 use crate::core::session::{MatchPhase, SessionManager};
 use crate::core::settings::get_settings;
 use crate::core::storage::{init_storage, DbPool};
@@ -100,6 +101,12 @@ pub fn run() {
             commands::overlay_window::set_overlay_clickthrough,
             commands::overlay_window::notify_overlay_settings_changed,
             commands::overlay_window::set_overlay_interactive,
+            commands::profiles::list_profiles_cmd,
+            commands::profiles::get_active_profile_cmd,
+            commands::profiles::create_profile_cmd,
+            commands::profiles::delete_profile_cmd,
+            commands::profiles::switch_profile_cmd,
+            commands::profiles::rename_profile_cmd,
         ])
         .setup(move |app| {
             #[cfg(all(desktop, not(debug_assertions)))]
@@ -117,9 +124,12 @@ pub fn run() {
                 .app_data_dir()
                 .expect("Failed to get app data directory");
             std::fs::create_dir_all(&app_dir).expect("Failed to create app data directory");
-            let db_path = app_dir.join("rl_stats.db");
 
-            info!(db_path = %db_path.display(), "Initializing storage");
+            let active_profile_id = init_profiles(&app_dir)
+                .expect("Failed to initialize profiles");
+            let db_path = get_db_path_for_profile(&app_dir, &active_profile_id);
+
+            info!(profile_id = %active_profile_id, db_path = %db_path.display(), "Initializing storage");
             let db_pool = match init_storage(&db_path) {
                 Ok(pool) => Arc::new(pool),
                 Err(e) => {

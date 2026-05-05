@@ -27,6 +27,7 @@ import {
   type RlInstallation,
   type PlayerDirectoryEntry,
   type PlayerDetailRecord,
+  type Profile,
 } from "./types";
 import { formatLocalDateFromUnix } from "./utils";
 
@@ -759,4 +760,30 @@ export async function getPlayerDirectory(filters?: {
 
 export async function getPlayerDetail(playerId: number): Promise<PlayerDetailRecord | null> {
   return invokeCommand<PlayerDetailRecord>("get_player_detail", { playerId });
+}
+
+// ─── Profiles ────────────────────────────────────────────────────────────────
+
+export async function listProfiles(): Promise<Profile[]> {
+  return invokeCommand<Profile[]>("list_profiles_cmd");
+}
+
+export async function getActiveProfile(): Promise<Profile> {
+  return invokeCommand<Profile>("get_active_profile_cmd");
+}
+
+export async function createProfile(name: string): Promise<Profile> {
+  return invokeCommand<Profile>("create_profile_cmd", { name });
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+  return invokeCommand<void>("delete_profile_cmd", { id });
+}
+
+export async function switchProfile(id: string): Promise<void> {
+  return invokeCommand<void>("switch_profile_cmd", { id });
+}
+
+export async function renameProfile(id: string, newName: string): Promise<void> {
+  return invokeCommand<void>("rename_profile_cmd", { id, newName });
 }

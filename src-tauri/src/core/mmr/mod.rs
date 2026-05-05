@@ -522,7 +522,7 @@ fn extract_rlstats_table_rank_info(
 
 fn parse_single_skill_table(
     table_html: &str,
-    table_index: usize,
+    _table_index: usize,
     out: &mut HashMap<String, (Option<String>, Option<String>, Option<i32>)>,
 ) {
     let rows = extract_rlstats_table_rows(table_html);

@@ -4,7 +4,7 @@ use crate::core::tracker_api::{
 };
 use crate::error::{AppError, AppResult};
 
-pub fn parse_profile_html(html: &str, platform: &str, identifier: &str) -> AppResult<TrackerProfile> {
+pub fn parse_profile_html(html: &str, platform: &str, _identifier: &str) -> AppResult<TrackerProfile> {
     let username = extract_username(html, platform)?;
     let avatar_url = extract_avatar(html);
     let overview = extract_career_stats(html);
@@ -69,10 +69,40 @@ fn extract_avatar(html: &str) -> Option<String> {
     Some(after[..end].to_string())
 }
 
+fn empty_overview() -> OverviewStats {
+    OverviewStats {
+        assists: None,
+        goals: None,
+        goal_shot_ratio: None,
+        mvps: None,
+        saves: None,
+        shots: None,
+        wins: None,
+        season_rank: None,
+    }
+}
+
+fn empty_ranked() -> RankedPlaylists {
+    RankedPlaylists {
+        duel: None,
+        double: None,
+        standard: None,
+    }
+}
+
+fn empty_extra() -> ExtraPlaylists {
+    ExtraPlaylists {
+        dropshot: None,
+        hoops: None,
+        rumble: None,
+        snowday: None,
+    }
+}
+
 fn extract_career_stats(html: &str) -> OverviewStats {
     let table_start = match html.find("<table>") {
         Some(pos) => pos,
-        None => return OverviewStats::default(),
+        None => return empty_overview(),
     };
 
     let table_end = html[table_start..]
@@ -166,7 +196,7 @@ fn extract_skill_tables(
 ) -> (RankedPlaylists, ExtraPlaylists, Option<PlaylistStats>) {
     let section_start = match html.find("id=\"skills\"") {
         Some(pos) => pos,
-        None => return (RankedPlaylists::default(), ExtraPlaylists::default(), None),
+        None => return (empty_ranked(), empty_extra(), None),
     };
 
     let history_start = html[section_start..]
@@ -177,8 +207,8 @@ fn extract_skill_tables(
     let section = &html[section_start..history_start];
 
     let tables = extract_tables(section);
-    let mut ranked = RankedPlaylists::default();
-    let mut extra = ExtraPlaylists::default();
+    let mut ranked = empty_ranked();
+    let mut extra = empty_extra();
     let mut unranked: Option<PlaylistStats> = None;
 
     for table_html in &tables {

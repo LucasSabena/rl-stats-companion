@@ -530,3 +530,9 @@ export interface PlayerMatchEntry {
   score: number;
   demos: number;
 }
+
+export interface Profile {
+  id: string;
+  name: string;
+  createdAt: string;
+}

@@ -6,11 +6,17 @@ import { UpdateChecker } from "@/components/settings/UpdateChecker";
 import { OverlayConfig } from "@/components/settings/OverlayConfig";
 import { OverlayStreaming } from "@/components/settings/OverlayStreaming";
 import { TrackerSetup } from "@/components/settings/TrackerSetup";
+import { ProfileManagement } from "@/components/settings/ProfileManagement";
 
 export function SettingsPage() {
   return (
     <PageContainer>
       <div className="space-y-8">
+        <section>
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-tertiary">Perfiles</h3>
+          <ProfileManagement />
+        </section>
+
         <section>
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-tertiary">Streaming OBS</h3>
           <OverlayStreaming />

@@ -10,3 +10,4 @@ pub mod rlstats;
 pub mod settings;
 pub mod tracker;
 pub mod window;
+pub mod profiles;
