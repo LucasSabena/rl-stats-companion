@@ -175,6 +175,8 @@ interface RawAppSettings {
   overlay_show_names?: boolean;
   overlay_show_player_score?: boolean;
   overlay_show_boost?: boolean;
+  overlay_show_mmr?: boolean;
+  game_running?: boolean;
 }
 
 interface RawDailyRollup {
@@ -458,7 +460,7 @@ export async function getMatchDetail(matchId: number): Promise<MatchDetail> {
 }
 
 export async function deleteMatch(matchId: number): Promise<void> {
-  return invokeCommand<void>("delete_match_cmd", { matchId });
+  return invokeCommand<void>("delete_match_cmd", { match_id: matchId });
 }
 
 export async function updateMatch(
@@ -466,8 +468,8 @@ export async function updateMatch(
   data: { matchType?: string | null; playlist?: string | null }
 ): Promise<void> {
   return invokeCommand<void>("update_match_cmd", {
-    matchId,
-    matchType: data.matchType ?? null,
+    match_id: matchId,
+    match_type: data.matchType ?? null,
     playlist: data.playlist ?? null,
   });
 }
@@ -552,6 +554,8 @@ export async function getSettings(): Promise<AppSettings> {
     overlayShowNames: settings.overlay_show_names ?? true,
     overlayShowPlayerScore: settings.overlay_show_player_score ?? true,
     overlayShowBoost: settings.overlay_show_boost ?? false,
+    overlayShowMmr: settings.overlay_show_mmr ?? false,
+    gameRunning: settings.game_running ?? false,
   };
 }
 
@@ -590,6 +594,8 @@ export async function setSettings(settings: AppSettings): Promise<void> {
       overlay_show_names: settings.overlayShowNames ?? true,
       overlay_show_player_score: settings.overlayShowPlayerScore ?? true,
       overlay_show_boost: settings.overlayShowBoost ?? false,
+      overlay_show_mmr: settings.overlayShowMmr ?? false,
+      game_running: settings.gameRunning ?? false,
     },
   });
 }
@@ -778,7 +784,7 @@ export async function getActiveProfile(): Promise<Profile> {
 }
 
 export async function createProfile(name: string, playerName: string): Promise<Profile> {
-  return invokeCommand<Profile>("create_profile_cmd", { name, playerName });
+  return invokeCommand<Profile>("create_profile_cmd", { name, player_name: playerName });
 }
 
 export async function deleteProfile(id: string): Promise<void> {
@@ -790,5 +796,5 @@ export async function switchProfile(id: string): Promise<void> {
 }
 
 export async function renameProfile(id: string, newName: string): Promise<void> {
-  return invokeCommand<void>("rename_profile_cmd", { id, newName });
+  return invokeCommand<void>("rename_profile_cmd", { id, new_name: newName });
 }

@@ -291,6 +291,7 @@ export interface AppSettings {
   overlayShowPlayerScore?: boolean;
   overlayShowBoost?: boolean;
   overlayShowMmr?: boolean;
+  gameRunning?: boolean;
 }
 
 // ─── Overlay Window ─────────────────────────────────────────────────────────
