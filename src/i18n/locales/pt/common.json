@@ -1,0 +1,71 @@
+{
+  "sidebar": {
+    "live": "Ao Vivo",
+    "history": "Histórico",
+    "analytics": "Análises",
+    "players": "Jogadores",
+    "proConfigs": "Configs Pros",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "collapse": "Recolher barra lateral",
+    "expand": "Expandir barra lateral"
+  },
+  "pageTitles": {
+    "live": "Painel ao Vivo",
+    "history": "Histórico de Partidas",
+    "analytics": "Análises de Desempenho",
+    "proConfigs": "Configs de Pros",
+    "settings": "Configurações",
+    "fallback": "RL Stats"
+  },
+  "connection": {
+    "online": "Online",
+    "connecting": "Conectando",
+    "offline": "Offline",
+    "waitingForGame": "Aguardando Rocket League..."
+  },
+  "profile": {
+    "selectPlaceholder": "Selecionar perfil",
+    "new": "+ Novo"
+  },
+  "buttons": {
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "retry": "Tentar novamente",
+    "close": "Fechar",
+    "reload": "Recarregar app",
+    "confirm": "Confirmar"
+  },
+  "status": {
+    "live": "Ao vivo",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "loading": "Carregando",
+    "error": "Erro"
+  },
+  "errorBoundary": {
+    "title": "Algo deu errado",
+    "description": "Ocorreu um erro inesperado na visualização da partida ao vivo."
+  },
+  "theme": {
+    "switchToLight": "Mudar para tema claro",
+    "switchToDark": "Mudar para tema escuro",
+    "light": "Tema claro",
+    "dark": "Tema escuro"
+  },
+  "select": {
+    "placeholder": "Selecionar..."
+  },
+  "dataTable": {
+    "noData": "Nenhum dado disponível"
+  },
+  "accessibility": {
+    "close": "Fechar",
+    "loading": "Carregando"
+  },
+  "brand": {
+    "name": "RL Stats",
+    "short": "RL"
+  }
+}

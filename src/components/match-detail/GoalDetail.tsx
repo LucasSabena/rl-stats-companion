@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
@@ -10,6 +11,8 @@ interface GoalDetailProps {
 }
 
 export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
+  const { t } = useTranslation("matchDetail");
+
   if (goals.length === 0) return null;
 
   const team0Goals = goals.filter((g) => g.scorerTeam === 0);
@@ -20,7 +23,7 @@ export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
       <div className="flex items-center gap-3 mb-5">
         <div className="flex items-center gap-1.5">
           <Goal size={18} className="text-yellow-400" />
-          <h3 className="text-sm font-semibold text-text-primary">Goles</h3>
+          <h3 className="text-sm font-semibold text-text-primary">{t("goals.title")}</h3>
         </div>
         <div className="flex items-center gap-4 ml-auto">
           <div className="flex items-center gap-1.5">
@@ -38,7 +41,7 @@ export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
         {goals.map((goal, idx) => {
           const isBlue = goal.scorerTeam === 0;
           const goalNumber = (isBlue ? team0Goals.indexOf(goal) : team1Goals.indexOf(goal)) + 1;
-          const teamLabel = isBlue ? "AZUL" : "NAR";
+          const teamLabel = isBlue ? t("teams.blueShort") : t("teams.orangeShort");
           return (
             <Card
               key={goal.id || idx}

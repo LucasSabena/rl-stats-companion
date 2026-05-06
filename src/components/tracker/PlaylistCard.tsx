@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { PlaylistStats } from "@/lib/types";
 import { RankBadge } from "./RankBadge";
 import { cn } from "@/lib/utils";
@@ -8,25 +9,26 @@ interface PlaylistCardProps {
   className?: string;
 }
 
-const PLAYLIST_LABELS: Record<string, string> = {
-  duel: "1v1",
-  double: "2v2",
-  standard: "3v3",
-  dropshot: "Dropshot",
-  hoops: "Hoops",
-  rumble: "Rumble",
-  snowday: "Snow Day",
-  unranked: "Casual",
+const PLAYLIST_KEYS: Record<string, string> = {
+  duel: "playlist.duel",
+  double: "playlist.double",
+  standard: "playlist.standard",
+  dropshot: "playlist.dropshot",
+  hoops: "playlist.hoops",
+  rumble: "playlist.rumble",
+  snowday: "playlist.snowday",
+  unranked: "playlist.unranked",
 };
 
 export function PlaylistCard({ name, stats, className }: PlaylistCardProps) {
-  const label = PLAYLIST_LABELS[name] || name;
+  const { t } = useTranslation("tracker");
+  const label = t(PLAYLIST_KEYS[name] || name, name);
 
   if (!stats || (!stats.rank && stats.mmr == null)) {
     return (
       <div className={cn("rounded-xl border border-border-subtle bg-bg-surface p-3", className)}>
         <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{label}</p>
-        <span className="text-sm text-text-tertiary italic">Sin datos</span>
+        <span className="text-sm text-text-tertiary italic">{t("ranks.noData")}</span>
       </div>
     );
   }
@@ -39,7 +41,7 @@ export function PlaylistCard({ name, stats, className }: PlaylistCardProps) {
 
       <div className="mt-2 flex gap-3 text-xs text-text-tertiary">
         {stats.matchesPlayed != null && (
-          <span>{stats.matchesPlayed} part.</span>
+          <span>{t("playlist.matchesShort", { count: stats.matchesPlayed })}</span>
         )}
         {stats.winStreak != null && stats.winStreak > 0 && (
           <span className="text-accent-success font-medium">W{stats.winStreak}</span>

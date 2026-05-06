@@ -262,6 +262,8 @@ pub async fn notify_overlay_settings_changed(
                 "showNames": app_settings.overlay_show_names,
                 "showPlayerScore": app_settings.overlay_show_player_score,
                 "showBoost": app_settings.overlay_show_boost,
+                "showMmr": app_settings.overlay_show_mmr,
+                "showSpeed": app_settings.overlay_show_speed,
             }),
         );
     }
@@ -315,6 +317,8 @@ fn apply_overlay_settings(
             "showNames": settings.overlay_show_names,
             "showPlayerScore": settings.overlay_show_player_score,
             "showBoost": settings.overlay_show_boost,
+            "showMmr": settings.overlay_show_mmr,
+            "showSpeed": settings.overlay_show_speed,
         }),
     );
 

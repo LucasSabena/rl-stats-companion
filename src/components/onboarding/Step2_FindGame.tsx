@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Search, FolderOpen, Gamepad2, Monitor, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { configureRlIni, detectRlPath } from "@/lib/api";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -7,6 +8,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 interface StepProps { onNext: () => void; onBack: () => void }
 
 export default function Step2({ onNext, onBack }: StepProps) {
+  const { t } = useTranslation(["onboarding", "common"]);
   const [detecting, setDetecting] = useState(false);
   const [detectedPath, setDetectedPath] = useState<string | null>(null);
   const [platform, setPlatform] = useState<"steam" | "epic" | "auto" | "manual" | null>(null);
@@ -41,10 +43,10 @@ export default function Step2({ onNext, onBack }: StepProps) {
           });
         }
       } else {
-        setError("No se detecto la instalacion automaticamente. Intenta buscar manualmente.");
+        setError(t('onboarding:findGame.autoDetectError'));
       }
     } catch {
-      setError("No se detecto la instalacion automaticamente. Intenta buscar manualmente.");
+      setError(t('onboarding:findGame.autoDetectError'));
     } finally {
       setDetecting(false);
     }
@@ -57,9 +59,9 @@ export default function Step2({ onNext, onBack }: StepProps) {
       <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-accent-primary-subtle">
         <Search className="h-10 w-10 text-accent-primary" />
       </div>
-      <h2 className="font-display text-2xl font-bold text-text-primary mb-4">Encontrar Rocket League</h2>
+      <h2 className="font-display text-2xl font-bold text-text-primary mb-4">{t('onboarding:findGame.title')}</h2>
       <p className="text-text-secondary max-w-md mx-auto mb-10 leading-relaxed">
-        Buscamos tu instalacion de Rocket League para configurar automaticamente la API de estadisticas.
+        {t('onboarding:findGame.description')}
       </p>
 
       <div className="grid grid-cols-2 gap-3 max-w-md mx-auto mb-8">
@@ -69,7 +71,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
           className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-panel border border-border-subtle hover:border-border-highlight hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Gamepad2 className="h-8 w-8 text-text-secondary" />
-          <span className="text-sm font-semibold text-text-primary">Steam</span>
+          <span className="text-sm font-semibold text-text-primary">{t('onboarding:findGame.steam')}</span>
         </button>
 
         <button
@@ -78,7 +80,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
           className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-panel border border-border-subtle hover:border-border-highlight hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Monitor className="h-8 w-8 text-text-secondary" />
-          <span className="text-sm font-semibold text-text-primary">Epic Games</span>
+          <span className="text-sm font-semibold text-text-primary">{t('onboarding:findGame.epic')}</span>
         </button>
 
         <button
@@ -91,20 +93,20 @@ export default function Step2({ onNext, onBack }: StepProps) {
           ) : (
             <Search className="h-8 w-8 text-accent-primary" />
           )}
-          <span className="text-sm font-semibold text-text-primary">Auto-detectar</span>
-          <span className="text-[10px] font-semibold text-accent-primary uppercase tracking-wider">Recomendado</span>
+          <span className="text-sm font-semibold text-text-primary">{t('onboarding:findGame.autoDetect')}</span>
+          <span className="text-[10px] font-semibold text-accent-primary uppercase tracking-wider">{t('onboarding:findGame.recommended')}</span>
         </button>
 
         <button
           onClick={() => {
             setPlatform("manual");
-            setError("Para configurar manualmente, asegurate de que Rocket League este instalado y ejecuta la app como administrador.");
+            setError(t('onboarding:findGame.manualHint'));
           }}
           disabled={detecting}
           className="flex flex-col items-center gap-3 p-5 rounded-xl bg-bg-panel border border-border-subtle hover:border-border-highlight hover:bg-surface-hover transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FolderOpen className="h-8 w-8 text-text-secondary" />
-          <span className="text-sm font-semibold text-text-primary">Manual</span>
+          <span className="text-sm font-semibold text-text-primary">{t('onboarding:findGame.manual')}</span>
         </button>
       </div>
 
@@ -125,7 +127,7 @@ export default function Step2({ onNext, onBack }: StepProps) {
       {detecting && (
         <div className="flex items-center justify-center gap-2 mb-8 text-accent-primary">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">Buscando instalacion...</span>
+          <span className="text-sm">{t('onboarding:findGame.searching')}</span>
         </div>
       )}
 
@@ -134,14 +136,14 @@ export default function Step2({ onNext, onBack }: StepProps) {
           onClick={onBack}
           className="px-6 py-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors font-medium"
         >
-          Atras
+          {t('onboarding:findGame.back')}
         </button>
         <button
           onClick={onNext}
           disabled={!canProceed}
           className="bg-accent-primary hover:bg-accent-primary-hover disabled:bg-bg-panel disabled:text-text-muted text-white px-8 py-2.5 rounded-lg font-semibold transition-all duration-200"
         >
-          Siguiente
+          {t('onboarding:findGame.next')}
         </button>
       </div>
     </div>

@@ -13,9 +13,12 @@ pub fn calculate_streaks(
     local_primary_id: &str,
     start_date: &str,
     end_date: &str,
+    playlist: Option<&str>,
+    match_type: Option<&str>,
 ) -> AppResult<StreakData> {
     let conn = get_conn(pool)?;
-    let mut stmt = conn.prepare(
+
+    let mut sql = String::from(
         "SELECT m.winner, mp.team_num
          FROM matches m
          JOIN match_players mp ON m.id = mp.match_id
@@ -23,13 +26,31 @@ pub fn calculate_streaks(
          WHERE p.primary_id = ?1
            AND m.winner IS NOT NULL
            AND m.start_time >= ?2
-           AND m.start_time < date(?3, '+1 day')
-         ORDER BY m.start_time ASC",
-    )?;
+           AND m.start_time < date(?3, '+1 day')"
+    );
+    let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    args.push(Box::new(local_primary_id.to_string()));
+    args.push(Box::new(start_date.to_string()));
+    args.push(Box::new(end_date.to_string()));
+
+    if let Some(mt) = match_type {
+        sql.push_str(" AND m.match_type = ?");
+        args.push(Box::new(mt.to_string()));
+    }
+
+    if let Some(pl) = playlist {
+        sql.push_str(" AND m.playlist = ?");
+        args.push(Box::new(pl.to_string()));
+    }
+
+    sql.push_str(" ORDER BY m.start_time ASC");
+
+    let params_refs: Vec<&dyn rusqlite::ToSql> = args.iter().map(|a| a.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
 
     let results: Vec<(Option<i32>, i32)> = stmt
         .query_map(
-            rusqlite::params![local_primary_id, start_date, end_date],
+            &*params_refs,
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?
         .collect::<Result<Vec<_>, _>>()?;

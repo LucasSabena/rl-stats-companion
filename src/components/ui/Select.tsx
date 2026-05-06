@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -21,17 +22,19 @@ export function Select({
   options,
   value,
   onChange,
-  placeholder = "Seleccionar...",
+  placeholder,
   className,
   align = "left",
   size = "md",
 }: SelectProps) {
+  const { t } = useTranslation("common");
+  const resolvedPlaceholder = placeholder ?? t("select.placeholder");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const selectedOption = options.find((o) => o.value === value);
-  const displayText = selectedOption?.label ?? placeholder;
+  const displayText = selectedOption?.label ?? resolvedPlaceholder;
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (ref.current && !ref.current.contains(e.target as Node)) {

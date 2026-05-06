@@ -354,6 +354,11 @@ impl SessionManager {
             .filter(|p| Some(p.team_num) == my_team)
             .map(|p| p.stats.assists)
             .sum();
+        let my_score: i32 = players_vec
+            .iter()
+            .filter(|p| Some(p.team_num) == my_team)
+            .map(|p| p.stats.score)
+            .sum();
 
         let summary = SessionSummary {
             match_guid: guid.clone(),
@@ -386,6 +391,7 @@ impl SessionManager {
                 avg_duration_seconds: duration,
                 total_demos,
                 total_assists,
+                avg_score: my_score,
             };
             if let Err(error) = upsert_daily_rollup_conn(&conn, &rollup) {
                 let _ = conn.execute("ROLLBACK", []);
@@ -458,13 +464,13 @@ fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> Option<S
     let playlist = match total {
         0 | 1 => return None, // solo = training, not a real playlist
         2 => "Duel",
-        3 | 4 => match team_size {
+        _ => match team_size {
+            1 => "Duel",
             2 => "Doubles",
             3 => "Standard",
             4 => "Chaos",
             _ => "Other",
         },
-        _ => "Other",
     };
 
     Some(playlist.to_string())

@@ -1,0 +1,95 @@
+{
+  "page": {
+    "title": "Live Match"
+  },
+  "emptyState": {
+    "title": "Waiting for match...",
+    "description": "Start a match in Rocket League to see live data."
+  },
+  "matchType": {
+    "online": "Online",
+    "local": "Local"
+  },
+  "matchSize": {
+    "training": "Training",
+    "1v1": "1v1",
+    "2v2": "2v2",
+    "3v3": "3v3",
+    "4v4": "4v4",
+    "playerCount": "{{count}}p"
+  },
+  "result": {
+    "draw": "Draw {{scoreBlue}} - {{scoreOrange}}",
+    "win": "Victory! {{scoreBlue}} - {{scoreOrange}}",
+    "loss": "Defeat {{scoreBlue}} - {{scoreOrange}}"
+  },
+  "matchEnd": {
+    "summary": "Duration: {{duration}} | {{count}} players",
+    "dismiss": "Close notification"
+  },
+  "playlist": {
+    "label": "Playlist",
+    "detected": "detected",
+    "estimated": "estimated",
+    "unknown": "unknown",
+    "unresolved": "unresolved",
+    "candidates": "Candidates:",
+    "updated": "Updated:",
+    "refreshAriaLabel": "Refresh MMR",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh"
+  },
+  "teams": {
+    "blue": "Blue Team",
+    "orange": "Orange Team",
+    "blueShort": "Blue",
+    "orangeShort": "Orange"
+  },
+  "mmr": {
+    "average": "Avg MMR",
+    "searching": "Searching..."
+  },
+  "players": {
+    "bots": "Bots",
+    "none": "No players",
+    "other": "Other players",
+    "you": "You"
+  },
+  "stats": {
+    "goals": "Goal",
+    "assists": "Ast",
+    "shots": "Shot",
+    "saves": "Save",
+    "touches": "Tch",
+    "demos": "Dem",
+    "speed": "Spd",
+    "boost": "Bst"
+  },
+  "boostAriaLabel": "{{name}}'s Boost",
+  "events": {
+    "title": "Recent events",
+    "empty": "No events yet",
+    "UpdateState": "State update",
+    "BallHit": "Ball hit",
+    "GoalScored": "Goal!",
+    "StatfeedEvent": "Statistic",
+    "MatchCreated": "Match created",
+    "MatchEnded": "Match ended",
+    "GoalReplayStart": "Goal replay",
+    "GoalReplayEnd": "Replay ended",
+    "PlayerJoined": "Player joined",
+    "PlayerLeft": "Player left",
+    "CountdownBegin": "Countdown",
+    "MatchPaused": "Match paused",
+    "MatchUnpaused": "Match resumed",
+    "ClockUpdatedSeconds": "Clock updated",
+    "RoundStarted": "Round started"
+  },
+  "overtime": "OVERTIME",
+  "connectionStatus": {
+    "connected": "Connected",
+    "connecting": "Connecting...",
+    "disconnected": "Disconnected",
+    "gameNotRunning": "Game closed"
+  }
+}

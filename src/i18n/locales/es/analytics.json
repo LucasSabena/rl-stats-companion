@@ -1,0 +1,134 @@
+{
+  "title": "Análisis de rendimiento",
+  "matchCount": "{{count}} partidas",
+  "activeFilters": " · filtros activos",
+  "periods": {
+    "day": "Dia",
+    "week": "Semana",
+    "month": "Mes",
+    "year": "Año",
+    "alltime": "Siempre",
+    "session": "Sesion"
+  },
+  "stats": {
+    "totalMatches": "Partidas jugadas",
+    "winRate": "Win Rate",
+    "totalGoals": "Goles totales",
+    "avgScore": "Puntuación media",
+    "totalAssists": "Asistencias totales",
+    "totalSaves": "Paradas totales",
+    "totalShots": "Tiros totales",
+    "totalDemos": "Demoliciones",
+    "peakSpeed": "Velocidad máxima",
+    "avgDuration": "Duración media",
+    "perMatch": "/ partido",
+    "winLossTrend": "{{wins}}V / {{losses}}D"
+  },
+  "streaks": {
+    "label": "Racha",
+    "current": "Racha actual",
+    "best": "Mejor racha",
+    "bestSuffix": "mejor"
+  },
+  "chart": {
+    "evolution": "Evolución",
+    "combo": "Combo",
+    "noData": "No hay datos para este periodo",
+    "ariaLabel": "Gráfico de evolución de {{metric}}",
+    "winRate": "Win Rate (%)",
+    "metrics": {
+      "wr": "WR",
+      "matches": "Part.",
+      "score": "Punt.",
+      "goals": "Goles",
+      "assists": "Asist.",
+      "saves": "Paradas",
+      "demos": "Demos"
+    }
+  },
+  "insights": {
+    "title": "Análisis avanzado",
+    "byPlaylist": "Por playlist",
+    "bestHour": "Mejor horario",
+    "bestHourDetail": "{{hour}}:00hs — WR ",
+    "situational": "Rend. situacional",
+    "overtime": "Overtime ({{count}}j)",
+    "closeGames": "Partidos cerrados (±1 gol, {{count}}j)",
+    "blowouts": "Palizas (+4 goles, {{count}}j)",
+    "contribution": "Contribución al equipo",
+    "records": "Records",
+    "gamesPlayed": "{{count}}j",
+    "hourTooltip": "{{hour}}h: {{played}}j, {{winRate}}% WR",
+    "contrib": {
+      "goals": "Goles",
+      "assists": "Asistencias",
+      "saves": "Paradas",
+      "shots": "Tiros",
+      "demos": "Demos"
+    }
+  },
+  "sessions": {
+    "title": "Historial de sesiones",
+    "detail": "Detalle de sesión",
+    "matches": "partidas",
+    "matchesCount": "{{count}} partidas",
+    "ariaLabel": "Sesión del {{date}}, {{count}} partidas, {{winRate}}% win rate",
+    "kpi": {
+      "matches": "Partidas",
+      "wr": "WR",
+      "goals": "Goles",
+      "shots": "Tiros"
+    },
+    "winsLabel": "V",
+    "lossesLabel": "D",
+    "assistsTitle": "Asistencias",
+    "demosTitle": "Demoliciones"
+  },
+  "matchDetail": {
+    "loading": "Cargando partidas...",
+    "win": "V",
+    "loss": "D",
+    "overtime": "OT",
+    "points": "pts",
+    "goals": "goles",
+    "assists": "asist",
+    "saves": "paradas",
+    "shots": "tiros"
+  },
+  "empty": {
+    "noData": {
+      "title": "No hay datos para este periodo",
+      "description": "Jugá algunas partidas para ver tu análisis aquí.",
+      "filteredDescription": "Probá cambiando los filtros de playlist o tipo de partida.",
+      "clearFilters": "Limpiar filtros"
+    },
+    "error": {
+      "title": "Error cargando análisis",
+      "description": "No se pudieron cargar los datos de rendimiento."
+    }
+  },
+  "filters": {
+    "playlistAriaLabel": "Filtrar por playlist",
+    "matchTypeAriaLabel": "Filtrar por tipo de partida",
+    "playlists": {
+      "all": "Todas las playlists",
+      "duel": "1v1 — Duel",
+      "doubles": "2v2 — Doubles",
+      "standard": "3v3 — Standard",
+      "chaos": "4v4 — Chaos",
+      "rumble": "Rumble",
+      "dropshot": "Dropshot",
+      "hoops": "Hoops",
+      "snowday": "Snow Day",
+      "other": "Otras"
+    },
+    "matchTypes": {
+      "all": "Todos",
+      "ranked": "Competitivo",
+      "casual": "Casual",
+      "tournament": "Torneo",
+      "training": "Entrenamiento",
+      "other": "Otras"
+    }
+  }
+}

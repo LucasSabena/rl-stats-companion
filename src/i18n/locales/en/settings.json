@@ -1,0 +1,142 @@
+{
+  "pageTitle": "Settings",
+  "pageDescription": "Customize your RL Stats experience",
+  "pageSections": {
+    "profiles": "Profiles",
+    "streamingOBS": "Streaming OBS",
+    "overlayInGame": "In-game Overlay",
+    "general": "General",
+    "game": "Game",
+    "trackerNetwork": "Tracker Network",
+    "data": "Data",
+    "updates": "Updates"
+  },
+  "sections": {
+    "rocketLeague": "Rocket League",
+    "system": "System"
+  },
+  "fields": {
+    "playerName": "In-game name",
+    "playerNamePlaceholder": "E.g.: Si Locura",
+    "playerNameHelper": "Used to identify you the first time and save your `PrimaryId` automatically.",
+    "installPath": "Install path",
+    "installPathPlaceholder": "Auto-detected...",
+    "detectPath": "Search",
+    "platform": "Platform",
+    "platformAutoDetect": "Auto-detect",
+    "defaultMatchType": "Default match type",
+    "autoStart": "Start with Windows",
+    "autoStartDescription": "Launch RL Stats when the computer starts",
+    "sessionGap": "Session gap (minutes)",
+    "sessionGapHelper": "Minutes between matches to consider them the same session (5-120, default 30)."
+  },
+  "matchTypes": {
+    "ranked": "Ranked",
+    "casual": "Casual",
+    "tournament": "Tournament",
+    "other": "Other"
+  },
+  "buttons": {
+    "saveSettings": "Save settings"
+  },
+  "toasts": {
+    "saved": {
+      "title": "Settings saved",
+      "message": "Changes applied successfully."
+    },
+    "saveError": {
+      "title": "Error saving",
+      "message": "Could not save settings."
+    },
+    "installFound": {
+      "title": "Installation found",
+      "message": "{{platform}}: {{path}}"
+    },
+    "notFound": {
+      "title": "Not found",
+      "message": "Rocket League was not detected. Make sure it is installed."
+    },
+    "detectError": {
+      "title": "Error",
+      "message": "Error detecting the path."
+    }
+  },
+  "errors": {
+    "loadingTitle": "Error loading settings",
+    "loadingMessage": "Could not load settings."
+  },
+  "ini": {
+    "title": "Configure Stats API",
+    "description": "Automatically activates the Rocket League stats API by editing the game's configuration file.",
+    "port": "Port",
+    "enable": "Enable Stats API",
+    "configureButton": "Configure RL.ini",
+    "errors": {
+      "noRlPath": "First configure the Rocket League path in Settings."
+    },
+    "toasts": {
+      "applied": {
+        "title": "Configuration applied",
+        "message": "The RL file has been configured on port {{port}}."
+      },
+      "error": {
+        "title": "Error",
+        "message": "Could not configure the RL file."
+      }
+    }
+  },
+  "data": {
+    "title": "Storage",
+    "statsTemplate": "{{totalMatches}} matches · {{size}} MB",
+    "loading": "Loading...",
+    "copyPath": "Copy path",
+    "export": "Export",
+    "import": "Import",
+    "deleteAll": "Delete all",
+    "deleteModalTitle": "Delete all data?",
+    "deleteModalDescription": "This action cannot be undone. All matches and statistics will be deleted.",
+    "deleteModalWarning": "Make sure you've exported your data if you want to keep it.",
+    "exportSuccess": "Export complete",
+    "exportSuccessMessage": "A JSON backup was downloaded.",
+    "exportError": "Export failed",
+    "importSuccess": "Import complete",
+    "importError": "Import failed",
+    "dataDeleted": "Data deleted",
+    "deleteError": "Failed to delete data",
+    "cancel": "Cancel"
+  },
+  "update": {
+    "title": "Updates",
+    "unknownVersion": "unknown",
+    "installedVersion": "Installed version: {{version}}",
+    "loadingVersion": "Loading version...",
+    "downloading": "Downloading {{progress}}%",
+    "searching": "Searching...",
+    "checkButton": "Check",
+    "versionAvailable": "{{version}} available",
+    "retryDownload": "Retry download",
+    "errorTitle": "Error checking for updates",
+    "commonCauses": "Common causes: no GitHub release published, running in development mode, or the latest.json file is missing from the release.",
+    "toasts": {
+      "installed": "Update installed. Restarting...",
+      "available": {
+        "title": "Update available: {{version}}"
+      },
+      "upToDate": "You're on the latest version",
+      "downloadError": {
+        "title": "Error updating"
+      },
+      "checkError": {
+        "title": "Error checking for updates"
+      }
+    },
+    "errors": {
+      "invalidSignature": "Invalid signature. Verify that TAURI_SIGNING_PRIVATE_KEY is configured in CI.",
+      "updateNotFound": "Update file not found. The latest.json was probably not generated correctly.",
+      "connection": "Connection error. Check your internet access.",
+      "signatureMismatch": "Signature error. The public key in tauri.conf.json may not match.",
+      "latestJsonNotFound": "latest.json not found. Make sure the CI release has been run.",
+      "connectionWithDetail": "Connection error. Check your internet access.\nDetail: {{detail}}"
+    }
+  }
+}

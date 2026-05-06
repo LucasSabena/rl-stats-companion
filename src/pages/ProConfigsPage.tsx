@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { proPlayers } from "@/data/proConfigs";
 import { ProPlayerCard } from "@/components/pro-configs/ProPlayerCard";
 import { ProPlayerAvatar } from "@/components/pro-configs/ProPlayerAvatar";
@@ -36,6 +37,7 @@ function groupByContinentAndTeam(players: ProPlayer[]) {
 }
 
 export function ProConfigsPage() {
+  const { t } = useTranslation(["proConfigs", "common"]);
   const [search, setSearch] = useState("");
   const [expandedContinents, setExpandedContinents] = useState<Set<Continent>>(new Set(["Europe", "North America"]));
   const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
@@ -82,7 +84,7 @@ export function ProConfigsPage() {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
             <input
               type="text"
-              placeholder="Buscar jugador o equipo..."
+              placeholder={t("proConfigs:search.placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-md border border-border-subtle bg-bg-base py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
@@ -168,11 +170,10 @@ export function ProConfigsPage() {
           <div className="flex h-full flex-col items-center justify-center py-20 text-center">
             <Globe size={48} className="mb-4 text-text-tertiary" />
             <h3 className="text-lg font-semibold text-text-secondary">
-              Configuraciones de Pro Players
+              {t("proConfigs:emptyState.title")}
             </h3>
             <p className="mt-2 max-w-md text-sm text-text-tertiary">
-              Selecciona un jugador de la lista para ver su configuracion de camara,
-              controles, deadzone y hardware. Datos obtenidos de Liquipedia.
+              {t("proConfigs:emptyState.description")}
             </p>
           </div>
         )}

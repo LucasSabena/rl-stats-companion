@@ -69,6 +69,7 @@
   --color-accent-danger: #ef4444;
   --color-accent-warning: #f59e0b;
   --color-accent-info: #0ea5e9;
+  --color-accent-purple: #a855f7;
 
   /* ── Shadows & Effects ── */
   --shadow-level-1: 0 1px 2px rgba(0,0,0,0.4), 0 0 1px rgba(0,0,0,0.3);
@@ -138,10 +139,10 @@
     font-family: var(--font-sans);
     background-color: var(--color-bg-base);
     color: var(--color-text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.01em;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  html.overlay-window, html.overlay-window body, html.overlay-window #root {
+    background-color: transparent !important;
   }
 
   h1, h2, h3, h4, h5, h6 {

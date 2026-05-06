@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AppShell } from "@/components/layout/AppShell";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useAutoUpdateCheck } from "@/hooks/useAutoUpdateCheck";
 
 const OverlayView = lazy(() => import("@/components/overlay/OverlayView").then((module) => ({ default: module.OverlayView })));
 const LivePage = lazy(() => import("@/pages/LivePage").then((module) => ({ default: module.LivePage })));
@@ -27,8 +28,8 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppFallback() {
-  return <div className="min-h-screen bg-bg-base" />;
+function AppFallback({ transparent = false }: { transparent?: boolean }) {
+  return <div className={`min-h-screen ${transparent ? "bg-transparent" : "bg-bg-base"}`} />;
 }
 
 function AppContent() {
@@ -37,11 +38,16 @@ function AppContent() {
   const [isOverlayWindow, setIsOverlayWindow] = useState(false);
   const [detecting, setDetecting] = useState(true);
 
+  useAutoUpdateCheck();
+
   useEffect(() => {
     try {
       const win = getCurrentWindow();
       if (win.label === "overlay") {
         setIsOverlayWindow(true);
+        document.documentElement.style.backgroundColor = "transparent";
+        document.body.style.backgroundColor = "transparent";
+        document.documentElement.classList.add("overlay-window");
       }
     } catch {
       // Running outside Tauri (dev mode in browser) — not an overlay window
@@ -55,7 +61,7 @@ function AppContent() {
   // Overlay window: render only the overlay widget (no sidebar, no routing)
   if (isOverlayWindow) {
     return (
-      <Suspense fallback={<AppFallback />}>
+      <Suspense fallback={<AppFallback transparent />}>
         <OverlayView />
       </Suspense>
     );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { detectRlPath } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, FolderSearch, MonitorUp } from "lucide-react";
+import { LanguageSelector } from "./LanguageSelector";
 import { settingsSchema, type SettingsFormInput, type SettingsFormValues } from "@/lib/schemas";
 
 const inputClass = cn(
@@ -23,6 +25,7 @@ const selectClass = cn(
 );
 
 export function SettingsPanel() {
+  const { t } = useTranslation(["settings", "common"]);
   const { data: settings, isLoading, isError, refetch } = useSettings();
   const updateSettings = useUpdateSettings();
   const addToast = useUIStore((state) => state.addToast);
@@ -71,9 +74,9 @@ export function SettingsPanel() {
       sessionGapMinutes: data.sessionGapMinutes,
     }, {
       onSuccess: () =>
-        addToast({ type: "success", title: "Ajustes guardados", message: "Los cambios se aplicaron correctamente." }),
+        addToast({ type: "success", title: t("settings:toasts.saved.title"), message: t("settings:toasts.saved.message") }),
       onError: (err) =>
-        addToast({ type: "error", title: "Error al guardar", message: err.message || "No se pudieron guardar los ajustes." }),
+        addToast({ type: "error", title: t("settings:toasts.saveError.title"), message: err.message || t("settings:toasts.saveError.message") }),
     });
   };
 
@@ -88,68 +91,67 @@ export function SettingsPanel() {
         setValue("platform", valid.platform);
         addToast({
           type: "success",
-          title: "Instalación encontrada",
-          message: `${valid.platform === "steam" ? "Steam" : "Epic Games"}: ${valid.path}`,
+          title: t("settings:toasts.installFound.title"),
+          message: t("settings:toasts.installFound.message", { platform: valid.platform === "steam" ? "Steam" : "Epic Games", path: valid.path }),
         });
       } else {
-        addToast({ type: "warning", title: "No encontrado", message: "No se detectó Rocket League. Verificá que esté instalado." });
+        addToast({ type: "warning", title: t("settings:toasts.notFound.title"), message: t("settings:toasts.notFound.message") });
       }
     } catch {
-      addToast({ type: "error", title: "Error", message: "Error al detectar la ruta." });
+      addToast({ type: "error", title: t("settings:toasts.detectError.title"), message: t("settings:toasts.detectError.message") });
     } finally {
       setIsDetecting(false);
     }
   };
 
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-1/3" /><Skeleton className="h-24 w-full" /></div>;
-  if (isError || !settings) return <EmptyState icon={AlertTriangle} title="Error cargando ajustes" description="No se pudieron cargar los ajustes." actionLabel="Reintentar" onAction={() => refetch()} />;
+  if (isError || !settings) return <EmptyState icon={AlertTriangle} title={t("settings:errors.loadingTitle")} description={t("settings:errors.loadingMessage")} actionLabel={t("common:buttons.retry")} onAction={() => refetch()} />;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* ── Rocket League Section ── */}
       <section className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-primary-subtle transition-colors group-hover:bg-accent-primary/20">
             <FolderSearch className="h-4 w-4 text-accent-primary" />
           </div>
-          <h3 className="text-sm font-semibold tracking-wide text-text-secondary">Rocket League</h3>
+          <h3 className="text-sm font-semibold tracking-wide text-text-secondary">{t("settings:sections.rocketLeague")}</h3>
         </div>
         <div className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-text-secondary">Nombre dentro del juego</label>
+            <label className="text-sm font-medium text-text-secondary">{t("settings:fields.playerName")}</label>
             <input
               type="text"
               {...register("playerName")}
               className={inputClass}
-              placeholder="Ej: Si Locura"
+              placeholder={t("settings:fields.playerNamePlaceholder")}
             />
             {errors.playerName && <p className="text-xs text-accent-danger">{errors.playerName.message}</p>}
             <p className="text-xs text-text-muted">
-              Lo usamos para identificarte la primera vez y guardar tu `PrimaryId` automaticamente.
+              {t("settings:fields.playerNameHelper")}
             </p>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-text-secondary">Ruta de instalacion</label>
+            <label className="text-sm font-medium text-text-secondary">{t("settings:fields.installPath")}</label>
             <div className="flex gap-2">
-              <input type="text" {...register("rlPath")} className={cn(inputClass, "flex-1")} placeholder="Se detecta automaticamente..." />
+              <input type="text" {...register("rlPath")} className={cn(inputClass, "flex-1")} placeholder={t("settings:fields.installPathPlaceholder")} />
               <Button type="button" variant="secondary" size="sm" onClick={handleDetectPath} isLoading={isDetecting} disabled={isDetecting} className="shrink-0">
                 <FolderSearch size={14} className="mr-1" />
-                Buscar
+                {t("settings:fields.detectPath")}
               </Button>
             </div>
             {errors.rlPath && <p className="text-xs text-accent-danger">{errors.rlPath.message}</p>}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-text-secondary">Plataforma</label>
+            <label className="text-sm font-medium text-text-secondary">{t("settings:fields.platform")}</label>
             <select {...register("platform")} className={selectClass}>
-              <option value="">Detectar automaticamente</option>
+              <option value="">{t("settings:fields.platformAutoDetect")}</option>
               <option value="steam">Steam</option>
               <option value="epic">Epic Games</option>
             </select>
             {errors.platform && <p className="text-xs text-accent-danger">{errors.platform.message}</p>}
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-text-secondary">Tipo de partida por defecto</label>
+            <label className="text-sm font-medium text-text-secondary">{t("settings:fields.defaultMatchType")}</label>
             <div className="flex flex-wrap gap-2">
               {(["ranked", "casual", "tournament", "other"] as const).map((type) => (
                 <Controller key={type} name="defaultMatchType" control={control}
@@ -161,7 +163,7 @@ export function SettingsPanel() {
                           ? "bg-accent-primary text-white shadow-[0_0_12px_rgba(59,130,246,0.3)]"
                           : "bg-bg-base text-text-tertiary hover:text-text-secondary hover:bg-bg-elevated border border-border-subtle"
                       )}>
-                      {type === "ranked" ? "Ranked" : type === "casual" ? "Casual" : type === "tournament" ? "Torneo" : "Otro"}
+                      {t(`settings:matchTypes.${type}`)}
                     </button>
                   )} />
               ))}
@@ -170,20 +172,18 @@ export function SettingsPanel() {
         </div>
       </section>
 
-      {/* ── System Section ── */}
       <section className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-primary-subtle transition-colors group-hover:bg-accent-primary/20">
             <MonitorUp className="h-4 w-4 text-accent-primary" />
           </div>
-          <h3 className="text-sm font-semibold tracking-wide text-text-secondary">Sistema</h3>
+          <h3 className="text-sm font-semibold tracking-wide text-text-secondary">{t("settings:sections.system")}</h3>
         </div>
         <div className="space-y-5">
-          {/* Auto-start toggle */}
           <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-bg-base px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-text-secondary">Iniciar con Windows</p>
-              <p className="text-xs text-text-muted">Arrancar RL Stats al encender el equipo</p>
+              <p className="text-sm font-medium text-text-secondary">{t("settings:fields.autoStart")}</p>
+              <p className="text-xs text-text-muted">{t("settings:fields.autoStartDescription")}</p>
             </div>
             <Controller name="autoStart" control={control}
               render={({ field }) => (
@@ -208,10 +208,9 @@ export function SettingsPanel() {
               )} />
           </div>
 
-          {/* Session gap */}
           <div className="space-y-2">
             <label htmlFor="sessionGapMinutes" className="text-sm font-medium text-text-secondary">
-              Brecha entre sesiones (minutos)
+              {t("settings:fields.sessionGap")}
             </label>
             <Controller name="sessionGapMinutes" control={control}
               render={({ field }) => (
@@ -226,16 +225,18 @@ export function SettingsPanel() {
                 />
               )} />
             <p className="text-xs text-text-muted">
-              Minutos entre partidas para considerarlas la misma sesion (5-120, por defecto 30).
+              {t("settings:fields.sessionGapHelper")}
             </p>
             {errors.sessionGapMinutes && (
               <p className="text-xs text-accent-danger">{errors.sessionGapMinutes.message}</p>
             )}
           </div>
+
+          <LanguageSelector />
         </div>
       </section>
 
-      <Button type="submit" isLoading={updateSettings.isPending} disabled={updateSettings.isPending} className="w-full">Guardar ajustes</Button>
+      <Button type="submit" isLoading={updateSettings.isPending} disabled={updateSettings.isPending} className="w-full">{t("settings:buttons.saveSettings")}</Button>
     </form>
   );
 }

@@ -168,10 +168,10 @@ export interface DailyRollup {
   losses: number;
   avgScore: number;
   totalGoals: number;
-  totalShots?: number;
-  totalSaves?: number;
-  totalDemos?: number;
-  totalAssists?: number;
+  totalShots: number;
+  totalSaves: number;
+  totalDemos: number;
+  totalAssists: number;
 }
 
 export interface MatchSession {
@@ -187,6 +187,8 @@ export interface MatchSession {
   goals_conceded: number;
   total_shots: number;
   total_saves: number;
+  total_assists: number;
+  total_demos: number;
 }
 
 export interface SessionMatchPlayer {
@@ -261,6 +263,20 @@ export interface OverlayUrl {
 
 export type MatchType = "ranked" | "casual" | "tournament" | "training" | "other";
 
+export type PlaylistFilter =
+  | "all"
+  | "duel"
+  | "doubles"
+  | "standard"
+  | "chaos"
+  | "rumble"
+  | "dropshot"
+  | "hoops"
+  | "snowday"
+  | "other";
+
+export type MatchTypeFilter = "all" | MatchType;
+
 export interface AppSettings {
   playerName?: string;
   localPrimaryId?: string | null;
@@ -291,6 +307,7 @@ export interface AppSettings {
   overlayShowPlayerScore?: boolean;
   overlayShowBoost?: boolean;
   overlayShowMmr?: boolean;
+  overlayShowSpeed?: boolean;
   gameRunning?: boolean;
 }
 
@@ -318,6 +335,7 @@ export interface OverlayDisplaySettings {
   showPlayerScore: boolean;
   showBoost: boolean;
   showMmr: boolean;
+  showSpeed: boolean;
 }
 
 export type OverlayPositionPreset = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "custom";
@@ -341,6 +359,7 @@ export interface OverlayConfigForm {
   showPlayerScore: boolean;
   showBoost: boolean;
   showMmr: boolean;
+  showSpeed: boolean;
 }
 
 export interface UpdateInfo {

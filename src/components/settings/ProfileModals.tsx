@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 
@@ -21,6 +22,7 @@ export function CreateProfileModal({
   isLoading,
   error,
 }: CreateProfileModalProps) {
+  const { t } = useTranslation(["profiles", "common"]);
   const [name, setName] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [errors, setErrors] = useState<{ name?: string; playerName?: string }>({});
@@ -37,8 +39,8 @@ export function CreateProfileModal({
 
   const handleConfirm = () => {
     const nextErrors: { name?: string; playerName?: string } = {};
-    if (!name.trim()) nextErrors.name = "El nombre del perfil es obligatorio.";
-    if (!playerName.trim()) nextErrors.playerName = "El nickname es obligatorio.";
+    if (!name.trim()) nextErrors.name = t("profiles:modals.create.profileNameRequired");
+    if (!playerName.trim()) nextErrors.playerName = t("profiles:modals.create.playerNameRequired");
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -51,16 +53,16 @@ export function CreateProfileModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Crear nuevo perfil"
-      description="Cada perfil tiene su propio historial de partidas y configuración."
+      title={t("profiles:modals.create.title")}
+      description={t("profiles:modals.create.description")}
       size="md"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancelar
+            {t("common:buttons.cancel")}
           </Button>
           <Button variant="primary" onClick={handleConfirm} isLoading={isLoading}>
-            Crear perfil
+            {t("profiles:modals.create.submit")}
           </Button>
         </div>
       }
@@ -68,7 +70,7 @@ export function CreateProfileModal({
       <div className="space-y-4">
         <div>
           <label htmlFor="profile-name" className="mb-1 block text-sm font-medium text-text-primary">
-            Nombre del perfil
+            {t("profiles:modals.create.profileName")}
           </label>
           <input
             ref={nameInputRef}
@@ -79,7 +81,7 @@ export function CreateProfileModal({
             onKeyDown={(e) => {
               if (e.key === "Enter") handleConfirm();
             }}
-            placeholder="Ej. Amigos, Novia..."
+            placeholder={t("profiles:modals.create.profileNamePlaceholder")}
             className="w-full border bg-bg-panel border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50 outline-none transition-colors"
           />
           {errors.name && <p className="text-accent-danger text-xs mt-1">{errors.name}</p>}
@@ -87,7 +89,7 @@ export function CreateProfileModal({
 
         <div>
           <label htmlFor="player-name" className="mb-1 block text-sm font-medium text-text-primary">
-            Tu nickname en Rocket League
+            {t("profiles:modals.create.playerName")}
           </label>
           <input
             id="player-name"
@@ -97,7 +99,7 @@ export function CreateProfileModal({
             onKeyDown={(e) => {
               if (e.key === "Enter") handleConfirm();
             }}
-            placeholder="Tu nombre en el juego"
+            placeholder={t("profiles:modals.create.playerNamePlaceholder")}
             className="w-full border bg-bg-panel border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/50 outline-none transition-colors"
           />
           {errors.playerName && <p className="text-accent-danger text-xs mt-1">{errors.playerName}</p>}
@@ -128,26 +130,27 @@ export function DeleteProfileModal({
   profileName,
   isLoading,
 }: DeleteProfileModalProps) {
+  const { t } = useTranslation(["profiles", "common"]);
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Eliminar perfil"
-      description={`¿Estás seguro de que quieres eliminar el perfil "${profileName}"? Esta acción no se puede deshacer.`}
+      title={t("profiles:modals.delete.title")}
+      description={t("profiles:modals.delete.description", { name: profileName })}
       size="sm"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancelar
+            {t("common:buttons.cancel")}
           </Button>
           <Button variant="danger" onClick={onConfirm} isLoading={isLoading}>
-            Eliminar
+            {t("profiles:modals.delete.submit")}
           </Button>
         </div>
       }
     >
       <p className="text-sm text-text-secondary">
-        Se perderán todas las partidas y estadísticas asociadas a este perfil.
+        {t("profiles:modals.delete.warning")}
       </p>
     </Modal>
   );
@@ -172,20 +175,21 @@ export function SwitchProfileModal({
   profileName,
   isLoading,
 }: SwitchProfileModalProps) {
+  const { t } = useTranslation(["profiles", "common"]);
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Cambiar de perfil"
-      description={`Vas a cambiar al perfil "${profileName}". La aplicación se reiniciará para cargar los datos del nuevo perfil.`}
+      title={t("profiles:modals.switch.title")}
+      description={t("profiles:modals.switch.description", { name: profileName })}
       size="sm"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancelar
+            {t("common:buttons.cancel")}
           </Button>
           <Button variant="accent" onClick={onConfirm} isLoading={isLoading}>
-            Reiniciar ahora
+            {t("profiles:modals.switch.restartNow")}
           </Button>
         </div>
       }
@@ -216,6 +220,7 @@ export function RenameProfileModal({
   isLoading,
   error,
 }: RenameProfileModalProps) {
+  const { t } = useTranslation(["profiles", "common"]);
   const [name, setName] = useState(currentName);
   const [localError, setLocalError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -231,7 +236,7 @@ export function RenameProfileModal({
   const handleConfirm = () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setLocalError("El nombre no puede estar vacío.");
+      setLocalError(t("profiles:modals.rename.emptyError"));
       return;
     }
     if (trimmed === currentName) {
@@ -246,24 +251,24 @@ export function RenameProfileModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Renombrar perfil"
-      description="Introduce un nuevo nombre para este perfil."
+      title={t("profiles:modals.rename.title")}
+      description={t("profiles:modals.rename.description")}
       size="sm"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancelar
+            {t("common:buttons.cancel")}
           </Button>
           <Button variant="primary" onClick={handleConfirm} isLoading={isLoading}>
-            Guardar
+            {t("common:buttons.save")}
           </Button>
         </div>
       }
     >
       <div>
-        <label htmlFor="rename-profile" className="mb-1 block text-sm font-medium text-text-primary">
-          Nuevo nombre
-        </label>
+          <label htmlFor="rename-profile" className="mb-1 block text-sm font-medium text-text-primary">
+            {t("profiles:modals.rename.newName")}
+          </label>
         <input
           ref={inputRef}
           id="rename-profile"

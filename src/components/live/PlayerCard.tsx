@@ -2,6 +2,7 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { formatBoost, formatSpeed } from "@/lib/utils";
 import type { LiveMmrPlayer, Player } from "@/lib/types";
+import { useTranslation } from "react-i18next";
 
 interface PlayerCardProps {
   player: Player;
@@ -11,6 +12,7 @@ interface PlayerCardProps {
 }
 
 export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr, mmrLoading }: PlayerCardProps) {
+  const { t } = useTranslation(["live", "common"]);
   const isBlue = player.team === 0;
   const hasMmr = mmr?.mmr !== null && mmr?.mmr !== undefined;
   const mmrLabel = hasMmr ? `MMR ${mmr?.mmr}` : null;
@@ -22,18 +24,17 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
   return (
     <div
       className={cn(
-        "rounded-xl border p-4 transition-all duration-200",
+        "rounded-lg border p-2.5 transition-all duration-200",
         isCurrentUser
           ? "border-accent-primary/30 bg-accent-primary-muted glow-blue"
           : "border-border-subtle bg-bg-surface hover:border-border-default"
       )}
     >
-      {/* Header: name + score */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <div
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold",
+              "flex h-7 w-7 items-center justify-center rounded-md text-[10px] font-bold",
               isBlue
                 ? "bg-team-blue-bg text-team-blue"
                 : "bg-team-orange-bg text-team-orange"
@@ -41,15 +42,17 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
           >
             {(player.name || "?").charAt(0).toUpperCase()}
           </div>
-          <div>
-            <span className="text-sm font-semibold text-text-primary">{player.name}</span>
-            {isCurrentUser && (
-              <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-accent-primary">
-                Tu
-              </span>
-            )}
-            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-text-tertiary">
-              {mmrLoading && !hasMmr ? <span>Buscando MMR...</span> : null}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-xs font-semibold text-text-primary">{player.name}</span>
+              {isCurrentUser && (
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-accent-primary">
+                  {t("live:players.you")}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-1 text-[9px] text-text-tertiary">
+              {mmrLoading && !hasMmr ? <span>{t("live:mmr.searching")}</span> : null}
               {mmrLabel ? <span className="font-mono font-semibold text-text-secondary">{mmrLabel}</span> : null}
               {rankLabel ? <span>{rankLabel}</span> : null}
               {sourceLabel ? <span>{sourceLabel}</span> : null}
@@ -58,47 +61,45 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
             </div>
           </div>
         </div>
-        <span className="font-mono text-lg font-bold text-text-primary">{player.score}</span>
+        <span className="font-mono text-sm font-bold text-text-primary">{player.score}</span>
       </div>
 
-      {/* Stats grid */}
-      <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-        <Stat label="Goles" value={player.goals} />
-        <Stat label="Asist." value={player.assists} />
-        <Stat label="Tiros" value={player.shots} />
-        <Stat label="Paradas" value={player.saves} />
+      <div className="mt-1.5 grid grid-cols-4 gap-1 text-center">
+        <Stat label={t("live:stats.goals")} value={player.goals} />
+        <Stat label={t("live:stats.assists")} value={player.assists} />
+        <Stat label={t("live:stats.shots")} value={player.shots} />
+        <Stat label={t("live:stats.saves")} value={player.saves} />
       </div>
 
-      <div className="mt-2 grid grid-cols-4 gap-2 text-center">
-        <Stat label="Toques" value={player.touches} />
-        <Stat label="Demos" value={player.demos} />
+      <div className="mt-1 grid grid-cols-4 gap-1 text-center">
+        <Stat label={t("live:stats.touches")} value={player.touches} />
+        <Stat label={t("live:stats.demos")} value={player.demos} />
         <Stat
-          label="Veloc."
+          label={t("live:stats.speed")}
           value={player.speed}
           displayValue={formatSpeed(player.speed)}
         />
         <Stat
-          label="Boost"
+          label={t("live:stats.boost")}
           value={player.boostAmount}
           displayValue={formatBoost(player.boostAmount)}
         />
       </div>
 
-      {/* Boost bar */}
-      <div className="mt-3">
+      <div className="mt-1.5">
         <div
-          className="h-1.5 w-full overflow-hidden rounded-full bg-bg-panel"
+          className="h-1 w-full overflow-hidden rounded-full bg-bg-panel"
           role="progressbar"
           aria-valuenow={Math.round(player.boostAmount)}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`Boost de ${player.name}`}
+          aria-label={t("live:boostAriaLabel", { name: player.name })}
         >
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500 ease-out",
               player.boostAmount > 60
-                ? "bg-accent-success shadow-[0_0_8px_var(--color-accent-success)]"
+                ? "bg-accent-success shadow-[0_0_6px_var(--color-accent-success)]"
                 : player.boostAmount > 30
                   ? "bg-accent-warning"
                   : "bg-accent-danger"
@@ -122,8 +123,8 @@ function Stat({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">{label}</p>
-      <p className="mt-0.5 font-mono text-sm font-bold text-text-primary">
+      <p className="text-[9px] font-semibold uppercase tracking-wide text-text-tertiary leading-none">{label}</p>
+      <p className="mt-0.5 font-mono text-xs font-bold text-text-primary leading-tight">
         {displayValue ?? value}
       </p>
     </div>

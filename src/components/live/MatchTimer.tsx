@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface MatchTimerProps {
   timeRemaining: number;
@@ -8,16 +9,18 @@ interface MatchTimerProps {
 }
 
 export const MatchTimer = memo(function MatchTimer({ timeRemaining, isOvertime }: MatchTimerProps) {
+  const { t } = useTranslation(["live", "common"]);
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {isOvertime && (
-        <span className="rounded-full bg-accent-warning-subtle border border-accent-warning/20 px-2.5 py-0.5 text-xs font-bold text-accent-warning">
-          PRORROGA
+        <span className="rounded-full bg-accent-warning-subtle border border-accent-warning/20 px-2 py-0.5 text-[10px] font-bold text-accent-warning">
+          {t("live:overtime")}
         </span>
       )}
       <div
         className={cn(
-          "rounded-xl border px-4 py-2 font-mono text-xl font-bold tracking-wider",
+          "rounded-lg border px-3 py-1.5 font-mono text-base font-bold tracking-wider",
           isOvertime
             ? "border-accent-warning/30 bg-accent-warning-subtle text-accent-warning"
             : "border-border-subtle bg-bg-surface text-text-primary"

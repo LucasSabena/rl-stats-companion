@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/uiStore";
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
@@ -42,6 +43,7 @@ interface ToastItemProps {
 }
 
 function ToastItem({ toast, onClose }: ToastItemProps) {
+  const { t } = useTranslation("common");
   useEffect(() => {
     const timer = setTimeout(onClose, toast.duration ?? 4000);
     return () => clearTimeout(timer);
@@ -65,7 +67,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
       <button
         onClick={onClose}
         className="shrink-0 rounded-md p-1 text-text-tertiary transition-colors hover:bg-white/10 hover:text-text-primary"
-        aria-label="Close"
+        aria-label={t("accessibility.close")}
       >
         <X size={14} />
       </button>

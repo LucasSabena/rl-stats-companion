@@ -1,18 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { check, type Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { getVersion } from "@tauri-apps/api/app";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useUIStore } from "@/stores/uiStore";
 import { RefreshCw, Download, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function UpdateChecker() {
+  const { t } = useTranslation(["settings", "common"]);
   const [checking, setChecking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [update, setUpdate] = useState<Update | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<string>("");
   const addToast = useUIStore((state) => state.addToast);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const v = await getVersion();
+        setCurrentVersion(v);
+      } catch {
+        setCurrentVersion(t("settings:update.unknownVersion"));
+      }
+    })();
+  }, [t]);
 
   async function downloadAndInstall(updateObj: Update) {
     setDownloading(true);
@@ -39,18 +54,18 @@ export function UpdateChecker() {
             break;
         }
       });
-      addToast({ type: "success", title: "Actualizacion instalada. Reiniciando..." });
+      addToast({ type: "success", title: t("settings:update.toasts.installed") });
       await relaunch();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       const friendly = msg.includes("signature")
-        ? "Firma invalida. Verifica que TAURI_SIGNING_PRIVATE_KEY este configurado en CI."
+        ? t("settings:update.errors.invalidSignature")
         : msg.includes("404") || msg.includes("not found")
-          ? "No se encontro el archivo de actualizacion. Probablemente no se genero el latest.json correctamente."
+          ? t("settings:update.errors.updateNotFound")
           : msg.includes("connection") || msg.includes("network") || msg.includes("fetch")
-            ? "Error de conexion. Verifica tu acceso a internet."
+            ? t("settings:update.errors.connection")
             : msg;
-      addToast({ type: "error", title: "Error al actualizar", message: friendly });
+      addToast({ type: "error", title: t("settings:update.toasts.downloadError.title"), message: friendly });
       setError(friendly);
     } finally {
       setDownloading(false);
@@ -67,26 +82,27 @@ export function UpdateChecker() {
       if (result) {
         addToast({
           type: "info",
-          title: `Actualizacion disponible: ${result.version}`,
+          title: t("settings:update.toasts.available.title", { version: result.version }),
           message: result.body ?? "",
         });
         await downloadAndInstall(result);
       } else {
         setUpdate(null);
-        addToast({ type: "success", title: "Estas en la ultima version" });
+        addToast({ type: "success", title: t("settings:update.toasts.upToDate") });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      console.error("[UpdateChecker] Raw error:", e);
       const friendly = msg.includes("signature")
-        ? "Error de firma. La clave publica en tauri.conf.json podria no coincidir."
+        ? t("settings:update.errors.signatureMismatch")
         : msg.includes("404") || msg.includes("not found")
-          ? "No se encontro latest.json. Asegurate de haber ejecutado el release de CI."
+          ? t("settings:update.errors.latestJsonNotFound")
           : msg.includes("connection") || msg.includes("network") || msg.includes("fetch")
-            ? "Error de conexion. Verifica tu acceso a internet."
+            ? t("settings:update.errors.connectionWithDetail", { detail: msg })
             : msg;
       setUpdate(null);
       setError(friendly);
-      addToast({ type: "error", title: "Error buscando actualizaciones", message: friendly });
+      addToast({ type: "error", title: t("settings:update.toasts.checkError.title"), message: friendly });
     } finally {
       setChecking(false);
     }
@@ -94,10 +110,10 @@ export function UpdateChecker() {
 
   const isBusy = checking || downloading;
   const buttonLabel = downloading
-    ? `Descargando ${downloadProgress}%`
+    ? t("settings:update.downloading", { progress: downloadProgress })
     : checking
-      ? "Buscando..."
-      : "Buscar";
+      ? t("settings:update.searching")
+      : t("settings:update.checkButton");
 
   return (
     <div className="group rounded-xl border border-border-subtle bg-bg-surface/60 p-5 transition-all duration-200 hover:border-border-default hover:bg-bg-surface/80">
@@ -107,8 +123,10 @@ export function UpdateChecker() {
             <RefreshCw size={16} className={cn("text-text-muted transition-colors", isBusy && "animate-spin text-accent-primary")} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-text-primary">Actualizaciones</p>
-            <p className="text-xs text-text-muted">Busca nuevas versiones de RL Stats</p>
+            <p className="text-sm font-semibold text-text-primary">{t("settings:update.title")}</p>
+            <p className="text-xs text-text-muted">
+              {currentVersion ? t("settings:update.installedVersion", { version: currentVersion }) : t("settings:update.loadingVersion")}
+            </p>
           </div>
         </div>
         <Button
@@ -130,8 +148,11 @@ export function UpdateChecker() {
               <AlertCircle size={14} className="text-red-500" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-red-600">Error al buscar actualizaciones</p>
-              <p className="mt-1 text-xs text-text-secondary break-words">{error}</p>
+              <p className="text-sm font-semibold text-red-600">{t("settings:update.errorTitle")}</p>
+              <p className="mt-1 text-xs text-text-secondary break-words whitespace-pre-line">{error}</p>
+              <p className="mt-2 text-[11px] text-text-tertiary">
+                {t("settings:update.commonCauses")}
+              </p>
               <Button
                 variant="primary"
                 size="sm"
@@ -139,7 +160,7 @@ export function UpdateChecker() {
                 leftIcon={RefreshCw}
                 onClick={handleCheck}
               >
-                Reintentar
+                {t("common:buttons.retry")}
               </Button>
             </div>
           </div>
@@ -152,7 +173,7 @@ export function UpdateChecker() {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent-primary/10">
               <Download size={12} className="text-accent-primary" />
             </div>
-            <p className="text-sm font-semibold text-accent-primary">{update.version} disponible</p>
+            <p className="text-sm font-semibold text-accent-primary">{t("settings:update.versionAvailable", { version: update.version })}</p>
           </div>
           {update.body && <p className="mb-3 text-xs text-text-secondary">{update.body}</p>}
           <Button
@@ -161,7 +182,7 @@ export function UpdateChecker() {
             leftIcon={Download}
             onClick={() => downloadAndInstall(update)}
           >
-            Reintentar descarga
+            {t("settings:update.retryDownload")}
           </Button>
         </div>
       )}

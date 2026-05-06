@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { configureRlIni } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { useUIStore } from "@/stores/uiStore";
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { iniSettingsSchema, type IniSettingsFormValues } from "@/lib/schemas";
 
 export function IniHelper() {
+  const { t } = useTranslation(["settings", "common"]);
   const addToast = useUIStore((state) => state.addToast);
   const { data: settings } = useSettings();
 
@@ -27,21 +29,21 @@ export function IniHelper() {
   const onSubmit = async (data: IniSettingsFormValues) => {
     try {
       if (!settings?.rlPath) {
-        throw new Error("Primero configura la ruta de Rocket League en Ajustes.");
+        throw new Error(t("settings:ini.errors.noRlPath"));
       }
 
       await configureRlIni(settings.rlPath, data.port);
       addToast({
         type: "success",
-        title: "Configuración aplicada",
-        message: `El archivo RL se ha configurado en el puerto ${data.port}.`,
+        title: t("settings:ini.toasts.applied.title"),
+        message: t("settings:ini.toasts.applied.message", { port: data.port }),
       });
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo configurar el archivo RL.";
-      addToast({ type: "error", title: "Error", message });
+          : t("settings:ini.toasts.error.message");
+      addToast({ type: "error", title: t("common:errors.title"), message });
     }
   };
 
@@ -63,22 +65,20 @@ export function IniHelper() {
           <div className="flex-1 space-y-5">
             <div>
               <h3 className="text-sm font-semibold text-text-primary">
-                Configurar Stats API
+                {t("settings:ini.title")}
               </h3>
               <p className="mt-1 text-xs text-text-muted">
-                Activa automaticamente la API de estadisticas de Rocket League
-                editando el archivo de configuracion del juego.
+                {t("settings:ini.description")}
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Port field */}
               <div className="space-y-1.5">
                 <label
                   htmlFor="ini-port"
                   className="text-xs font-medium text-text-secondary"
                 >
-                  Puerto
+                  {t("settings:ini.port")}
                 </label>
                 <input
                   id="ini-port"
@@ -93,7 +93,6 @@ export function IniHelper() {
                 )}
               </div>
 
-              {/* Enabled checkbox */}
               <div className="flex items-end">
                 <label
                   htmlFor="ini-enabled"
@@ -106,7 +105,7 @@ export function IniHelper() {
                     className="h-4 w-4 rounded border-border-highlight bg-bg-surface accent-accent-primary transition-colors"
                   />
                   <span className="text-sm text-text-secondary">
-                    Habilitar Stats API
+                    {t("settings:ini.enable")}
                   </span>
                 </label>
               </div>
@@ -120,7 +119,7 @@ export function IniHelper() {
               disabled={isSubmitting}
             >
               <FileJson size={14} className="mr-1.5" />
-              Configurar RL.ini
+              {t("settings:ini.configureButton")}
             </Button>
           </div>
         </div>

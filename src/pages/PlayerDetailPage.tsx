@@ -1,4 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { usePlayerDetail } from "@/hooks/usePlayerDirectory";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -19,7 +21,7 @@ import {
 } from "lucide-react";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-AR", {
+  return new Date(iso).toLocaleDateString(i18n.language, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -27,7 +29,7 @@ function formatDate(iso: string) {
 }
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString("es-AR", {
+  return new Date(iso).toLocaleDateString(i18n.language, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -41,6 +43,7 @@ function pct(a: number, b: number): string {
 }
 
 export function PlayerDetailPage() {
+  const { t } = useTranslation(["players", "common"]);
   const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
   const id = playerId ? parseInt(playerId, 10) : 0;
@@ -49,14 +52,14 @@ export function PlayerDetailPage() {
 
   return (
     <PageContainer>
-      <h2 className="text-2xl font-bold text-text-primary">Detalle del Jugador</h2>
+      <h2 className="text-2xl font-bold text-text-primary">{t("players:detail.title")}</h2>
 
       <button
         onClick={() => navigate("/players")}
         className="mb-4 flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-accent-primary"
       >
         <ArrowLeft size={16} />
-        Volver al directorio
+        {t("players:detail.backToDirectory")}
       </button>
 
       {isLoading && (
@@ -68,7 +71,7 @@ export function PlayerDetailPage() {
 
       {!isLoading && !player && (
         <Card className="p-8 text-center">
-          <p className="text-text-secondary">Jugador no encontrado.</p>
+          <p className="text-text-secondary">{t("players:detail.notFound")}</p>
         </Card>
       )}
 
@@ -80,7 +83,7 @@ export function PlayerDetailPage() {
               {player.name}
             </h1>
             <p className="text-xs text-text-tertiary">
-              Jugador #{player.player_id} · {player.primary_id}
+              {t("players:detail.playerId", { id: player.player_id })} · {player.primary_id}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge variant="default">
@@ -88,14 +91,13 @@ export function PlayerDetailPage() {
                 {formatDate(player.first_seen)} → {formatDate(player.last_seen)}
               </Badge>
               <Badge variant="default">
-                {player.total_matches} partida
-                {player.total_matches !== 1 ? "s" : ""} jugadas
+                {t("players:detail.matchesPlayed", { count: player.total_matches })}
               </Badge>
               <Badge variant="success">
-                {player.matches_as_teammate} como compañero
+                {player.matches_as_teammate} {t("players:detail.asTeammate")}
               </Badge>
               <Badge variant="danger">
-                {player.matches_as_opponent} como rival
+                {player.matches_as_opponent} {t("players:detail.asOpponent")}
               </Badge>
             </div>
           </Card>
@@ -105,11 +107,11 @@ export function PlayerDetailPage() {
             <>
               <h2 className="mb-3 mt-6 flex items-center gap-2 text-lg font-bold text-text-primary">
                 <Shield size={18} className="text-accent-secondary" />
-                Como Compañero ({player.matches_as_teammate} partidas)
+                {t("players:detail.asTeammateHeading", { count: player.matches_as_teammate })}
               </h2>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
-                  label="Win Rate"
+                  label={t("players:detail.stats.winRate")}
                   value={pct(
                     player.wins_together,
                     player.wins_together + player.losses_together
@@ -117,41 +119,41 @@ export function PlayerDetailPage() {
                   icon={Target}
                 />
                 <StatCard
-                  label="W - L"
+                  label={t("players:detail.stats.winLoss")}
                   value={`${player.wins_together}-${player.losses_together}`}
                   icon={Swords}
                 />
                 <StatCard
-                  label="Goles totales"
+                  label={t("players:detail.stats.totalGoals")}
                   value={player.total_goals_together}
                   icon={Goal}
                 />
                 <StatCard
-                  label="Asistencias"
+                  label={t("players:detail.stats.assists")}
                   value={player.total_assists_together}
                   icon={HeartHandshake}
                 />
               </div>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
-                  label="Salvadas"
+                  label={t("players:detail.stats.saves")}
                   value={player.total_saves_together}
                   icon={Shield}
                 />
                 <StatCard
-                  label="Tiros"
+                  label={t("players:detail.stats.shots")}
                   value={player.total_shots_together}
                   icon={Crosshair}
                 />
                 <StatCard
-                  label="Prom gol/part"
+                  label={t("players:detail.stats.avgGoalsPerMatch")}
                   value={(
                     player.total_goals_together / player.matches_as_teammate
                   ).toFixed(2)}
                   icon={Zap}
                 />
                 <StatCard
-                  label="Prom asis/part"
+                  label={t("players:detail.stats.avgAssistsPerMatch")}
                   value={(
                     player.total_assists_together /
                     player.matches_as_teammate
@@ -167,11 +169,11 @@ export function PlayerDetailPage() {
             <>
               <h2 className="mb-3 mt-6 flex items-center gap-2 text-lg font-bold text-text-primary">
                 <Swords size={18} className="text-accent-danger" />
-                Como Rival ({player.matches_as_opponent} partidas)
+                {t("players:detail.asOpponentHeading", { count: player.matches_as_opponent })}
               </h2>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
-                  label="Win Rate"
+                  label={t("players:detail.stats.winRate")}
                   value={pct(
                     player.wins_against,
                     player.wins_against + player.losses_against
@@ -179,34 +181,34 @@ export function PlayerDetailPage() {
                   icon={Target}
                 />
                 <StatCard
-                  label="W - L"
+                  label={t("players:detail.stats.winLoss")}
                   value={`${player.wins_against}-${player.losses_against}`}
                   icon={Swords}
                 />
                 <StatCard
-                  label="Goles contra"
+                  label={t("players:detail.stats.goalsAgainst")}
                   value={player.total_goals_against}
                   icon={Goal}
                 />
                 <StatCard
-                  label="Asist contra"
+                  label={t("players:detail.stats.assistsAgainst")}
                   value={player.total_assists_against}
                   icon={HeartHandshake}
                 />
               </div>
               <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard
-                  label="Salvadas contra"
+                  label={t("players:detail.stats.savesAgainst")}
                   value={player.total_saves_against}
                   icon={Shield}
                 />
                 <StatCard
-                  label="Tiros contra"
+                  label={t("players:detail.stats.shotsAgainst")}
                   value={player.total_shots_against}
                   icon={Crosshair}
                 />
                 <StatCard
-                  label="Prom gol/part"
+                  label={t("players:detail.stats.avgGoalsPerMatch")}
                   value={(
                     player.total_goals_against /
                     player.matches_as_opponent
@@ -214,7 +216,7 @@ export function PlayerDetailPage() {
                   icon={Zap}
                 />
                 <StatCard
-                  label="Prom asis/part"
+                  label={t("players:detail.stats.avgAssistsPerMatch")}
                   value={(
                     player.total_assists_against /
                     player.matches_as_opponent
@@ -230,7 +232,7 @@ export function PlayerDetailPage() {
             <>
               <h2 className="mb-3 mt-6 flex items-center gap-2 text-lg font-bold text-text-primary">
                 <Clock size={18} className="text-accent-primary" />
-                Últimas partidas
+                {t("players:detail.recentMatches")}
               </h2>
               <div className="space-y-2">
                 {player.recent_matches.map((m) => (
@@ -246,12 +248,12 @@ export function PlayerDetailPage() {
                         }
                       >
                         {m.relationship === "teammate"
-                          ? "Compañero"
-                          : "Rival"}
+                          ? t("players:detail.teammate")
+                          : t("players:detail.opponent")}
                       </Badge>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-text-primary">
-                          {m.playlist ?? "Partida"} — {m.arena ?? "Arena"}
+                          {m.playlist ?? t("players:detail.matchFallback")} — {m.arena ?? t("players:detail.arenaFallback")}
                         </p>
                         <p className="text-xs text-text-tertiary">
                           {formatDateTime(m.start_time)}

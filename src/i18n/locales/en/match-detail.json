@@ -1,0 +1,94 @@
+{
+  "matchType": {
+    "ranked": "Ranked",
+    "casual": "Casual",
+    "tournament": "Tournament",
+    "training": "Training",
+    "other": "Other"
+  },
+  "mode": {
+    "online": "Online",
+    "local": "Local"
+  },
+  "overtime": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "teams": {
+    "blue": "Blue",
+    "orange": "Orange",
+    "blueTeam": "Blue Team",
+    "orangeTeam": "Orange Team",
+    "blueShort": "BLUE",
+    "orangeShort": "ORG"
+  },
+  "header": {
+    "duration": "Duration",
+    "start": "Start",
+    "end": "End",
+    "overtime": "Overtime",
+    "arena": "Arena"
+  },
+  "infoPanel": {
+    "title": "Match information",
+    "result": "Result",
+    "type": "Type",
+    "playlist": "Playlist",
+    "mode": "Mode",
+    "duration": "Duration",
+    "overtime": "Overtime",
+    "totalGoals": "Total goals",
+    "date": "Date",
+    "win": "Victory",
+    "loss": "Defeat",
+    "blueWon": "Blue won",
+    "orangeWon": "Orange won",
+    "draw": "Draw"
+  },
+  "stats": {
+    "title": "Player stats",
+    "goals": "Goals",
+    "assists": "Assists",
+    "saves": "Saves",
+    "shots": "Shots",
+    "score": "Score",
+    "demos": "Demos",
+    "touches": "Touches",
+    "player": "Player",
+    "team": "Team",
+    "assistsShort": "Ast",
+    "tabTable": "Table",
+    "tabCompare": "Compare",
+    "emptyData": "No player data",
+    "selectPlayers": "Select at least 2 players to compare"
+  },
+  "roster": {
+    "playerCount": "{{count}} player",
+    "playerCount_plural": "{{count}} players",
+    "pts": "PTS",
+    "gol": "GL",
+    "ast": "AST",
+    "par": "SAV"
+  },
+  "timeline": {
+    "title": "Event timeline",
+    "goalsLabel": "Goals:",
+    "save": "Save",
+    "epicSave": "Epic Save",
+    "shot": "Shot",
+    "assist": "Assist",
+    "demolish": "Demo",
+    "unknownScorer": "Unknown",
+    "unknownPlayer": "Player"
+  },
+  "goals": {
+    "title": "Goals"
+  },
+  "page": {
+    "notFoundTitle": "Match not found",
+    "notFoundDescription": "Could not load the details for this match.",
+    "backToHistory": "Back to history",
+    "noDataTitle": "No match data",
+    "noDataDescription": "This match contains no player data or events."
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "sidebar": {
+    "live": "Live",
+    "history": "History",
+    "analytics": "Analytics",
+    "players": "Players",
+    "proConfigs": "Pro Configs",
+    "profile": "Profile",
+    "settings": "Settings",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "pageTitles": {
+    "live": "Live Dashboard",
+    "history": "Match History",
+    "analytics": "Performance Analytics",
+    "proConfigs": "Pro Configs",
+    "settings": "Settings",
+    "fallback": "RL Stats"
+  },
+  "connection": {
+    "online": "Online",
+    "connecting": "Connecting",
+    "offline": "Offline",
+    "waitingForGame": "Waiting for Rocket League..."
+  },
+  "profile": {
+    "selectPlaceholder": "Select profile",
+    "new": "+ New"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "retry": "Retry",
+    "close": "Close",
+    "reload": "Reload app",
+    "confirm": "Confirm"
+  },
+  "status": {
+    "live": "Live",
+    "active": "Active",
+    "inactive": "Inactive",
+    "loading": "Loading",
+    "error": "Error"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred in the live match view."
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme",
+    "light": "Light theme",
+    "dark": "Dark theme"
+  },
+  "select": {
+    "placeholder": "Select..."
+  },
+  "dataTable": {
+    "noData": "No data available"
+  },
+  "accessibility": {
+    "close": "Close",
+    "loading": "Loading"
+  },
+  "brand": {
+    "name": "RL Stats",
+    "short": "RL"
+  }
+}

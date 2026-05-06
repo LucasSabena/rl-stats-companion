@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Crown, Users } from "lucide-react";
 import type { PlayerStats } from "@/lib/types";
@@ -40,6 +41,7 @@ export const TeamRoster = memo(function TeamRoster({
   teamName,
   teamColorClass,
 }: TeamRosterProps) {
+  const { t } = useTranslation("matchDetail");
   const teamPlayers = useMemo(
     () => players.filter((p) => p.team === teamNum),
     [players, teamNum]
@@ -60,7 +62,7 @@ export const TeamRoster = memo(function TeamRoster({
           {teamName}
         </h3>
         <span className="ml-auto text-xs text-text-tertiary">
-          {teamPlayers.length} jugadores
+          {t("roster.playerCount", { count: teamPlayers.length })}
         </span>
       </div>
 
@@ -98,10 +100,10 @@ export const TeamRoster = memo(function TeamRoster({
                   )}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-secondary">
-                  <Stat value={player.score} label="PTS" />
-                  <Stat value={player.goals} label="GOL" />
-                  <Stat value={player.assists} label="AST" />
-                  <Stat value={player.saves} label="PAR" />
+                  <Stat value={player.score} label={t("roster.pts")} />
+                  <Stat value={player.goals} label={t("roster.gol")} />
+                  <Stat value={player.assists} label={t("roster.ast")} />
+                  <Stat value={player.saves} label={t("roster.par")} />
                 </div>
               </div>
             </div>

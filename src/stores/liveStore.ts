@@ -29,19 +29,6 @@ export const useLiveStore = create<LiveState>()(
 
       setMatch: (match) =>
         set((state) => {
-          if (
-            state.currentMatch &&
-            match &&
-            state.currentMatch.matchGuid === match.matchGuid &&
-            state.currentMatch.teamBlueScore === match.teamBlueScore &&
-            state.currentMatch.teamOrangeScore === match.teamOrangeScore &&
-            state.currentMatch.players.length === match.players.length &&
-            state.currentMatch.gameState.timeRemaining === match.gameState.timeRemaining &&
-            state.currentMatch.gameState.isOvertime === match.gameState.isOvertime &&
-            state.currentMatch.gameState.arena === match.gameState.arena
-          ) {
-            return;
-          }
           if (state.currentMatch?.matchGuid !== match?.matchGuid) {
             state.events = [];
           }

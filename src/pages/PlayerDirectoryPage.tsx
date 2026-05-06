@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { usePlayerDirectory } from "@/hooks/usePlayerDirectory";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,6 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { ArrowRight, Shield, Swords, Search, Users } from "lucide-react";
 
 export function PlayerDirectoryPage() {
+  const { t } = useTranslation(["players", "common"]);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [relationship, setRelationship] = useState("");
@@ -29,12 +32,12 @@ export function PlayerDirectoryPage() {
 
   return (
     <PageContainer>
-      <h2 className="text-2xl font-bold text-text-primary">Directorio de Jugadores</h2>
+      <h2 className="text-2xl font-bold text-text-primary">{t("players:directory.title")}</h2>
       {/* Filters */}
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="flex-1 min-w-[220px]">
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-text-tertiary">
-            Buscar
+            {t("players:directory.searchLabel")}
           </label>
           <div className="relative">
             <Search
@@ -45,7 +48,7 @@ export function PlayerDirectoryPage() {
               type="text"
               value={search}
               onChange={handleSearchChange}
-              placeholder="Nombre o ID..."
+              placeholder={t("players:directory.searchPlaceholder")}
               className="w-full rounded-md border border-border-subtle bg-bg-base py-2 pl-10 pr-3 text-sm text-text-primary placeholder:text-text-tertiary focus:border-accent-primary focus:outline-none"
             />
           </div>
@@ -55,9 +58,9 @@ export function PlayerDirectoryPage() {
           value={relationship}
           onChange={setRelationship}
           options={[
-            { value: "", label: "Todos" },
-            { value: "teammate", label: "Compañeros" },
-            { value: "opponent", label: "Rivales" },
+            { value: "", label: t("players:directory.filterAll") },
+            { value: "teammate", label: t("players:directory.filterTeammates") },
+            { value: "opponent", label: t("players:directory.filterOpponents") },
           ]}
         />
 
@@ -65,10 +68,10 @@ export function PlayerDirectoryPage() {
           value={sortBy}
           onChange={setSortBy}
           options={[
-            { value: "matches", label: "Más partidas" },
-            { value: "recent", label: "Más reciente" },
-            { value: "wins_together", label: "Más wins juntos" },
-            { value: "wins_against", label: "Más wins contra" },
+            { value: "matches", label: t("players:directory.sortMostMatches") },
+            { value: "recent", label: t("players:directory.sortRecent") },
+            { value: "wins_together", label: t("players:directory.sortMostWinsTogether") },
+            { value: "wins_against", label: t("players:directory.sortMostWinsAgainst") },
           ]}
         />
       </div>
@@ -85,8 +88,8 @@ export function PlayerDirectoryPage() {
       {!isLoading && players && players.length === 0 && (
         <EmptyState
           icon={Users}
-          title="Sin jugadores registrados"
-          description="Jugá algunas partidas para empezar a construir tu directorio."
+          title={t("players:directory.emptyTitle")}
+          description={t("players:directory.emptyDescription")}
         />
       )}
 
@@ -107,22 +110,22 @@ export function PlayerDirectoryPage() {
                     </p>
                     {p.matches_as_teammate === 0 && (
                       <span className="shrink-0 rounded-full bg-accent-danger/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-danger">
-                        Solo rival
+                        {t("players:directory.badgeSoloRival")}
                       </span>
                     )}
                     {p.matches_as_opponent === 0 && (
                       <span className="shrink-0 rounded-full bg-accent-success/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-success">
-                        Solo compañero
+                        {t("players:directory.badgeSoloTeammate")}
                       </span>
                     )}
                   </div>
                   <p className="mt-1 text-xs text-text-tertiary">
-                    {p.total_matches} partida{p.total_matches !== 1 ? "s" : ""}
+                    {t("players:directory.matchCount", { count: p.total_matches })}
                     {" · "}
-                    {p.matches_as_teammate} compa · {p.matches_as_opponent} rival
+                    {p.matches_as_teammate} {t("players:directory.teammateShort")} · {p.matches_as_opponent} {t("players:directory.opponentShort")}
                     {" · "}
-                    Primera vez:{" "}
-                    {new Date(p.first_seen).toLocaleDateString("es-AR", {
+                    {t("players:directory.firstSeen")}{" "}
+                    {new Date(p.first_seen).toLocaleDateString(i18n.language, {
                       month: "short",
                       year: "numeric",
                     })}
@@ -135,14 +138,14 @@ export function PlayerDirectoryPage() {
                   <span className="text-xs text-text-secondary">
                     {p.wins_together}-{p.losses_together}
                   </span>
-                  <span className="text-[10px] text-text-tertiary">juntos</span>
+                  <span className="text-[10px] text-text-tertiary">{t("players:directory.together")}</span>
                 </div>
                 <div className="hidden flex-col items-center gap-0.5 sm:flex">
                   <Swords size={13} className="text-accent-danger/70" />
                   <span className="text-xs text-text-secondary">
                     {p.wins_against}-{p.losses_against}
                   </span>
-                  <span className="text-[10px] text-text-tertiary">vs</span>
+                  <span className="text-[10px] text-text-tertiary">{t("players:directory.versus")}</span>
                 </div>
 
                 <ArrowRight size={16} className="text-text-tertiary" />

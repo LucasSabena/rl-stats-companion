@@ -1,0 +1,95 @@
+{
+  "page": {
+    "title": "Partida en directo"
+  },
+  "emptyState": {
+    "title": "Esperando partida...",
+    "description": "Inicia una partida en Rocket League para ver los datos en directo."
+  },
+  "matchType": {
+    "online": "Online",
+    "local": "Local"
+  },
+  "matchSize": {
+    "training": "Entrenamiento",
+    "1v1": "1v1",
+    "2v2": "2v2",
+    "3v3": "3v3",
+    "4v4": "4v4",
+    "playerCount": "{{count}} jug."
+  },
+  "result": {
+    "draw": "Empate {{scoreBlue}} - {{scoreOrange}}",
+    "win": "Victoria! {{scoreBlue}} - {{scoreOrange}}",
+    "loss": "Derrota {{scoreBlue}} - {{scoreOrange}}"
+  },
+  "matchEnd": {
+    "summary": "Duracion: {{duration}} | {{count}} jugadores",
+    "dismiss": "Cerrar notificacion"
+  },
+  "playlist": {
+    "label": "Playlist",
+    "detected": "detectada",
+    "estimated": "estimada",
+    "unknown": "desconocida",
+    "unresolved": "sin resolver",
+    "candidates": "Candidatos:",
+    "updated": "Actualizado:",
+    "refreshAriaLabel": "Actualizar MMR",
+    "refreshing": "Actualizando...",
+    "refresh": "Actualizar"
+  },
+  "teams": {
+    "blue": "Equipo Azul",
+    "orange": "Equipo Naranja",
+    "blueShort": "Azul",
+    "orangeShort": "Naranja"
+  },
+  "mmr": {
+    "average": "MMR promedio",
+    "searching": "Buscando..."
+  },
+  "players": {
+    "bots": "Bots",
+    "none": "Sin jugadores",
+    "other": "Otros jugadores",
+    "you": "Tu"
+  },
+  "stats": {
+    "goals": "Gol",
+    "assists": "Ast",
+    "shots": "Tiro",
+    "saves": "Par",
+    "touches": "Toq",
+    "demos": "Dem",
+    "speed": "Vel",
+    "boost": "Bst"
+  },
+  "boostAriaLabel": "Boost de {{name}}",
+  "events": {
+    "title": "Eventos recientes",
+    "empty": "Sin eventos aun",
+    "UpdateState": "Actualizacion",
+    "BallHit": "Pelota golpeada",
+    "GoalScored": "Gol!",
+    "StatfeedEvent": "Estadistica",
+    "MatchCreated": "Partida creada",
+    "MatchEnded": "Partida finalizada",
+    "GoalReplayStart": "Repeticion de gol",
+    "GoalReplayEnd": "Fin repeticion",
+    "PlayerJoined": "Jugador unido",
+    "PlayerLeft": "Jugador salio",
+    "CountdownBegin": "Cuenta regresiva",
+    "MatchPaused": "Partida pausada",
+    "MatchUnpaused": "Partida reanudada",
+    "ClockUpdatedSeconds": "Reloj actualizado",
+    "RoundStarted": "Ronda iniciada"
+  },
+  "overtime": "PRORROGA",
+  "connectionStatus": {
+    "connected": "Conectado",
+    "connecting": "Conectando...",
+    "disconnected": "Desconectado",
+    "gameNotRunning": "Juego cerrado"
+  }
+}

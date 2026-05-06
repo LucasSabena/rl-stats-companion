@@ -1,0 +1,79 @@
+{
+  "pageTitle": "Historial de partidas",
+  "matchTypes": {
+    "ranked": "Ranked",
+    "casual": "Casual",
+    "tournament": "Torneo",
+    "other": "Otro"
+  },
+  "playlists": {
+    "duel": "Duel (1v1)",
+    "doubles": "Doubles (2v2)",
+    "standard": "Standard (3v3)",
+    "chaos": "Chaos (4v4)",
+    "other": "Otro"
+  },
+  "results": {
+    "win": "Victoria",
+    "loss": "Derrota",
+    "blueWon": "Ganó Azul",
+    "orangeWon": "Ganó Naranja",
+    "draw": "Empate"
+  },
+  "contextMenu": {
+    "viewDetail": "Ver detalle",
+    "editMatch": "Editar partida",
+    "deleteMatch": "Borrar partida"
+  },
+  "onlineStatus": {
+    "online": "En línea",
+    "local": "Local"
+  },
+  "empty": {
+    "noMatches": {
+      "title": "Sin partidas capturadas",
+      "description": "Inicia Rocket League, habilita la Stats API y juega una partida. Capturaremos los datos automáticamente."
+    }
+  },
+  "errors": {
+    "loadFailed": {
+      "title": "Error cargando historial",
+      "description": "No se pudieron cargar las partidas. Intenta de nuevo."
+    }
+  },
+  "modals": {
+    "delete": {
+      "title": "¿Borrar partida?",
+      "description": "Esta acción no se puede deshacer."
+    },
+    "edit": {
+      "title": "Editar partida",
+      "matchTypeLabel": "Tipo de partida",
+      "playlistLabel": "Playlist"
+    }
+  },
+  "filters": {
+    "title": "Filtros",
+    "clear": "Limpiar",
+    "search": {
+      "label": "Buscar",
+      "placeholder": "Nombre de jugador..."
+    },
+    "results": {
+      "placeholder": "Resultado",
+      "all": "Todos los resultados",
+      "wins": "Victorias",
+      "losses": "Derrotas"
+    },
+    "matchTypes": {
+      "placeholder": "Tipo",
+      "all": "Todos los tipos"
+    },
+    "modes": {
+      "placeholder": "Modo",
+      "all": "Todos los modos"
+    },
+    "dateFrom": "Desde",
+    "dateTo": "Hasta"
+  }
+}

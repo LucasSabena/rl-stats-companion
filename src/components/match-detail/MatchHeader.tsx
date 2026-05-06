@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatDuration } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -10,23 +11,25 @@ interface MatchHeaderProps {
   match: MatchDetail;
 }
 
-const MATCH_TYPE_LABELS: Record<MatchType, string> = {
-  ranked: "Ranked",
-  casual: "Casual",
-  tournament: "Torneo",
-  training: "Entrenamiento",
-  other: "Otro",
-};
-
-const MATCH_TYPE_VARIANTS: Record<MatchType, "ranked" | "default"> = {
-  ranked: "ranked",
-  casual: "default",
-  tournament: "default",
-  training: "default",
-  other: "default",
-};
-
 export const MatchHeader = memo(function MatchHeader({ match }: MatchHeaderProps) {
+  const { t } = useTranslation("matchDetail");
+
+  const MATCH_TYPE_LABELS: Record<MatchType, string> = {
+    ranked: t("matchType.ranked"),
+    casual: t("matchType.casual"),
+    tournament: t("matchType.tournament"),
+    training: t("matchType.training"),
+    other: t("matchType.other"),
+  };
+
+  const MATCH_TYPE_VARIANTS: Record<MatchType, "ranked" | "default"> = {
+    ranked: "ranked",
+    casual: "default",
+    tournament: "default",
+    training: "default",
+    other: "default",
+  };
+
   const isDraw = match.winnerTeamNum === null;
   const blueWon = match.winnerTeamNum === 0;
   const orangeWon = match.winnerTeamNum === 1;
@@ -85,7 +88,7 @@ export const MatchHeader = memo(function MatchHeader({ match }: MatchHeaderProps
               ) : (
                 <Monitor size={12} className="mr-1" />
               )}
-              {match.isOnline ? "Online" : "Local"}
+              {match.isOnline ? t("mode.online") : t("mode.local")}
             </Badge>
           </div>
 
@@ -115,7 +118,7 @@ export const MatchHeader = memo(function MatchHeader({ match }: MatchHeaderProps
               )}
             />
             <span className="mt-2 text-xs font-bold uppercase tracking-widest text-team-blue">
-              Azul
+              {t("teams.blue")}
             </span>
           </div>
 
@@ -157,18 +160,18 @@ export const MatchHeader = memo(function MatchHeader({ match }: MatchHeaderProps
               )}
             />
             <span className="mt-2 text-xs font-bold uppercase tracking-widest text-team-orange">
-              Naranja
+              {t("teams.orange")}
             </span>
           </div>
         </div>
 
         {/* Metadata grid */}
         <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          <MetaItem label="Duracion" value={match.durationSeconds ? formatDuration(match.durationSeconds) : "---"} />
-          <MetaItem label="Inicio" value={formatDateTime(match.startTime * 1000)} />
-          {match.endTime && <MetaItem label="Fin" value={formatDateTime(match.endTime * 1000)} />}
-          <MetaItem label="Prorroga" value={match.isOvertime ? "Si" : "No"} />
-          <MetaItem label="Arena" value={arenaName ?? "---"} />
+          <MetaItem label={t("header.duration")} value={match.durationSeconds ? formatDuration(match.durationSeconds) : "---"} />
+          <MetaItem label={t("header.start")} value={formatDateTime(match.startTime * 1000)} />
+          {match.endTime && <MetaItem label={t("header.end")} value={formatDateTime(match.endTime * 1000)} />}
+          <MetaItem label={t("header.overtime")} value={match.isOvertime ? t("overtime.yes") : t("overtime.no")} />
+          <MetaItem label={t("header.arena")} value={arenaName ?? "---"} />
         </div>
       </div>
     </div>

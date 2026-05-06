@@ -1,0 +1,142 @@
+{
+  "pageTitle": "Configurações",
+  "pageDescription": "Personalize sua experiência no RL Stats",
+  "pageSections": {
+    "profiles": "Perfis",
+    "streamingOBS": "Streaming OBS",
+    "overlayInGame": "Overlay in-game",
+    "general": "Geral",
+    "game": "Jogo",
+    "trackerNetwork": "Tracker Network",
+    "data": "Dados",
+    "updates": "Atualizações"
+  },
+  "sections": {
+    "rocketLeague": "Rocket League",
+    "system": "Sistema"
+  },
+  "fields": {
+    "playerName": "Nome no jogo",
+    "playerNamePlaceholder": "Ex.: Si Locura",
+    "playerNameHelper": "Usado para identificá-lo na primeira vez e salvar seu `PrimaryId` automaticamente.",
+    "installPath": "Caminho de instalação",
+    "installPathPlaceholder": "Detectado automaticamente...",
+    "detectPath": "Buscar",
+    "platform": "Plataforma",
+    "platformAutoDetect": "Detecção automática",
+    "defaultMatchType": "Tipo de partida padrão",
+    "autoStart": "Iniciar com o Windows",
+    "autoStartDescription": "Abrir o RL Stats quando o computador ligar",
+    "sessionGap": "Intervalo de sessão (minutos)",
+    "sessionGapHelper": "Minutos entre partidas para considerar a mesma sessão (5-120, padrão 30)."
+  },
+  "matchTypes": {
+    "ranked": "Competitivo",
+    "casual": "Casual",
+    "tournament": "Torneio",
+    "other": "Outro"
+  },
+  "buttons": {
+    "saveSettings": "Salvar configurações"
+  },
+  "toasts": {
+    "saved": {
+      "title": "Configurações salvas",
+      "message": "Alterações aplicadas com sucesso."
+    },
+    "saveError": {
+      "title": "Erro ao salvar",
+      "message": "Não foi possível salvar as configurações."
+    },
+    "installFound": {
+      "title": "Instalação encontrada",
+      "message": "{{platform}}: {{path}}"
+    },
+    "notFound": {
+      "title": "Não encontrado",
+      "message": "Rocket League não foi detectado. Verifique se está instalado."
+    },
+    "detectError": {
+      "title": "Erro",
+      "message": "Erro ao detectar o caminho."
+    }
+  },
+  "errors": {
+    "loadingTitle": "Erro ao carregar configurações",
+    "loadingMessage": "Não foi possível carregar as configurações."
+  },
+  "ini": {
+    "title": "Configurar Stats API",
+    "description": "Ativa automaticamente a API de estatísticas do Rocket League editando o arquivo de configuração do jogo.",
+    "port": "Porta",
+    "enable": "Ativar Stats API",
+    "configureButton": "Configurar RL.ini",
+    "errors": {
+      "noRlPath": "Primeiro configure o caminho do Rocket League nas Configurações."
+    },
+    "toasts": {
+      "applied": {
+        "title": "Configuração aplicada",
+        "message": "O arquivo RL foi configurado na porta {{port}}."
+      },
+      "error": {
+        "title": "Erro",
+        "message": "Não foi possível configurar o arquivo RL."
+      }
+    }
+  },
+  "data": {
+    "title": "Armazenamento",
+    "statsTemplate": "{{totalMatches}} partidas · {{size}} MB",
+    "loading": "Carregando...",
+    "copyPath": "Copiar caminho",
+    "export": "Exportar",
+    "import": "Importar",
+    "deleteAll": "Excluir tudo",
+    "deleteModalTitle": "Excluir todos os dados?",
+    "deleteModalDescription": "Esta ação não pode ser desfeita. Todas as partidas e estatísticas serão excluídas.",
+    "deleteModalWarning": "Certifique-se de ter exportado seus dados se quiser mantê-los.",
+    "exportSuccess": "Exportação concluída",
+    "exportSuccessMessage": "Um backup JSON foi baixado.",
+    "exportError": "Falha na exportação",
+    "importSuccess": "Importação concluída",
+    "importError": "Falha na importação",
+    "dataDeleted": "Dados excluídos",
+    "deleteError": "Falha ao excluir dados",
+    "cancel": "Cancelar"
+  },
+  "update": {
+    "title": "Atualizações",
+    "unknownVersion": "desconhecido",
+    "installedVersion": "Versão instalada: {{version}}",
+    "loadingVersion": "Carregando versão...",
+    "downloading": "Baixando {{progress}}%",
+    "searching": "Buscando...",
+    "checkButton": "Verificar",
+    "versionAvailable": "{{version}} disponível",
+    "retryDownload": "Tentar novamente",
+    "errorTitle": "Erro ao verificar atualizações",
+    "commonCauses": "Causas comuns: nenhum release do GitHub publicado, executando em modo de desenvolvimento, ou o arquivo latest.json está ausente no release.",
+    "toasts": {
+      "installed": "Atualização instalada. Reiniciando...",
+      "available": {
+        "title": "Atualização disponível: {{version}}"
+      },
+      "upToDate": "Você está na versão mais recente",
+      "downloadError": {
+        "title": "Erro ao atualizar"
+      },
+      "checkError": {
+        "title": "Erro ao verificar atualizações"
+      }
+    },
+    "errors": {
+      "invalidSignature": "Assinatura inválida. Verifique se TAURI_SIGNING_PRIVATE_KEY está configurado no CI.",
+      "updateNotFound": "Arquivo de atualização não encontrado. Provavelmente o latest.json não foi gerado corretamente.",
+      "connection": "Erro de conexão. Verifique seu acesso à internet.",
+      "signatureMismatch": "Erro de assinatura. A chave pública no tauri.conf.json pode não corresponder.",
+      "latestJsonNotFound": "latest.json não encontrado. Certifique-se de que o release do CI foi executado.",
+      "connectionWithDetail": "Erro de conexão. Verifique seu acesso à internet.\nDetalhe: {{detail}}"
+    }
+  }
+}

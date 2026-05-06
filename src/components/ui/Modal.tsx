@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { Button } from "./Button";
@@ -14,6 +15,7 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, description, children, footer, size = "md" }: ModalProps) {
+  const { t } = useTranslation("common");
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +64,7 @@ export function Modal({ isOpen, onClose, title, description, children, footer, s
               {title && <h2 className="font-display text-lg font-semibold text-text-primary">{title}</h2>}
               {description && <p className="mt-1 text-sm text-text-secondary">{description}</p>}
             </div>
-            <Button variant="icon" onClick={onClose} aria-label="Close">
+            <Button variant="icon" onClick={onClose} aria-label={t("accessibility.close")}>
               <X size={18} />
             </Button>
           </div>

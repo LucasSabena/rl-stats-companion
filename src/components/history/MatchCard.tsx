@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatDuration } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -15,23 +16,24 @@ interface MatchCardProps {
   onDelete?: (matchId: number) => void;
 }
 
-const matchTypeLabel: Record<string, string> = {
-  ranked: "Ranked",
-  casual: "Casual",
-  tournament: "Torneo",
-  other: "Otro",
-};
-
-const playlistLabelMap: Record<string, string> = {
-  Duel: "Duel (1v1)",
-  Doubles: "Doubles (2v2)",
-  Standard: "Standard (3v3)",
-  Chaos: "Chaos (4v4)",
-  Other: "Otro",
-};
-
 export const MatchCard = memo(function MatchCard({ match, onClick, onEdit, onDelete }: MatchCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation(["history", "common"]);
+
+  const matchTypeLabel: Record<string, string> = {
+    ranked: t("history:matchTypes.ranked"),
+    casual: t("history:matchTypes.casual"),
+    tournament: t("history:matchTypes.tournament"),
+    other: t("history:matchTypes.other"),
+  };
+
+  const playlistLabelMap: Record<string, string> = {
+    Duel: t("history:playlists.duel"),
+    Doubles: t("history:playlists.doubles"),
+    Standard: t("history:playlists.standard"),
+    Chaos: t("history:playlists.chaos"),
+    Other: t("history:playlists.other"),
+  };
 
   const blueWon = match.winnerTeamNum === 0;
   const orangeWon = match.winnerTeamNum === 1;
@@ -40,14 +42,14 @@ export const MatchCard = memo(function MatchCard({ match, onClick, onEdit, onDel
   const isLoss = hasLocalTeam && match.winnerTeamNum !== null && match.winnerTeamNum !== match.localTeamNum;
 
   const resultLabel = isWin
-    ? "Victoria"
+    ? t("history:results.win")
     : isLoss
-    ? "Derrota"
+    ? t("history:results.loss")
     : match.winnerTeamNum === 0
-    ? "Ganó Azul"
+    ? t("history:results.blueWon")
     : match.winnerTeamNum === 1
-    ? "Ganó Naranja"
-    : "Empate";
+    ? t("history:results.orangeWon")
+    : t("history:results.draw");
 
   const resultVariant = isWin ? "win" : isLoss ? "loss" : "default";
 
@@ -63,17 +65,17 @@ export const MatchCard = memo(function MatchCard({ match, onClick, onEdit, onDel
     <ContextMenu
       items={[
         {
-          label: "Ver detalle",
+          label: t("history:contextMenu.viewDetail"),
           icon: Eye,
           onClick: () => navigate(`/history/${match.id}`),
         },
         {
-          label: "Editar partida",
+          label: t("history:contextMenu.editMatch"),
           icon: Pencil,
           onClick: () => onEdit?.(match),
         },
         {
-          label: "Borrar partida",
+          label: t("history:contextMenu.deleteMatch"),
           icon: Trash2,
           variant: "danger",
           onClick: () => onDelete?.(match.id),
@@ -148,7 +150,7 @@ export const MatchCard = memo(function MatchCard({ match, onClick, onEdit, onDel
                     "h-1.5 w-1.5 rounded-full shrink-0 shadow-[0_0_8px_currentColor]",
                     match.isOnline ? "bg-accent-secondary text-accent-secondary" : "bg-text-muted text-text-muted"
                   )}
-                  title={match.isOnline ? "En línea" : "Local"}
+                  title={match.isOnline ? t("history:onlineStatus.online") : t("history:onlineStatus.local")}
                 />
               </div>
               <div className="flex flex-wrap items-center gap-1.5">

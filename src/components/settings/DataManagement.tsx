@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { exportDataJson, importDataJson, getStorageStats, clearAllData } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -20,6 +21,7 @@ async function invalidateDataQueries(queryClient: ReturnType<typeof useQueryClie
 }
 
 export function DataManagement() {
+  const { t } = useTranslation(["settings", "common"]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -42,9 +44,9 @@ export function DataManagement() {
       link.download = `rl-stats-backup-${stamp}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      addToast({ type: "success", title: "Exportación completada", message: "Se descargó un backup JSON." });
+      addToast({ type: "success", title: t("settings:data.exportSuccess"), message: t("settings:data.exportSuccessMessage") });
     } catch {
-      addToast({ type: "error", title: "Error al exportar" });
+      addToast({ type: "error", title: t("settings:data.exportError") });
     }
   }
 
@@ -53,10 +55,10 @@ export function DataManagement() {
       setIsImporting(true);
       const content = await file.text();
       await importDataJson(content);
-      addToast({ type: "success", title: "Importación completada", message: `Archivo: ${file.name}` });
+      addToast({ type: "success", title: t("settings:data.importSuccess"), message: `Archivo: ${file.name}` });
       await invalidateDataQueries(queryClient);
     } catch {
-      addToast({ type: "error", title: "Error al importar" });
+      addToast({ type: "error", title: t("settings:data.importError") });
     } finally {
       setIsImporting(false);
     }
@@ -65,11 +67,11 @@ export function DataManagement() {
   async function handleClear() {
     try {
       await clearAllData();
-      addToast({ type: "success", title: "Datos eliminados" });
+      addToast({ type: "success", title: t("settings:data.dataDeleted") });
       await invalidateDataQueries(queryClient);
       setConfirmOpen(false);
     } catch {
-      addToast({ type: "error", title: "Error al eliminar datos" });
+      addToast({ type: "error", title: t("settings:data.deleteError") });
     }
   }
 
@@ -82,11 +84,11 @@ export function DataManagement() {
             <Database size={20} className="text-accent-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-text-primary">Almacenamiento</p>
+            <p className="text-sm font-semibold text-text-primary">{t("settings:data.title")}</p>
             <p className="text-xs text-text-secondary">
               {stats
-                ? `${stats.totalMatches} partidas · ${(stats.databaseSizeBytes / 1024 / 1024).toFixed(1)} MB`
-                : "Cargando..."}
+                ? t("settings:data.statsTemplate", { totalMatches: stats.totalMatches, size: (stats.databaseSizeBytes / 1024 / 1024).toFixed(1) })
+                : t("settings:data.loading")}
             </p>
             {stats?.dbPath && (
               <p className="mt-1 truncate text-[11px] font-mono text-text-tertiary">
@@ -102,7 +104,7 @@ export function DataManagement() {
               className="shrink-0"
             >
               <FolderOpen size={14} className="mr-1" />
-              Copiar ruta
+              {t("settings:data.copyPath")}
             </Button>
           )}
         </div>
@@ -126,13 +128,13 @@ export function DataManagement() {
       {/* ── Action Buttons ── */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Button variant="secondary" leftIcon={Download} onClick={handleExport} className="justify-center">
-          Exportar
+          {t("settings:data.export")}
         </Button>
         <Button variant="secondary" leftIcon={Upload} onClick={() => fileInputRef.current?.click()} isLoading={isImporting} className="justify-center">
-          Importar
+          {t("settings:data.import")}
         </Button>
         <Button variant="danger" leftIcon={Trash2} onClick={() => setConfirmOpen(true)} className="col-span-2 sm:col-span-2 justify-center">
-          Borrar todo
+          {t("settings:data.deleteAll")}
         </Button>
       </div>
 
@@ -140,20 +142,20 @@ export function DataManagement() {
       <Modal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="¿Borrar todos los datos?"
-        description="Esta acción no se puede deshacer. Se eliminarán todas las partidas y estadísticas."
+        title={t("settings:data.deleteModalTitle")}
+        description={t("settings:data.deleteModalDescription")}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
-              Cancelar
+              {t("settings:data.cancel")}
             </Button>
             <Button variant="danger" onClick={handleClear}>
-              Borrar todo
+              {t("settings:data.deleteAll")}
             </Button>
           </div>
         }
       >
-        <p className="text-sm text-text-secondary">Asegúrate de haber exportado tus datos si quieres conservarlos.</p>
+        <p className="text-sm text-text-secondary">{t("settings:data.deleteModalWarning")}</p>
       </Modal>
     </div>
   );

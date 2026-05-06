@@ -1,0 +1,94 @@
+{
+  "matchType": {
+    "ranked": "Competitivo",
+    "casual": "Casual",
+    "tournament": "Torneio",
+    "training": "Treino",
+    "other": "Outro"
+  },
+  "mode": {
+    "online": "Online",
+    "local": "Local"
+  },
+  "overtime": {
+    "yes": "Sim",
+    "no": "Não"
+  },
+  "teams": {
+    "blue": "Azul",
+    "orange": "Laranja",
+    "blueTeam": "Time Azul",
+    "orangeTeam": "Time Laranja",
+    "blueShort": "AZU",
+    "orangeShort": "LAR"
+  },
+  "header": {
+    "duration": "Duração",
+    "start": "Início",
+    "end": "Fim",
+    "overtime": "Prorrogação",
+    "arena": "Arena"
+  },
+  "infoPanel": {
+    "title": "Informações da partida",
+    "result": "Resultado",
+    "type": "Tipo",
+    "playlist": "Playlist",
+    "mode": "Modo",
+    "duration": "Duração",
+    "overtime": "Prorrogação",
+    "totalGoals": "Gols totais",
+    "date": "Data",
+    "win": "Vitória",
+    "loss": "Derrota",
+    "blueWon": "Azul venceu",
+    "orangeWon": "Laranja venceu",
+    "draw": "Empate"
+  },
+  "stats": {
+    "title": "Estatísticas dos jogadores",
+    "goals": "Gols",
+    "assists": "Assistências",
+    "saves": "Defesas",
+    "shots": "Chutes",
+    "score": "Pontuação",
+    "demos": "Demos",
+    "touches": "Toques",
+    "player": "Jogador",
+    "team": "Time",
+    "assistsShort": "Ast.",
+    "tabTable": "Tabela",
+    "tabCompare": "Comparar",
+    "emptyData": "Sem dados de jogadores",
+    "selectPlayers": "Selecione pelo menos 2 jogadores para comparar"
+  },
+  "roster": {
+    "playerCount": "{{count}} jogador",
+    "playerCount_plural": "{{count}} jogadores",
+    "pts": "PTS",
+    "gol": "GOL",
+    "ast": "AST",
+    "par": "DEF"
+  },
+  "timeline": {
+    "title": "Cronologia de eventos",
+    "goalsLabel": "Gols:",
+    "save": "Defesa",
+    "epicSave": "Defesa Épica",
+    "shot": "Chute",
+    "assist": "Assistência",
+    "demolish": "Demo",
+    "unknownScorer": "Desconhecido",
+    "unknownPlayer": "Jogador"
+  },
+  "goals": {
+    "title": "Gols"
+  },
+  "page": {
+    "notFoundTitle": "Partida não encontrada",
+    "notFoundDescription": "Não foi possível carregar os detalhes desta partida.",
+    "backToHistory": "Voltar ao histórico",
+    "noDataTitle": "Sem dados da partida",
+    "noDataDescription": "Esta partida não contém dados de jogadores ou eventos."
+  }
+}

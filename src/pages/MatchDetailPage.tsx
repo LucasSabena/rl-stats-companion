@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMatchDetail } from "@/hooks/useMatchDetail";
 import { MatchHeader } from "@/components/match-detail/MatchHeader";
 import { MatchInfoPanel } from "@/components/match-detail/MatchInfoPanel";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Gamepad2, ArrowLeft } from "lucide-react";
 
 export function MatchDetailPage() {
+  const { t } = useTranslation(["matchDetail", "common"]);
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const id = Number(matchId);
@@ -41,9 +43,9 @@ export function MatchDetailPage() {
       <PageContainer>
         <EmptyState
           icon={Gamepad2}
-          title="Partida no encontrada"
-          description="No se pudieron cargar los detalles de esta partida."
-          actionLabel="Volver al historial"
+          title={t("matchDetail:page.notFoundTitle")}
+          description={t("matchDetail:page.notFoundDescription")}
+          actionLabel={t("matchDetail:page.backToHistory")}
           onAction={() => navigate("/history")}
         />
       </PageContainer>
@@ -59,12 +61,12 @@ export function MatchDetailPage() {
           onClick={() => navigate("/history")}
           className="mb-4"
         >
-          Volver al historial
+          {t("matchDetail:page.backToHistory")}
         </Button>
         <EmptyState
           icon={Gamepad2}
-          title="Sin datos de partida"
-          description="Esta partida no contiene datos de jugadores ni eventos."
+          title={t("matchDetail:page.noDataTitle")}
+          description={t("matchDetail:page.noDataDescription")}
         />
       </PageContainer>
     );
@@ -80,7 +82,7 @@ export function MatchDetailPage() {
         leftIcon={ArrowLeft}
         onClick={() => navigate("/history")}
       >
-        Volver al historial
+        {t("matchDetail:page.backToHistory")}
       </Button>
 
       {/* Sección 1: Header — marcador grande + metadata */}
@@ -97,7 +99,7 @@ export function MatchDetailPage() {
         <TeamRoster
           players={data.players}
           teamNum={0}
-          teamName="Equipo Azul"
+          teamName={t("matchDetail:teams.blueTeam")}
           teamColorClass="blue"
         />
 
@@ -105,7 +107,7 @@ export function MatchDetailPage() {
         <TeamRoster
           players={data.players}
           teamNum={1}
-          teamName="Equipo Naranja"
+          teamName={t("matchDetail:teams.orangeTeam")}
           teamColorClass="orange"
         />
       </div>
@@ -122,8 +124,8 @@ export function MatchDetailPage() {
         <div className="mt-6">
           <ScoreTimeline
             events={data.events}
-            team0Name="Azul"
-            team1Name="Naranja"
+            team0Name={t("matchDetail:teams.blue")}
+            team1Name={t("matchDetail:teams.orange")}
           />
         </div>
       )}

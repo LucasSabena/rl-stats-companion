@@ -1,0 +1,71 @@
+{
+  "sidebar": {
+    "live": "En directo",
+    "history": "Historial",
+    "analytics": "Analisis",
+    "players": "Jugadores",
+    "proConfigs": "Pro Configs",
+    "profile": "Perfil",
+    "settings": "Ajustes",
+    "collapse": "Colapsar sidebar",
+    "expand": "Expandir sidebar"
+  },
+  "pageTitles": {
+    "live": "Live Dashboard",
+    "history": "Historial de Partidas",
+    "analytics": "Análisis de Rendimiento",
+    "proConfigs": "Configuraciones Pro",
+    "settings": "Ajustes",
+    "fallback": "RL Stats"
+  },
+  "connection": {
+    "online": "Online",
+    "connecting": "Connecting",
+    "offline": "Offline",
+    "waitingForGame": "Esperando a Rocket League..."
+  },
+  "profile": {
+    "selectPlaceholder": "Seleccionar perfil",
+    "new": "+ Nuevo"
+  },
+  "buttons": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Borrar",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "reload": "Recargar aplicación",
+    "confirm": "Confirmar"
+  },
+  "status": {
+    "live": "En directo",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "loading": "Cargando",
+    "error": "Error"
+  },
+  "errorBoundary": {
+    "title": "Algo salió mal",
+    "description": "Se produjo un error inesperado en la vista de partida en directo."
+  },
+  "theme": {
+    "switchToLight": "Cambiar a tema claro",
+    "switchToDark": "Cambiar a tema oscuro",
+    "light": "Tema claro",
+    "dark": "Tema oscuro"
+  },
+  "select": {
+    "placeholder": "Seleccionar..."
+  },
+  "dataTable": {
+    "noData": "No hay datos disponibles"
+  },
+  "accessibility": {
+    "close": "Cerrar",
+    "loading": "Cargando"
+  },
+  "brand": {
+    "name": "RL Stats",
+    "short": "RL"
+  }
+}

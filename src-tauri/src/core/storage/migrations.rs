@@ -177,6 +177,11 @@ pub static MIGRATIONS: &[Migration] = &[
             UNIQUE(platform, username)
         );",
     },
+    Migration {
+        version: 15,
+        name: "add_avg_score_to_daily_rollups",
+        sql: "ALTER TABLE daily_rollups ADD COLUMN avg_score INTEGER NOT NULL DEFAULT 0;",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

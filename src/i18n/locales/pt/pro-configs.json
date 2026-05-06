@@ -1,0 +1,50 @@
+{
+  "search": {
+    "placeholder": "Buscar jogador ou time..."
+  },
+  "emptyState": {
+    "title": "Configs de Pro Players",
+    "description": "Selecione um jogador da lista para ver suas configurações de câmera, controles, deadzone e hardware. Dados obtidos do Liquipedia."
+  },
+  "noSettings": "Nenhuma configuração disponível para este jogador no Liquipedia.",
+  "panels": {
+    "updated": "Atualizado",
+    "camera": {
+      "title": "Câmera",
+      "cameraShake": "Camera Shake",
+      "ballCamera": "Ball Camera",
+      "fov": "FOV",
+      "height": "Height",
+      "angle": "Angle",
+      "distance": "Distance",
+      "stiffness": "Stiffness",
+      "swivelSpeed": "Swivel Speed",
+      "transitionSpeed": "Transition Speed"
+    },
+    "controls": {
+      "title": "Controles",
+      "powerslide": "Powerslide",
+      "airRollLeft": "Air Roll Left",
+      "airRollRight": "Air Roll Right",
+      "boost": "Boost",
+      "jump": "Jump",
+      "ballCam": "Ball Cam",
+      "brake": "Brake",
+      "throttle": "Throttle"
+    },
+    "deadzone": {
+      "title": "Deadzone",
+      "deadzoneShape": "Deadzone Shape",
+      "deadzone": "Deadzone",
+      "dodgeDeadzone": "Dodge Deadzone",
+      "aerialSensitivity": "Aerial Sensitivity",
+      "steeringSensitivity": "Steering Sensitivity"
+    },
+    "hardware": {
+      "title": "Hardware",
+      "controller": "Controller",
+      "monitor": "Monitor",
+      "headset": "Headset"
+    }
+  }
+}

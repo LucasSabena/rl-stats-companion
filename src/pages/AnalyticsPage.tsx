@@ -1,15 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { useAnalytics, useSessionMatches, useInsights } from "@/hooks/useAnalytics";
-import { StatsGrid } from "@/components/analytics/StatsGrid";
+import { PrimaryStatsRow, SecondaryStatsRow } from "@/components/analytics/StatsGrid";
 import { PerformanceChart } from "@/components/analytics/PerformanceChart";
-import { PeriodTabs } from "@/components/analytics/PeriodTabs";
-import { StreakCard } from "@/components/analytics/StreakCard";
+import { AnalyticsFilters } from "@/components/analytics/AnalyticsFilters";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
-import type { AnalyticsPeriod, MatchSession, SessionMatch } from "@/lib/types";
+import type { AnalyticsPeriod, MatchSession, SessionMatch, PlaylistFilter, MatchTypeFilter, AnalyticsData, InsightsData } from "@/lib/types";
 import {
   BarChart3,
   Clock,
@@ -20,6 +21,9 @@ import {
   ChevronRight,
   X,
   Gauge,
+  Zap,
+  Flame,
+  Sparkles,
 } from "lucide-react";
 
 function SessionCard({
@@ -29,8 +33,9 @@ function SessionCard({
   session: MatchSession;
   onClick: () => void;
 }) {
+  const { t } = useTranslation(["analytics", "common"]);
   const startDate = new Date(session.start_time);
-  const dateStr = startDate.toLocaleDateString("es-AR", {
+  const dateStr = startDate.toLocaleDateString(i18n.language, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -41,60 +46,70 @@ function SessionCard({
     session.match_count > 0
       ? Math.round((session.wins / session.match_count) * 100)
       : 0;
+  const goalDiff = session.goals_scored - session.goals_conceded;
 
   return (
     <Card
       className="cursor-pointer p-4 transition-all hover:shadow-level-2 hover:-translate-y-0.5"
       onClick={onClick}
+      aria-label={t("analytics:sessions.ariaLabel", { date: dateStr, count: session.match_count, winRate })}
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar size={14} className="text-text-tertiary" />
-            <span className="text-xs text-text-secondary">{dateStr}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-text-tertiary">
-            <Clock size={12} />
-            <span>{durationMin}m</span>
-            <ChevronRight size={14} className="text-accent-primary" />
-          </div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Calendar size={14} className="text-text-tertiary" />
+          <span className="text-xs text-text-secondary">{dateStr}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <p className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                Partidas
-              </p>
-              <p className="font-mono text-lg font-bold text-text-primary">
-                {session.match_count}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                WR
-              </p>
-              <p
-                className={`font-mono text-lg font-bold ${
-                  winRate >= 50 ? "text-accent-secondary" : "text-accent-danger"
-                }`}
-              >
-                {winRate}%
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1 text-accent-secondary">
-              <Trophy size={12} /> {session.wins}V
-            </span>
-            <span className="flex items-center gap-1 text-accent-danger">
-              <Swords size={12} /> {session.losses}D
-            </span>
-            {session.unknown > 0 && (
-              <span className="flex items-center gap-1 text-text-tertiary">
-                ? {session.unknown}
-              </span>
-            )}
-          </div>
+        <div className="flex items-center gap-2 text-xs text-text-tertiary">
+          <Clock size={12} />
+          <span>{durationMin}m</span>
+          <ChevronRight size={14} className="text-accent-primary" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2 mb-3">
+        <div className="text-center">
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{t("analytics:sessions.kpi.matches")}</p>
+          <p className="font-mono text-lg font-bold text-text-primary">{session.match_count}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{t("analytics:sessions.kpi.wr")}</p>
+          <p className={`font-mono text-lg font-bold ${winRate >= 50 ? "text-accent-success" : "text-accent-danger"}`}>
+            {winRate}%
+          </p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{t("analytics:sessions.kpi.goals")}</p>
+          <p className="font-mono text-lg font-bold text-text-primary">
+            {goalDiff > 0 ? `+${goalDiff}` : goalDiff}
+          </p>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{t("analytics:sessions.kpi.shots")}</p>
+          <p className="font-mono text-lg font-bold text-text-primary">{session.total_shots}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border-subtle pt-2.5 text-xs">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-accent-success">
+            <Trophy size={12} /> {session.wins}{t("analytics:sessions.winsLabel")}
+          </span>
+          <span className="flex items-center gap-1 text-accent-danger">
+            <Swords size={12} /> {session.losses}{t("analytics:sessions.lossesLabel")}
+          </span>
+          {session.unknown > 0 && (
+            <span className="text-text-tertiary">? {session.unknown}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-text-tertiary">
+          <span className="flex items-center gap-1" title={t("analytics:sessions.assistsTitle")}>
+            <Zap size={12} className="text-accent-purple" />
+            <span className="text-text-secondary">{session.total_assists}</span>
+          </span>
+          <span className="flex items-center gap-1" title={t("analytics:sessions.demosTitle")}>
+            <Flame size={12} className="text-accent-secondary" />
+            <span className="text-text-secondary">{session.total_demos}</span>
+          </span>
         </div>
       </div>
     </Card>
@@ -102,10 +117,12 @@ function SessionCard({
 }
 
 function SessionMatchDetail({ matches }: { matches: SessionMatch[] }) {
+  const { t } = useTranslation(["analytics", "common"]);
+
   if (matches.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <p className="text-sm text-text-secondary">Cargando partidas...</p>
+        <p className="text-sm text-text-secondary">{t("analytics:matchDetail.loading")}</p>
       </div>
     );
   }
@@ -114,34 +131,24 @@ function SessionMatchDetail({ matches }: { matches: SessionMatch[] }) {
     <div className="space-y-2">
       {matches.map((m) => {
         const startDate = new Date(m.start_time);
-        const timeStr = startDate.toLocaleTimeString("es-AR", {
+        const timeStr = startDate.toLocaleTimeString(i18n.language, {
           hour: "2-digit",
           minute: "2-digit",
         });
         const myTeam = m.local_team ?? -1;
         const myScore =
-          myTeam === 0
-            ? m.score_blue
-            : myTeam === 1
-              ? m.score_orange
-              : "?";
+          myTeam === 0 ? m.score_blue : myTeam === 1 ? m.score_orange : "?";
         const theirScore =
-          myTeam === 0
-            ? m.score_orange
-            : myTeam === 1
-              ? m.score_blue
-              : "?";
+          myTeam === 0 ? m.score_orange : myTeam === 1 ? m.score_blue : "?";
 
-        const myPlayer = m.players.find(
-          (p) => p.team_num === m.local_team
-        );
+        const myPlayer = m.players.find((p) => p.team_num === m.local_team);
 
         return (
           <div
             key={m.id}
             className={`rounded-lg border p-3 transition-colors ${
               m.is_win
-                ? "border-accent-secondary/20 bg-accent-secondary/5"
+                ? "border-accent-success/20 bg-accent-success/5"
                 : "border-accent-danger/20 bg-accent-danger/5"
             }`}
           >
@@ -150,11 +157,11 @@ function SessionMatchDetail({ matches }: { matches: SessionMatch[] }) {
                 <span
                   className={`rounded px-2 py-0.5 text-xs font-bold ${
                     m.is_win
-                      ? "bg-accent-secondary/20 text-accent-secondary"
+                      ? "bg-accent-success/20 text-accent-success"
                       : "bg-accent-danger/20 text-accent-danger"
                   }`}
                 >
-                  {m.is_win ? "V" : "D"}
+                  {m.is_win ? t("analytics:matchDetail.win") : t("analytics:matchDetail.loss")}
                 </span>
                 <span className="text-sm text-text-primary">
                   {myScore} - {theirScore}
@@ -164,30 +171,28 @@ function SessionMatchDetail({ matches }: { matches: SessionMatch[] }) {
               <div className="flex items-center gap-2 text-[10px] text-text-tertiary">
                 {m.is_overtime && (
                   <span className="rounded bg-accent-warning/20 px-1.5 py-0.5 text-accent-warning">
-                    OT
+                    {t("analytics:matchDetail.overtime")}
                   </span>
                 )}
-                <span>
-                  {Math.round(m.duration_seconds / 60)}m
-                </span>
+                <span>{Math.round(m.duration_seconds / 60)}m</span>
               </div>
             </div>
             {myPlayer && (
               <div className="mt-2 flex gap-3 text-[10px] text-text-tertiary">
                 <span>
-                  <span className="text-text-secondary">{myPlayer.score}</span> pts
+                  <span className="text-text-secondary">{myPlayer.score}</span> {t("analytics:matchDetail.points")}
                 </span>
                 <span>
-                  <span className="text-text-secondary">{myPlayer.goals}</span> goles
+                  <span className="text-text-secondary">{myPlayer.goals}</span> {t("analytics:matchDetail.goals")}
                 </span>
                 <span>
-                  <span className="text-text-secondary">{myPlayer.assists}</span> asist
+                  <span className="text-text-secondary">{myPlayer.assists}</span> {t("analytics:matchDetail.assists")}
                 </span>
                 <span>
-                  <span className="text-text-secondary">{myPlayer.saves}</span> paradas
+                  <span className="text-text-secondary">{myPlayer.saves}</span> {t("analytics:matchDetail.saves")}
                 </span>
                 <span>
-                  <span className="text-text-secondary">{myPlayer.shots}</span> tiros
+                  <span className="text-text-secondary">{myPlayer.shots}</span> {t("analytics:matchDetail.shots")}
                 </span>
               </div>
             )}
@@ -199,11 +204,16 @@ function SessionMatchDetail({ matches }: { matches: SessionMatch[] }) {
 }
 
 function InsightsPanel({
-  period,
+  insights,
+  isLoading,
+  summary,
 }: {
-  period: AnalyticsPeriod;
+  insights?: InsightsData;
+  isLoading: boolean;
+  summary?: AnalyticsData;
 }) {
-  const { data: insights, isLoading } = useInsights(period);
+  const { t } = useTranslation(["analytics", "common"]);
+
   const maxHourPlayed = useMemo(
     () => (insights?.byHour?.length ? Math.max(...insights.byHour.map((hour) => hour.played)) : 0),
     [insights?.byHour]
@@ -211,14 +221,17 @@ function InsightsPanel({
 
   if (isLoading) {
     return (
-      <Card>
-        <div className="space-y-4 p-4">
-          <Skeleton className="h-6 w-48" />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full" />
+      <div className="space-y-4">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <Sparkles size={18} className="text-accent-primary" />
+          {t("analytics:insights.title")}
+        </h3>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-xl" />
           ))}
         </div>
-      </Card>
+      </div>
     );
   }
 
@@ -228,32 +241,24 @@ function InsightsPanel({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-text-primary">
-        Analisis avanzado
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-text-primary">
+        <Sparkles size={18} className="text-accent-primary" />
+        {t("analytics:insights.title")}
       </h3>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {insights.playlists && insights.playlists.length > 0 && (
           <Card className="p-4">
             <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
-              <Trophy size={14} /> Por playlist
+              <Trophy size={14} /> {t("analytics:insights.byPlaylist")}
             </h4>
             <div className="space-y-2">
               {insights.playlists.slice(0, 5).map((p) => (
-                <div
-                  key={p.name}
-                  className="flex items-center justify-between text-xs"
-                >
+                <div key={p.name} className="flex items-center justify-between text-xs">
                   <span className="text-text-secondary">{p.name}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-text-tertiary">{p.played}j</span>
-                    <span
-                      className={
-                        p.winRate >= 50
-                          ? "text-accent-secondary"
-                          : "text-accent-danger"
-                      }
-                    >
+                    <span className="text-text-tertiary">{t("analytics:insights.gamesPlayed", { count: p.played })}</span>
+                    <span className={p.winRate >= 50 ? "text-accent-success" : "text-accent-danger"}>
                       {p.winRate}%
                     </span>
                   </div>
@@ -266,30 +271,21 @@ function InsightsPanel({
         {insights.byHour && insights.byHour.length > 0 && (
           <Card className="p-4">
             <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
-              <Clock size={14} /> Mejor horario
+              <Clock size={14} /> {t("analytics:insights.bestHour")}
             </h4>
             <p className="mb-2 text-sm text-text-primary">
-              {insights.bestHour}:00hs — WR{" "}
-              <span className="text-accent-secondary font-bold">
-                {insights.bestHourWR}%
-              </span>
+              {t("analytics:insights.bestHourDetail", { hour: insights.bestHour })}
+              <span className="font-bold text-accent-success">{insights.bestHourWR}%</span>
             </p>
             <div className="flex h-28 items-end gap-1">
               {insights.byHour.map((h) => {
-                const height =
-                  maxHourPlayed > 0
-                    ? (h.played / maxHourPlayed) * 100
-                    : 0;
+                const height = maxHourPlayed > 0 ? (h.played / maxHourPlayed) * 100 : 0;
                 return (
-                  <div
-                    key={h.hour}
-                    className="group flex-1 relative"
-                    title={`${h.hour}h: ${h.played}j, ${h.winRate}% WR`}
-                  >
+                  <div key={h.hour} className="group relative flex-1" title={t("analytics:insights.hourTooltip", { hour: h.hour, played: h.played, winRate: h.winRate })}>
                     <div
                       className={`w-full rounded-t transition-colors ${
                         h.winRate >= 50
-                          ? "bg-accent-secondary/80 group-hover:bg-accent-secondary"
+                          ? "bg-accent-success/80 group-hover:bg-accent-success"
                           : "bg-accent-danger/60 group-hover:bg-accent-danger"
                       }`}
                       style={{ height: `${Math.max(height, 2)}%` }}
@@ -306,181 +302,201 @@ function InsightsPanel({
 
         <Card className="p-4">
           <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
-            <Gauge size={14} /> Clutch & dominio
+            <Gauge size={14} /> {t("analytics:insights.situational")}
           </h4>
           <div className="space-y-3 text-xs">
             {insights.otGames && insights.otGames > 0 ? (
               <div className="flex justify-between">
-                <span className="text-text-secondary">
-                  Overtime ({insights.otGames}j)
-                </span>
-                <span
-                  className={
-                    (insights.otWinRate ?? 0) >= 50
-                      ? "text-accent-secondary"
-                      : "text-accent-danger"
-                  }
-                >
-                  {(insights.otWinRate ?? 0)}%
+                <span className="text-text-secondary">{t("analytics:insights.overtime", { count: insights.otGames })}</span>
+                <span className={(insights.otWinRate ?? 0) >= 50 ? "text-accent-success" : "text-accent-danger"}>
+                  {insights.otWinRate ?? 0}%
                 </span>
               </div>
             ) : null}
             {insights.closeGames && insights.closeGames > 0 ? (
               <div className="flex justify-between">
-                <span className="text-text-secondary">
-                  Partidos cerrados (+-1 gol, {insights.closeGames}j)
-                </span>
-                <span
-                  className={
-                    (insights.closeWinRate ?? 0) >= 50
-                      ? "text-accent-secondary"
-                      : "text-accent-danger"
-                  }
-                >
-                  {(insights.closeWinRate ?? 0)}%
+                <span className="text-text-secondary">{t("analytics:insights.closeGames", { count: insights.closeGames })}</span>
+                <span className={(insights.closeWinRate ?? 0) >= 50 ? "text-accent-success" : "text-accent-danger"}>
+                  {insights.closeWinRate ?? 0}%
                 </span>
               </div>
             ) : null}
             {insights.blowoutGames && insights.blowoutGames > 0 ? (
               <div className="flex justify-between">
-                <span className="text-text-secondary">
-                  Palizas (+4 goles, {insights.blowoutGames}j)
-                </span>
-                <span
-                  className={
-                    (insights.blowoutWinRate ?? 0) >= 50
-                      ? "text-accent-secondary"
-                      : "text-accent-danger"
-                  }
-                >
-                  {(insights.blowoutWinRate ?? 0)}%
+                <span className="text-text-secondary">{t("analytics:insights.blowouts", { count: insights.blowoutGames })}</span>
+                <span className={(insights.blowoutWinRate ?? 0) >= 50 ? "text-accent-success" : "text-accent-danger"}>
+                  {insights.blowoutWinRate ?? 0}%
                 </span>
               </div>
             ) : null}
           </div>
         </Card>
-
-        {insights.contrib && (
-          <Card className="p-4">
-            <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
-              <Target size={14} /> Contribucion al equipo
-            </h4>
-            <div className="space-y-2">
-              {[
-                {
-                  label: "Goles",
-                  pct: insights.contrib.goalsPct,
-                  color: "bg-accent-primary",
-                },
-                {
-                  label: "Asistencias",
-                  pct: insights.contrib.assistsPct,
-                  color: "bg-accent-secondary",
-                },
-                {
-                  label: "Paradas",
-                  pct: insights.contrib.savesPct,
-                  color: "bg-accent-warning",
-                },
-                {
-                  label: "Tiros",
-                  pct: insights.contrib.shotsPct,
-                  color: "bg-accent-purple",
-                },
-                {
-                  label: "Demos",
-                  pct: insights.contrib.demosPct,
-                  color: "bg-accent-danger",
-                },
-              ].map((c) => (
-                <div key={c.label}>
-                  <div className="flex justify-between text-[10px] mb-0.5">
-                    <span className="text-text-tertiary">{c.label}</span>
-                    <span className="text-text-secondary">{c.pct}%</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-bg-panel">
-                    <div
-                      className={`h-full rounded-full ${c.color}`}
-                      style={{ width: `${Math.min(c.pct, 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
       </div>
+
+      {insights.contrib && (
+        <Card className="p-4">
+          <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
+            <Target size={14} /> {t("analytics:insights.contribution")}
+          </h4>
+          <div className="space-y-2">
+            {[
+              { labelKey: "analytics:insights.contrib.goals", pct: insights.contrib.goalsPct, color: "bg-accent-primary" },
+              { labelKey: "analytics:insights.contrib.assists", pct: insights.contrib.assistsPct, color: "bg-accent-secondary" },
+              { labelKey: "analytics:insights.contrib.saves", pct: insights.contrib.savesPct, color: "bg-accent-warning" },
+              { labelKey: "analytics:insights.contrib.shots", pct: insights.contrib.shotsPct, color: "bg-accent-purple" },
+              { labelKey: "analytics:insights.contrib.demos", pct: insights.contrib.demosPct, color: "bg-accent-danger" },
+            ].map((c) => (
+              <div key={c.labelKey}>
+                <div className="flex justify-between text-[10px] mb-0.5">
+                  <span className="text-text-tertiary">{t(c.labelKey)}</span>
+                  <span className="text-text-secondary">{c.pct}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-bg-panel">
+                  <div className={`h-full rounded-full ${c.color}`} style={{ width: `${Math.min(c.pct, 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {summary && (
+        <Card className="p-4">
+          <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
+            <Gauge size={14} /> {t("analytics:insights.records")}
+          </h4>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-text-secondary">{t("analytics:stats.peakSpeed")}</span>
+              <span className="font-mono font-bold text-accent-success">{Math.round(summary.peakSpeed)} km/h</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-text-secondary">{t("analytics:stats.avgDuration")}</span>
+              <span className="font-mono font-bold text-text-primary">{Math.round(summary.avgDuration / 60)}m</span>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
 
 export function AnalyticsPage() {
+  const { t } = useTranslation(["analytics", "common"]);
   const [period, setPeriod] = useState<AnalyticsPeriod>("week");
-  const { data: result, isLoading, isError } = useAnalytics(period);
-  const [selectedSession, setSelectedSession] =
-    useState<MatchSession | null>(null);
+  const [playlist, setPlaylist] = useState<PlaylistFilter>("all");
+  const [matchType, setMatchType] = useState<MatchTypeFilter>("all");
+  const [selectedSession, setSelectedSession] = useState<MatchSession | null>(null);
 
-  const { data: sessionMatches, isLoading: matchesLoading } =
-    useSessionMatches(
-      selectedSession?.start_time,
-      selectedSession?.end_time
-    );
+  const filters = useMemo(
+    () => ({ playlist, matchType }),
+    [playlist, matchType]
+  );
+
+  const hasActiveFilters = playlist !== "all" || matchType !== "all";
+
+  const { data: result, isLoading, isError } = useAnalytics(period, filters);
+  const { data: insights, isLoading: insightsLoading } = useInsights(period, filters);
+
+  const { data: sessionMatches, isLoading: matchesLoading } = useSessionMatches(
+    selectedSession?.start_time,
+    selectedSession?.end_time
+  );
 
   const sessions = useMemo(() => result?.sessions ?? [], [result]);
 
+  const clearFilters = useCallback(() => {
+    setPlaylist("all");
+    setMatchType("all");
+  }, []);
+
   return (
     <PageContainer>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-text-primary">
-            Analisis de rendimiento
-          </h2>
+          <h2 className="text-2xl font-bold text-text-primary">{t("analytics:title")}</h2>
           {result?.data && (
             <p className="mt-1 text-sm text-text-secondary">
-              {result.data.totalMatches} partidas en el rango seleccionado
+              {t("analytics:matchCount", { count: result.data.totalMatches })}
+              {hasActiveFilters && t("analytics:activeFilters")}
             </p>
           )}
         </div>
-        <PeriodTabs active={period} onChange={setPeriod} />
+        <AnalyticsFilters
+          period={period}
+          onPeriodChange={setPeriod}
+          playlist={playlist}
+          onPlaylistChange={setPlaylist}
+          matchType={matchType}
+          onMatchTypeChange={setMatchType}
+          isLoading={isLoading}
+        />
       </div>
 
       {isLoading && (
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
+        <div className="space-y-8">
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
             ))}
           </div>
-          <Skeleton className="h-72 w-full" />
+          <Skeleton className="h-80 w-full rounded-xl" />
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            ))}
+          </div>
         </div>
       )}
 
       {isError && (
         <EmptyState
           icon={BarChart3}
-          title="Error cargando analisis"
-          description="No se pudieron cargar los datos de rendimiento."
+          title={t("analytics:empty.error.title")}
+          description={t("analytics:empty.error.description")}
         />
       )}
 
       {!isLoading && !isError && result && (
-        <div className="space-y-6">
-          <StatsGrid data={result.data} />
-          <StreakCard
-            bestStreak={result.data.bestStreak}
-            currentStreak={result.data.currentStreak}
-          />
+        <div className="space-y-8">
+          {result.data.totalMatches === 0 ? (
+            <EmptyState
+              icon={BarChart3}
+              title={t("analytics:empty.noData.title")}
+              description={
+                hasActiveFilters
+                  ? t("analytics:empty.noData.filteredDescription")
+                  : t("analytics:empty.noData.description")
+              }
+              actionLabel={hasActiveFilters ? t("analytics:empty.noData.clearFilters") : undefined}
+              onAction={hasActiveFilters ? clearFilters : undefined}
+            />
+          ) : (
+            <>
+              <PrimaryStatsRow data={result.data} />
 
-          {result.rollups.length > 0 && (
-            <PerformanceChart data={result.rollups} />
+              {result.rollups.length > 0 && (
+                <PerformanceChart data={result.rollups} />
+              )}
+
+              <SecondaryStatsRow
+                data={result.data}
+                streak={{ best: result.data.bestStreak, current: result.data.currentStreak }}
+              />
+
+              <InsightsPanel
+                insights={insights}
+                isLoading={insightsLoading}
+                summary={result.data}
+              />
+            </>
           )}
-
-          <InsightsPanel period={period} />
 
           {period === "session" && sessions.length > 0 && (
             <div>
               <h3 className="mb-3 text-sm font-semibold text-text-primary">
-                Historial de sesiones
+                {t("analytics:sessions.title")}
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {sessions.map((s) => (
@@ -493,28 +509,14 @@ export function AnalyticsPage() {
               </div>
             </div>
           )}
-
-          {result.data.totalMatches === 0 && (
-            <EmptyState
-              icon={BarChart3}
-              title="No hay datos para este periodo"
-              description="Juga algunas partidas para ver tu analisis aqui."
-            />
-          )}
         </div>
       )}
 
-      <Modal
-        isOpen={!!selectedSession}
-        onClose={() => setSelectedSession(null)}
-        size="lg"
-      >
+      <Modal isOpen={!!selectedSession} onClose={() => setSelectedSession(null)} size="lg">
         {selectedSession && (
           <div className="max-h-[80vh] overflow-y-auto">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-text-primary">
-                Detalle de sesion
-              </h3>
+              <h3 className="text-lg font-semibold text-text-primary">{t("analytics:sessions.detail")}</h3>
               <button
                 onClick={() => setSelectedSession(null)}
                 className="rounded-lg p-1.5 text-text-tertiary hover:bg-bg-panel hover:text-text-primary"
@@ -523,23 +525,13 @@ export function AnalyticsPage() {
               </button>
             </div>
             <div className="mb-4 flex gap-4 text-sm">
-              <span className="text-text-secondary">
-                {selectedSession.match_count} partidas
-              </span>
-              <span className="text-accent-secondary">
-                {selectedSession.wins}V
-              </span>
-              <span className="text-accent-danger">
-                {selectedSession.losses}D
-              </span>
-              <span className="text-text-tertiary">
-                {Math.round(selectedSession.duration_seconds / 60)}m
-              </span>
+              <span className="text-text-secondary">{t("analytics:sessions.matchesCount", { count: selectedSession.match_count })}</span>
+              <span className="text-accent-success">{selectedSession.wins}{t("analytics:sessions.winsLabel")}</span>
+              <span className="text-accent-danger">{selectedSession.losses}{t("analytics:sessions.lossesLabel")}</span>
+              <span className="text-text-tertiary">{Math.round(selectedSession.duration_seconds / 60)}m</span>
             </div>
             <SessionMatchDetail
-              matches={
-                matchesLoading ? [] : (sessionMatches ?? [])
-              }
+              matches={matchesLoading ? [] : (sessionMatches ?? [])}
             />
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
@@ -24,9 +25,10 @@ export function DataTable<T>({
   data,
   keyExtractor,
   className,
-  emptyMessage = "No hay datos disponibles",
+  emptyMessage,
   rowClassName,
 }: DataTableProps<T>) {
+  const { t } = useTranslation("common");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -60,7 +62,7 @@ export function DataTable<T>({
   if (data.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border-default text-sm text-text-secondary">
-        {emptyMessage}
+        {emptyMessage ?? t("dataTable.noData")}
       </div>
     );
   }

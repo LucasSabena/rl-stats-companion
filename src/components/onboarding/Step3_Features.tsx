@@ -1,17 +1,20 @@
 import { Activity, Clock, BarChart3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface StepProps { onNext: () => void; onBack: () => void }
 
-const features = [
-  { icon: Activity, title: "Dashboard en Vivo", desc: "Monitorea cada partida en tiempo real." },
-  { icon: Clock, title: "Historial de Partidas", desc: "Accede a tus resultados y estadisticas pasadas." },
-  { icon: BarChart3, title: "Analiticas de Rendimiento", desc: "Visualiza tendencias y patrones en tu juego." },
-];
-
 export default function Step3({ onNext, onBack }: StepProps) {
+  const { t } = useTranslation(["onboarding", "common"]);
+
+  const features = [
+    { icon: Activity, title: t('onboarding:features.liveDashboard.title'), desc: t('onboarding:features.liveDashboard.desc') },
+    { icon: Clock, title: t('onboarding:features.matchHistory.title'), desc: t('onboarding:features.matchHistory.desc') },
+    { icon: BarChart3, title: t('onboarding:features.analytics.title'), desc: t('onboarding:features.analytics.desc') },
+  ];
+
   return (
     <div className="text-center animate-fade-in">
-      <h2 className="font-display text-2xl font-bold text-text-primary mb-10">Que ofrece RL Stats?</h2>
+      <h2 className="font-display text-2xl font-bold text-text-primary mb-10">{t('onboarding:features.title')}</h2>
       <div className="grid grid-cols-1 gap-4 max-w-md mx-auto mb-12">
         {features.map(({ icon: Icon, title, desc }) => (
           <div key={title} className="flex items-start gap-4 text-left p-4 rounded-xl bg-bg-panel border border-border-subtle">
@@ -30,13 +33,13 @@ export default function Step3({ onNext, onBack }: StepProps) {
           onClick={onBack}
           className="px-6 py-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-colors font-medium"
         >
-          Atras
+          {t('onboarding:features.back')}
         </button>
         <button
           onClick={onNext}
           className="bg-accent-primary hover:bg-accent-primary-hover text-white px-8 py-2.5 rounded-lg font-semibold transition-all duration-200"
         >
-          Siguiente
+          {t('onboarding:features.next')}
         </button>
       </div>
     </div>

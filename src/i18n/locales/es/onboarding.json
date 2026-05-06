@@ -1,0 +1,64 @@
+{
+  "welcome": {
+    "title": "Bienvenido a RL Stats",
+    "description": "Tu terminal de rendimiento personal para Rocket League. Analiza tus partidas en tiempo real y descubre patrones en tu desempeño.",
+    "cta": "Comenzar"
+  },
+  "connection": {
+    "title": "Conexion Local",
+    "description": "La app se conecta directamente al stream de datos de Rocket League en tu PC mediante una conexion TCP local en el puerto <port>49123</port>.",
+    "howItWorks": "Como funciona",
+    "bullet1": "Rocket League envia eventos en tiempo real por el puerto 49123.",
+    "bullet2": "La app escucha estos eventos y los procesa localmente.",
+    "bullet3": "Todos los datos se almacenan solo en tu PC — nada sale a internet.",
+    "back": "Atras",
+    "understood": "Entendido"
+  },
+  "identity": {
+    "title": "Quien sos dentro del juego?",
+    "description": "Necesitamos tu nombre exacto en Rocket League para identificarte una vez y luego fijar tu PrimaryId automaticamente.",
+    "playerNameLabel": "Nombre dentro del juego",
+    "playerNamePlaceholder": "Ej: Si Locura",
+    "hint": "Si mas adelante cambias de nick, podras actualizarlo desde Ajustes.",
+    "error": "Ingresa tu nombre exacto dentro de Rocket League.",
+    "saving": "Guardando...",
+    "next": "Siguiente",
+    "back": "Atras"
+  },
+  "findGame": {
+    "title": "Encontrar Rocket League",
+    "description": "Buscamos tu instalacion de Rocket League para configurar automaticamente la API de estadisticas.",
+    "autoDetect": "Auto-detectar",
+    "recommended": "Recomendado",
+    "manual": "Manual",
+    "steam": "Steam",
+    "epic": "Epic Games",
+    "autoDetectError": "No se detecto la instalacion automaticamente. Intenta buscar manualmente.",
+    "manualHint": "Para configurar manualmente, asegurate de que Rocket League este instalado y ejecuta la app como administrador.",
+    "searching": "Buscando instalacion...",
+    "next": "Siguiente",
+    "back": "Atras"
+  },
+  "features": {
+    "title": "Que ofrece RL Stats?",
+    "liveDashboard": {
+      "title": "Dashboard en Vivo",
+      "desc": "Monitorea cada partida en tiempo real."
+    },
+    "matchHistory": {
+      "title": "Historial de Partidas",
+      "desc": "Accede a tus resultados y estadisticas pasadas."
+    },
+    "analytics": {
+      "title": "Analiticas de Rendimiento",
+      "desc": "Visualiza tendencias y patrones en tu juego."
+    },
+    "back": "Atras",
+    "next": "Siguiente"
+  },
+  "complete": {
+    "title": "Todo listo!",
+    "description": "Ahora abre Rocket League y la app comenzara a detectar tus partidas automaticamente.",
+    "cta": "Empezar a explorar"
+  }
+}

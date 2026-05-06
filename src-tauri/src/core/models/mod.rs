@@ -217,6 +217,7 @@ pub struct DailyRollup {
     pub avg_duration_seconds: i32,
     pub total_demos: i32,
     pub total_assists: i32,
+    pub avg_score: i32,
 }
 
 /// Data for CrossbarHit events.

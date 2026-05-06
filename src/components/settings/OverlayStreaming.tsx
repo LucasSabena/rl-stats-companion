@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation, Trans } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useUIStore } from "@/stores/uiStore";
@@ -40,6 +41,7 @@ const inputClass = cn(
 // ---------------------------------------------------------------------------
 
 export function OverlayStreaming() {
+  const { t } = useTranslation(["overlay", "common"]);
   const addToast = useUIStore((s) => s.addToast);
 
   const [status, setStatus] = useState<OverlayServerStatus | null>(null);
@@ -153,14 +155,14 @@ export function OverlayStreaming() {
       const result = await invoke<OverlayServerStatus>("start_overlay_server", { port });
       setStatus(result);
       await fetchUrls();
-      addToast({ type: "success", title: "Streaming iniciado", message: `Servidor overlay activo en el puerto ${port}.` });
+      addToast({ type: "success", title: t("overlay:streaming.toasts.started"), message: t("overlay:streaming.toasts.startedMessage", { port }) });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : typeof err === "string" ? err : "Error desconocido";
-      addToast({ type: "error", title: "Error al iniciar", message });
+      const message = err instanceof Error ? err.message : typeof err === "string" ? err : t("overlay:streaming.toasts.unknownError");
+      addToast({ type: "error", title: t("overlay:streaming.toasts.startError"), message });
     } finally {
       setIsToggling(false);
     }
-  }, [port, addToast, fetchUrls]);
+  }, [port, addToast, fetchUrls, t]);
 
   const handleStop = useCallback(async () => {
     setIsToggling(true);
@@ -168,14 +170,14 @@ export function OverlayStreaming() {
       await invoke("stop_overlay_server");
       setStatus(null);
       setUrls([]);
-      addToast({ type: "success", title: "Streaming detenido", message: "Servidor overlay detenido correctamente." });
+      addToast({ type: "success", title: t("overlay:streaming.toasts.stopped"), message: t("overlay:streaming.toasts.stoppedMessage") });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : typeof err === "string" ? err : "Error desconocido";
-      addToast({ type: "error", title: "Error al detener", message });
+      const message = err instanceof Error ? err.message : typeof err === "string" ? err : t("overlay:streaming.toasts.unknownError");
+      addToast({ type: "error", title: t("overlay:streaming.toasts.stopError"), message });
     } finally {
       setIsToggling(false);
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   const handleCopy = useCallback(async (url: string) => {
     try {
@@ -185,9 +187,9 @@ export function OverlayStreaming() {
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
       copyTimerRef.current = setTimeout(() => setCopiedUrl(null), COPY_FEEDBACK_MS);
     } catch {
-      addToast({ type: "error", title: "Error al copiar", message: "No se pudo copiar al portapapeles." });
+      addToast({ type: "error", title: t("overlay:streaming.toasts.copyError"), message: t("overlay:streaming.toasts.copyErrorMessage") });
     }
-  }, [addToast]);
+  }, [addToast, t]);
 
   const handlePortChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
@@ -234,11 +236,11 @@ export function OverlayStreaming() {
             </div>
             <div>
               <h4 className="text-sm font-semibold text-text-primary">
-                {isRunning ? "Streaming activo" : "Streaming OBS"}
+                {isRunning ? t("overlay:streaming.activeTitle") : t("overlay:streaming.title")}
               </h4>
 
               {/* Tooltip */}
-              <Tooltip content="Transmite datos en vivo a OBS Studio mediante overlays de navegador locales.">
+              <Tooltip content={t("overlay:streaming.tooltip")}>
                 <Monitor size={13} className="mt-0.5 cursor-help text-text-muted hover:text-text-secondary transition-colors" />
               </Tooltip>
             </div>
@@ -246,8 +248,8 @@ export function OverlayStreaming() {
 
           <p className="mt-2 text-xs text-text-muted">
             {isRunning
-              ? `Servidor overlay corriendo en el puerto ${activePort}. ${connectedClients > 0 ? `${connectedClients} cliente(s) conectado(s).` : "Esperando conexiones..."}`
-              : "Inicia el servidor local para que OBS Studio capture los datos de tus partidas en tiempo real."}
+              ? `${t("overlay:streaming.serverRunning", { port: activePort })} ${connectedClients > 0 ? t("overlay:streaming.clientsConnected", { count: connectedClients }) : t("overlay:streaming.waitingConnections")}`
+              : t("overlay:streaming.description")}
           </p>
         </div>
 
@@ -261,7 +263,7 @@ export function OverlayStreaming() {
           leftIcon={isRunning ? WifiOff : Wifi}
           className="shrink-0"
         >
-          {isRunning ? "Detener" : "Iniciar streaming"}
+          {isRunning ? t("overlay:streaming.stop") : t("overlay:streaming.startStreaming")}
         </Button>
       </div>
 
@@ -269,7 +271,7 @@ export function OverlayStreaming() {
       {!isRunning && (
         <div className="mt-4 flex items-center gap-3 rounded-lg border border-dashed border-border-subtle bg-bg-base/50 px-4 py-3">
           <label htmlFor="overlay-port" className="text-xs font-medium text-text-secondary shrink-0">
-            Puerto:
+            {t("overlay:streaming.port")}
           </label>
           <input
             id="overlay-port"
@@ -281,7 +283,7 @@ export function OverlayStreaming() {
             className={cn(inputClass, "w-24 text-center")}
             placeholder="9528"
           />
-          <p className="text-xs text-text-muted">Puerto del servidor local (por defecto 9528)</p>
+          <p className="text-xs text-text-muted">{t("overlay:streaming.portDefault")}</p>
         </div>
       )}
 
@@ -295,7 +297,7 @@ export function OverlayStreaming() {
               className={cn(connectedClients > 0 ? "text-accent-primary" : "text-text-muted")}
             />
             <span className="text-xs text-text-secondary">
-              Clientes conectados:{" "}
+              {t("overlay:streaming.connectedClients")}{" "}
               <span className={cn("font-semibold", connectedClients > 0 ? "text-accent-primary" : "text-text-tertiary")}>
                 {connectedClients}
               </span>
@@ -305,7 +307,7 @@ export function OverlayStreaming() {
           {/* URL list */}
           {urls.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">URLs de overlay</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{t("overlay:streaming.overlayUrls")}</p>
               <div className="space-y-2">
                 {urls.map((item) => {
                   const isCopied = copiedUrl === item.url;
@@ -320,7 +322,7 @@ export function OverlayStreaming() {
                       <code className="max-w-[200px] truncate text-[11px] font-mono text-text-tertiary select-all">
                         {item.url}
                       </code>
-                      <Tooltip content={isCopied ? "Copiado!" : "Copiar URL"}>
+                      <Tooltip content={isCopied ? t("overlay:streaming.copiedTooltipDone") : t("overlay:streaming.copyTooltip")}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -331,7 +333,7 @@ export function OverlayStreaming() {
                             isCopied && "text-accent-primary"
                           )}
                         >
-                          {isCopied ? "Copiado!" : "Copiar"}
+                          {isCopied ? t("overlay:streaming.copied") : t("overlay:streaming.copy")}
                         </Button>
                       </Tooltip>
                     </div>
@@ -343,7 +345,7 @@ export function OverlayStreaming() {
 
           {/* Fallback when no URLs yet */}
           {urls.length === 0 && (
-            <p className="text-xs text-text-muted italic">Cargando URLs de overlay...</p>
+            <p className="text-xs text-text-muted italic">{t("overlay:streaming.loadingUrls")}</p>
           )}
         </div>
       )}
@@ -354,14 +356,14 @@ export function OverlayStreaming() {
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent-info/10">
             <ExternalLink size={12} className="text-accent-info" />
           </div>
-          <p className="text-xs font-semibold text-accent-info">Como usar con OBS Studio:</p>
+          <p className="text-xs font-semibold text-accent-info">{t("overlay:streaming.howToOBS")}</p>
         </div>
         <ol className="list-decimal pl-5 space-y-1 text-xs text-text-tertiary">
-          <li>Inicia el servidor de streaming con el boton de arriba.</li>
-          <li>Abre OBS Studio y agrega una nueva fuente de tipo <strong className="text-text-secondary">Navegador</strong>.</li>
-          <li>Copia la URL del overlay que quieras mostrar y pegala en el campo <strong className="text-text-secondary">URL</strong> de la fuente.</li>
-          <li>Ajusta la anchura y altura segun el diseno del overlay.</li>
-          <li>Asegurate de que el puerto ({activePort}) no este bloqueado por tu firewall local.</li>
+          <li>{t("overlay:streaming.step1")}</li>
+          <li><Trans i18nKey="overlay:streaming.step2" components={{ bold: <strong className="text-text-secondary" /> }} /></li>
+          <li><Trans i18nKey="overlay:streaming.step3" components={{ bold: <strong className="text-text-secondary" /> }} /></li>
+          <li>{t("overlay:streaming.step4")}</li>
+          <li>{t("overlay:streaming.step5", { port: activePort })}</li>
         </ol>
       </div>
     </div>

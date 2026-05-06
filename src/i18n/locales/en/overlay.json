@@ -1,0 +1,117 @@
+{
+  "waitingState": {
+    "noGame": "Waiting for Rocket League...",
+    "noMatch": "Waiting for match..."
+  },
+  "dismissButton": {
+    "ariaLabel": "Close overlay",
+    "title": "Close overlay"
+  },
+  "labels": {
+    "overtime": "Overtime",
+    "pts": "PTS",
+    "vs": "VS"
+  },
+  "config": {
+    "title": "In-Game Overlay",
+    "description": "Shows stats, scoreboard, and players in real time directly on your Rocket League screen.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "loading": "Loading overlay...",
+    "loadError": "Could not load overlay settings",
+    "sections": {
+      "position": "Position",
+      "appearance": "Appearance",
+      "displayData": "Display Data"
+    },
+    "positionPresets": {
+      "topLeft": "top left",
+      "topRight": "top right",
+      "bottomLeft": "bottom left",
+      "bottomRight": "bottom right",
+      "custom": "Custom"
+    },
+    "axis": {
+      "x": "X Axis",
+      "y": "Y Axis"
+    },
+    "dimensions": {
+      "width": "Width (px)",
+      "height": "Height (px)"
+    },
+    "transparency": "Transparency",
+    "fontSize": "Font Size",
+    "fontSizeOptions": {
+      "small": "Small",
+      "medium": "Normal",
+      "large": "Large"
+    },
+    "displayElements": {
+      "visibleElements": "Visible elements",
+      "mainScore": "Main Scoreboard",
+      "gameTimer": "Game Timer / Arena",
+      "playerList": "Player List",
+      "playerNames": "Player Names",
+      "playerScore": "Player Score",
+      "stats": "Stats (G/A/S)",
+      "boost": "Boost Meter",
+      "speed": "Speed (km/h)",
+      "mmr": "Estimated MMR"
+    },
+    "playersOnScreen": "Players on screen",
+    "allPlayers": "All players",
+    "myTeam": "My team only",
+    "clickThrough": "Click-through",
+    "clickThroughTooltip": "When active, clicks pass through the overlay",
+    "buttons": {
+      "testPosition": "Test Position",
+      "apply": "Apply Changes"
+    },
+    "toasts": {
+      "overlayActivated": "Overlay activated",
+      "overlayDeactivated": "Overlay deactivated",
+      "interactiveMode": "Interactive mode",
+      "interactiveMessage": "Drag the overlay to reposition it (8 seconds)",
+      "settingsSaved": "Settings saved",
+      "settingsSavedMessage": "The overlay has been updated.",
+      "saveError": "Error saving"
+    }
+  },
+  "streaming": {
+    "title": "OBS Streaming",
+    "activeTitle": "Streaming active",
+    "description": "Start the local server so OBS Studio can capture your match data in real time.",
+    "tooltip": "Streams live data to OBS Studio via local browser overlays.",
+    "serverRunning": "Overlay server running on port {{port}}.",
+    "clientsConnected": "{{count}} client(s) connected.",
+    "waitingConnections": "Waiting for connections...",
+    "startStreaming": "Start streaming",
+    "stop": "Stop",
+    "port": "Port:",
+    "portDefault": "Local server port (default 9528)",
+    "connectedClients": "Connected clients:",
+    "overlayUrls": "Overlay URLs",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "copyTooltip": "Copy URL",
+    "copiedTooltipDone": "Copied!",
+    "loadingUrls": "Loading overlay URLs...",
+    "howToOBS": "How to use with OBS Studio:",
+    "step1": "Start the streaming server with the button above.",
+    "step2": "Open OBS Studio and add a new <bold>Browser</bold> source.",
+    "step3": "Copy the overlay URL you want to display and paste it into the source's <bold>URL</bold> field.",
+    "step4": "Adjust the width and height according to the overlay design.",
+    "step5": "Make sure port ({{port}}) is not blocked by your local firewall.",
+    "toasts": {
+      "started": "Streaming started",
+      "startedMessage": "Overlay server active on port {{port}}.",
+      "stopped": "Streaming stopped",
+      "stoppedMessage": "Overlay server stopped successfully.",
+      "startError": "Error starting",
+      "stopError": "Error stopping",
+      "copyError": "Error copying",
+      "copyErrorMessage": "Could not copy to clipboard.",
+      "unknownError": "Unknown error"
+    }
+  }
+}

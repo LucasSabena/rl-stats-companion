@@ -1,0 +1,79 @@
+{
+  "pageTitle": "Match History",
+  "matchTypes": {
+    "ranked": "Ranked",
+    "casual": "Casual",
+    "tournament": "Tournament",
+    "other": "Other"
+  },
+  "playlists": {
+    "duel": "Duel (1v1)",
+    "doubles": "Doubles (2v2)",
+    "standard": "Standard (3v3)",
+    "chaos": "Chaos (4v4)",
+    "other": "Other"
+  },
+  "results": {
+    "win": "Win",
+    "loss": "Loss",
+    "blueWon": "Blue Won",
+    "orangeWon": "Orange Won",
+    "draw": "Draw"
+  },
+  "contextMenu": {
+    "viewDetail": "View Details",
+    "editMatch": "Edit Match",
+    "deleteMatch": "Delete Match"
+  },
+  "onlineStatus": {
+    "online": "Online",
+    "local": "Local"
+  },
+  "empty": {
+    "noMatches": {
+      "title": "No Matches Captured",
+      "description": "Start Rocket League, enable the Stats API and play a match. We'll capture the data automatically."
+    }
+  },
+  "errors": {
+    "loadFailed": {
+      "title": "Error Loading History",
+      "description": "Could not load matches. Please try again."
+    }
+  },
+  "modals": {
+    "delete": {
+      "title": "Delete Match?",
+      "description": "This action cannot be undone."
+    },
+    "edit": {
+      "title": "Edit Match",
+      "matchTypeLabel": "Match Type",
+      "playlistLabel": "Playlist"
+    }
+  },
+  "filters": {
+    "title": "Filters",
+    "clear": "Clear",
+    "search": {
+      "label": "Search",
+      "placeholder": "Player name..."
+    },
+    "results": {
+      "placeholder": "Result",
+      "all": "All results",
+      "wins": "Wins",
+      "losses": "Losses"
+    },
+    "matchTypes": {
+      "placeholder": "Type",
+      "all": "All types"
+    },
+    "modes": {
+      "placeholder": "Mode",
+      "all": "All modes"
+    },
+    "dateFrom": "From",
+    "dateTo": "To"
+  }
+}

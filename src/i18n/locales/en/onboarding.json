@@ -1,0 +1,64 @@
+{
+  "welcome": {
+    "title": "Welcome to RL Stats",
+    "description": "Your personal performance terminal for Rocket League. Analyze your matches in real time and discover patterns in your gameplay.",
+    "cta": "Get Started"
+  },
+  "connection": {
+    "title": "Local Connection",
+    "description": "The app connects directly to the Rocket League data stream on your PC via a local TCP connection on port <port>49123</port>.",
+    "howItWorks": "How it works",
+    "bullet1": "Rocket League sends real-time events through port 49123.",
+    "bullet2": "The app listens for these events and processes them locally.",
+    "bullet3": "All data is stored only on your PC — nothing goes to the internet.",
+    "back": "Back",
+    "understood": "Got It"
+  },
+  "identity": {
+    "title": "Who are you in-game?",
+    "description": "We need your exact Rocket League name to identify you once and then set your PrimaryId automatically.",
+    "playerNameLabel": "In-game name",
+    "playerNamePlaceholder": "e.g. Si Locura",
+    "hint": "If you change your nickname later, you can update it from Settings.",
+    "error": "Enter your exact in-game Rocket League name.",
+    "saving": "Saving...",
+    "next": "Next",
+    "back": "Back"
+  },
+  "findGame": {
+    "title": "Find Rocket League",
+    "description": "We look for your Rocket League installation to automatically configure the stats API.",
+    "autoDetect": "Auto-detect",
+    "recommended": "Recommended",
+    "manual": "Manual",
+    "steam": "Steam",
+    "epic": "Epic Games",
+    "autoDetectError": "Installation not detected automatically. Try searching manually.",
+    "manualHint": "To configure manually, make sure Rocket League is installed and run the app as administrator.",
+    "searching": "Searching for installation...",
+    "next": "Next",
+    "back": "Back"
+  },
+  "features": {
+    "title": "What does RL Stats offer?",
+    "liveDashboard": {
+      "title": "Live Dashboard",
+      "desc": "Monitor every match in real time."
+    },
+    "matchHistory": {
+      "title": "Match History",
+      "desc": "Access your past results and stats."
+    },
+    "analytics": {
+      "title": "Performance Analytics",
+      "desc": "Visualize trends and patterns in your gameplay."
+    },
+    "back": "Back",
+    "next": "Next"
+  },
+  "complete": {
+    "title": "All set!",
+    "description": "Now open Rocket League and the app will start detecting your matches automatically.",
+    "cta": "Start Exploring"
+  }
+}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -11,36 +12,38 @@ interface FilterBarProps {
   onChange: (filters: MatchFilters) => void;
 }
 
-const resultOptions = [
-  { value: "all", label: "Todos los resultados" },
-  { value: "win", label: "Victorias" },
-  { value: "loss", label: "Derrotas" },
-];
-
-const matchTypeOptions = [
-  { value: "all", label: "Todos los tipos" },
-  { value: "ranked", label: "Ranked" },
-  { value: "casual", label: "Casual" },
-  { value: "tournament", label: "Torneo" },
-  { value: "other", label: "Otro" },
-];
-
-const modeOptions = [
-  { value: "all", label: "Todos los modos" },
-  { value: "Duel", label: "Duel (1v1)" },
-  { value: "Doubles", label: "Doubles (2v2)" },
-  { value: "Standard", label: "Standard (3v3)" },
-  { value: "Chaos", label: "Chaos (4v4)" },
-  { value: "Other", label: "Otro" },
-];
-
-const dateInputClasses = cn(
-  "h-9 rounded-md border bg-bg-surface px-3 text-sm text-text-primary",
-  "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50",
-  "[color-scheme:dark]"
-);
-
 export function FilterBar({ filters, onChange }: FilterBarProps) {
+  const { t } = useTranslation(["history", "common"]);
+
+  const resultOptions = [
+    { value: "all", label: t("history:filters.results.all") },
+    { value: "win", label: t("history:filters.results.wins") },
+    { value: "loss", label: t("history:filters.results.losses") },
+  ];
+
+  const matchTypeOptions = [
+    { value: "all", label: t("history:filters.matchTypes.all") },
+    { value: "ranked", label: t("history:matchTypes.ranked") },
+    { value: "casual", label: t("history:matchTypes.casual") },
+    { value: "tournament", label: t("history:matchTypes.tournament") },
+    { value: "other", label: t("history:matchTypes.other") },
+  ];
+
+  const modeOptions = [
+    { value: "all", label: t("history:filters.modes.all") },
+    { value: "Duel", label: t("history:playlists.duel") },
+    { value: "Doubles", label: t("history:playlists.doubles") },
+    { value: "Standard", label: t("history:playlists.standard") },
+    { value: "Chaos", label: t("history:playlists.chaos") },
+    { value: "Other", label: t("history:playlists.other") },
+  ];
+
+  const dateInputClasses = cn(
+    "h-9 rounded-md border bg-bg-surface px-3 text-sm text-text-primary",
+    "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50",
+    "[color-scheme:dark]"
+  );
+
   const [search, setSearch] = useState(filters.search ?? "");
 
   useEffect(() => {
@@ -138,12 +141,12 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
       <div className="flex items-center gap-2 mb-4">
         <SlidersHorizontal size={16} className="text-text-muted" />
         <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-          Filtros
+          {t("history:filters.title")}
         </span>
         {hasFilters && (
           <span className="ml-auto">
             <Button variant="ghost" size="sm" onClick={clearFilters} leftIcon={X}>
-              Limpiar
+              {t("history:filters.clear")}
             </Button>
           </span>
         )}
@@ -152,14 +155,14 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
       <div className="flex flex-wrap items-end gap-3">
         {/* Search */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-text-muted">Buscar</label>
+          <label className="text-xs font-medium text-text-muted">{t("history:filters.search.label")}</label>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Nombre de jugador..."
+              placeholder={t("history:filters.search.placeholder")}
               className={cn(
                 "h-9 w-48 rounded-md border bg-bg-surface pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted",
                 "border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50"
@@ -173,7 +176,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
           options={resultOptions}
           value={filters.result ?? "all"}
           onChange={handleResult}
-          placeholder="Resultado"
+          placeholder={t("history:filters.results.placeholder")}
         />
 
         {/* Tipo */}
@@ -181,7 +184,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
           options={matchTypeOptions}
           value={filters.matchType ?? "all"}
           onChange={handleMatchType}
-          placeholder="Tipo"
+          placeholder={t("history:filters.matchTypes.placeholder")}
         />
 
         {/* Modo */}
@@ -189,12 +192,12 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
           options={modeOptions}
           value={filters.mode ?? "all"}
           onChange={handleMode}
-          placeholder="Modo"
+          placeholder={t("history:filters.modes.placeholder")}
         />
 
         {/* Date range */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-text-muted">Desde</label>
+          <label className="text-xs font-medium text-text-muted">{t("history:filters.dateFrom")}</label>
           <input
             type="date"
             value={dateFromValue}
@@ -204,7 +207,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-text-muted">Hasta</label>
+          <label className="text-xs font-medium text-text-muted">{t("history:filters.dateTo")}</label>
           <input
             type="date"
             value={dateToValue}

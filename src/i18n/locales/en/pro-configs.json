@@ -1,0 +1,50 @@
+{
+  "search": {
+    "placeholder": "Search player or team..."
+  },
+  "emptyState": {
+    "title": "Pro Player Configs",
+    "description": "Select a player from the list to view their camera settings, controls, deadzone, and hardware. Data sourced from Liquipedia."
+  },
+  "noSettings": "No settings available for this player on Liquipedia.",
+  "panels": {
+    "updated": "Updated",
+    "camera": {
+      "title": "Camera",
+      "cameraShake": "Camera Shake",
+      "ballCamera": "Ball Camera",
+      "fov": "FOV",
+      "height": "Height",
+      "angle": "Angle",
+      "distance": "Distance",
+      "stiffness": "Stiffness",
+      "swivelSpeed": "Swivel Speed",
+      "transitionSpeed": "Transition Speed"
+    },
+    "controls": {
+      "title": "Controls",
+      "powerslide": "Powerslide",
+      "airRollLeft": "Air Roll Left",
+      "airRollRight": "Air Roll Right",
+      "boost": "Boost",
+      "jump": "Jump",
+      "ballCam": "Ball Cam",
+      "brake": "Brake",
+      "throttle": "Throttle"
+    },
+    "deadzone": {
+      "title": "Deadzone",
+      "deadzoneShape": "Deadzone Shape",
+      "deadzone": "Deadzone",
+      "dodgeDeadzone": "Dodge Deadzone",
+      "aerialSensitivity": "Aerial Sensitivity",
+      "steeringSensitivity": "Steering Sensitivity"
+    },
+    "hardware": {
+      "title": "Hardware",
+      "controller": "Controller",
+      "monitor": "Monitor",
+      "headset": "Headset"
+    }
+  }
+}

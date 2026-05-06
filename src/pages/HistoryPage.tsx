@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMatchHistory } from "@/hooks/useMatchHistory";
 import { useDeleteMatch } from "@/hooks/useDeleteMatch";
 import { useUpdateMatch } from "@/hooks/useUpdateMatch";
@@ -43,22 +44,8 @@ function paramsToFilters(params: URLSearchParams): MatchFilters {
   return filters;
 }
 
-const matchTypeOptions: { value: string; label: string }[] = [
-  { value: "ranked", label: "Ranked" },
-  { value: "casual", label: "Casual" },
-  { value: "tournament", label: "Torneo" },
-  { value: "other", label: "Otro" },
-];
-
-const playlistOptions: { value: string; label: string }[] = [
-  { value: "Duel", label: "Duel (1v1)" },
-  { value: "Doubles", label: "Doubles (2v2)" },
-  { value: "Standard", label: "Standard (3v3)" },
-  { value: "Chaos", label: "Chaos (4v4)" },
-  { value: "Other", label: "Otro" },
-];
-
 export function HistoryPage() {
+  const { t } = useTranslation(["history", "common"]);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilters = paramsToFilters(searchParams);
   const [filters, setFilters] = useState<MatchFilters>(initialFilters);
@@ -73,6 +60,21 @@ export function HistoryPage() {
 
   const deleteMutation = useDeleteMatch();
   const updateMutation = useUpdateMatch();
+
+  const matchTypeOptions: { value: string; label: string }[] = [
+    { value: "ranked", label: t("history:matchTypes.ranked") },
+    { value: "casual", label: t("history:matchTypes.casual") },
+    { value: "tournament", label: t("history:matchTypes.tournament") },
+    { value: "other", label: t("history:matchTypes.other") },
+  ];
+
+  const playlistOptions: { value: string; label: string }[] = [
+    { value: "Duel", label: t("history:playlists.duel") },
+    { value: "Doubles", label: t("history:playlists.doubles") },
+    { value: "Standard", label: t("history:playlists.standard") },
+    { value: "Chaos", label: t("history:playlists.chaos") },
+    { value: "Other", label: t("history:playlists.other") },
+  ];
 
   const handleFiltersChange = useCallback(
     (newFilters: MatchFilters) => {
@@ -114,7 +116,7 @@ export function HistoryPage() {
   return (
     <PageContainer>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-text-primary">Historial de partidas</h2>
+        <h2 className="text-2xl font-bold text-text-primary">{t("history:pageTitle")}</h2>
       </div>
 
       <FilterBar filters={filters} onChange={handleFiltersChange} />
@@ -130,16 +132,16 @@ export function HistoryPage() {
       {isError && (
         <EmptyState
           icon={Gamepad2}
-          title="Error cargando historial"
-          description="No se pudieron cargar las partidas. Intenta de nuevo."
+          title={t("history:errors.loadFailed.title")}
+          description={t("history:errors.loadFailed.description")}
         />
       )}
 
       {!isLoading && !isError && (!data || data.length === 0) && (
         <EmptyState
           icon={Gamepad2}
-          title="Sin partidas capturadas"
-          description="Inicia Rocket League, habilita la Stats API y juega una partida. Capturaremos los datos automáticamente."
+          title={t("history:empty.noMatches.title")}
+          description={t("history:empty.noMatches.description")}
         />
       )}
 
@@ -155,15 +157,15 @@ export function HistoryPage() {
       <Modal
         isOpen={deletingMatchId !== null}
         onClose={() => setDeletingMatchId(null)}
-        title="¿Borrar partida?"
-        description="Esta acción no se puede deshacer."
+        title={t("history:modals.delete.title")}
+        description={t("history:modals.delete.description")}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setDeletingMatchId(null)}>
-              Cancelar
+              {t("common:buttons.cancel")}
             </Button>
             <Button variant="danger" onClick={confirmDelete} isLoading={deleteMutation.isPending}>
-              Borrar
+              {t("common:buttons.delete")}
             </Button>
           </div>
         }
@@ -175,11 +177,11 @@ export function HistoryPage() {
       <Modal
         isOpen={editingMatch !== null}
         onClose={() => setEditingMatch(null)}
-        title="Editar partida"
+        title={t("history:modals.edit.title")}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setEditingMatch(null)}>
-              Cancelar
+              {t("common:buttons.cancel")}
             </Button>
             <Button
               variant="primary"
@@ -191,14 +193,14 @@ export function HistoryPage() {
               }
               isLoading={updateMutation.isPending}
             >
-              Guardar
+              {t("common:buttons.save")}
             </Button>
           </div>
         }
       >
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-text-secondary">Tipo de partida</label>
+            <label className="mb-1 block text-sm font-medium text-text-secondary">{t("history:modals.edit.matchTypeLabel")}</label>
             <select
               value={editMatchType}
               onChange={(e) => setEditMatchType(e.target.value)}
@@ -213,7 +215,7 @@ export function HistoryPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-text-secondary">Playlist</label>
+            <label className="mb-1 block text-sm font-medium text-text-secondary">{t("history:modals.edit.playlistLabel")}</label>
             <select
               value={editPlaylist}
               onChange={(e) => setEditPlaylist(e.target.value)}

@@ -1,7 +1,7 @@
 {
     "name": "rl-stats",
     "private": true,
-    "version": "1.1.4",
+    "version": "1.2.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -20,11 +20,14 @@
         "@tauri-apps/plugin-process": "^2",
         "@tauri-apps/plugin-updater": "^2",
         "clsx": "^2.1.1",
+        "i18next": "^26.0.8",
+        "i18next-browser-languagedetector": "^8.2.1",
         "immer": "^11.1.4",
         "lucide-react": "^0.487.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.75.0",
+        "react-i18next": "^17.0.6",
         "react-router-dom": "^7.5.0",
         "recharts": "^2.15.3",
         "tailwind-merge": "^3.2.0",

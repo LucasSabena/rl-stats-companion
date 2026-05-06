@@ -1,0 +1,69 @@
+{
+  "profilePage": {
+    "title": "Perfil",
+    "notConfigured": {
+      "title": "Perfil no configurado",
+      "description": "Para ver tu MMR y estadisticas, configura tu plataforma y nombre de usuario en Ajustes. Despues hace clic en 'Conectar' para cargar tus datos."
+    },
+    "connect": "Conectar",
+    "connecting": "Conectando...",
+    "connectionError": "Error al conectar con Tracker Network",
+    "refresh": "Refrescar",
+    "sections": {
+      "ranked": "Ranked",
+      "extraModes": "Modos Extra",
+      "casual": "Casual",
+      "careerStats": "Estadisticas de carrera",
+      "linkedAccounts": "Cuentas vinculadas",
+      "seasonRank": "Rango de temporada"
+    },
+    "totalMatches": "{{count}} partidas totales jugadas",
+    "refreshError": "Error al refrescar: {{message}}",
+    "refreshErrorFallback": "Reintenta en unos minutos."
+  },
+  "title": "Perfiles de jugador",
+  "description": "Cada perfil tiene su propio historial y configuración.",
+  "activeLabel": "Perfil activo",
+  "activeBadge": "Activo",
+  "noProfiles": "No hay perfiles. Crea uno para comenzar.",
+  "buttons": {
+    "create": "Crear nuevo perfil",
+    "activate": "Activar",
+    "rename": "Renombrar",
+    "delete": "Eliminar"
+  },
+  "errors": {
+    "duplicateName": "Ya existe un perfil con ese nombre.",
+    "emptyName": "El nombre no puede estar vacío."
+  },
+  "modals": {
+    "create": {
+      "title": "Crear nuevo perfil",
+      "description": "Cada perfil tiene su propio historial de partidas y configuración.",
+      "profileName": "Nombre del perfil",
+      "profileNamePlaceholder": "Ej. Amigos, Novia...",
+      "profileNameRequired": "El nombre del perfil es obligatorio.",
+      "playerName": "Tu nickname en Rocket League",
+      "playerNamePlaceholder": "Tu nombre en el juego",
+      "playerNameRequired": "El nickname es obligatorio.",
+      "submit": "Crear perfil"
+    },
+    "delete": {
+      "title": "Eliminar perfil",
+      "description": "¿Estás seguro de que quieres eliminar el perfil \"{{name}}\"? Esta acción no se puede deshacer.",
+      "warning": "Se perderán todas las partidas y estadísticas asociadas a este perfil.",
+      "submit": "Eliminar"
+    },
+    "switch": {
+      "title": "Cambiar de perfil",
+      "description": "Vas a cambiar al perfil \"{{name}}\". La aplicación se reiniciará para cargar los datos del nuevo perfil.",
+      "restartNow": "Reiniciar ahora"
+    },
+    "rename": {
+      "title": "Renombrar perfil",
+      "description": "Introduce un nuevo nombre para este perfil.",
+      "newName": "Nuevo nombre",
+      "emptyError": "El nombre no puede estar vacío."
+    }
+  }
+}

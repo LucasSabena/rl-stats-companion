@@ -29,6 +29,8 @@ import {
   type PlayerDirectoryEntry,
   type PlayerDetailRecord,
   type Profile,
+  type PlaylistFilter,
+  type MatchTypeFilter,
 } from "./types";
 import { formatLocalDateFromUnix } from "./utils";
 
@@ -176,6 +178,7 @@ interface RawAppSettings {
   overlay_show_player_score?: boolean;
   overlay_show_boost?: boolean;
   overlay_show_mmr?: boolean;
+  overlay_show_speed?: boolean;
   game_running?: boolean;
 }
 
@@ -186,6 +189,7 @@ interface RawDailyRollup {
   losses: number;
   goals_scored: number;
   goals_conceded: number;
+  avg_score: number;
   total_shots: number;
   total_saves: number;
   avg_duration_seconds: number;
@@ -364,7 +368,7 @@ function mapRollup(rollup: RawDailyRollup): DailyRollup {
     matchesPlayed: rollup.matches_played,
     wins: rollup.wins,
     losses: rollup.losses,
-    avgScore: rollup.matches_played > 0 ? rollup.goals_scored / rollup.matches_played : 0,
+    avgScore: rollup.avg_score ?? 0,
     totalGoals: rollup.goals_scored,
     totalShots: rollup.total_shots,
     totalSaves: rollup.total_saves,
@@ -460,7 +464,7 @@ export async function getMatchDetail(matchId: number): Promise<MatchDetail> {
 }
 
 export async function deleteMatch(matchId: number): Promise<void> {
-  return invokeCommand<void>("delete_match_cmd", { match_id: matchId });
+  return invokeCommand<void>("delete_match_cmd", { matchId });
 }
 
 export async function updateMatch(
@@ -468,18 +472,26 @@ export async function updateMatch(
   data: { matchType?: string | null; playlist?: string | null }
 ): Promise<void> {
   return invokeCommand<void>("update_match_cmd", {
-    match_id: matchId,
-    match_type: data.matchType ?? null,
+    matchId,
+    matchType: data.matchType ?? null,
     playlist: data.playlist ?? null,
   });
 }
 
 // Analytics
-export async function getAnalytics(period: AnalyticsPeriod): Promise<{ data: AnalyticsData; rollups?: DailyRollup[]; sessions?: MatchSession[] }> {
+export async function getAnalytics(
+  period: AnalyticsPeriod,
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+): Promise<{ data: AnalyticsData; rollups?: DailyRollup[]; sessions?: MatchSession[] }> {
   const days = periodToDays(period);
-  const response = await invokeCommand<RawAnalyticsResponse>("get_analytics", {
-    period: { days },
-  });
+  const args: Record<string, unknown> = { period: { days } };
+  if (filters?.playlist && filters.playlist !== "all") {
+    args.playlist = filters.playlist;
+  }
+  if (filters?.matchType && filters.matchType !== "all") {
+    args.match_type = filters.matchType;
+  }
+  const response = await invokeCommand<RawAnalyticsResponse>("get_analytics", args);
 
   return {
     data: mapSummaryToAnalyticsData(period, response.summary),
@@ -488,20 +500,35 @@ export async function getAnalytics(period: AnalyticsPeriod): Promise<{ data: Ana
   };
 }
 
-export async function getSessions(gapMinutes?: number): Promise<MatchSession[]> {
+export async function getSessions(
+  gapMinutes?: number,
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+): Promise<MatchSession[]> {
   return invokeCommand<MatchSession[]>("get_sessions", {
     gapMinutes: gapMinutes ?? undefined,
+    playlist: filters?.playlist && filters.playlist !== "all" ? filters.playlist : undefined,
+    match_type: filters?.matchType && filters.matchType !== "all" ? filters.matchType : undefined,
   });
 }
 
-export async function getDailyRollups(period: AnalyticsPeriod): Promise<DailyRollup[]> {
+export async function getDailyRollups(
+  period: AnalyticsPeriod,
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+): Promise<DailyRollup[]> {
   const end = new Date();
   const start = new Date(end);
   start.setDate(end.getDate() - periodToDays(period));
-  const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_daily_rollups", {
+  const args: Record<string, unknown> = {
     startDate: start.toISOString().slice(0, 10),
     endDate: end.toISOString().slice(0, 10),
-  });
+  };
+  if (filters?.playlist && filters.playlist !== "all") {
+    args.playlist = filters.playlist;
+  }
+  if (filters?.matchType && filters.matchType !== "all") {
+    args.match_type = filters.matchType;
+  }
+  const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_daily_rollups", args);
   return response.rollups.map(mapRollup);
 }
 
@@ -515,11 +542,19 @@ export async function getSessionMatches(
   });
 }
 
-export async function getInsights(period: AnalyticsPeriod): Promise<InsightsData> {
+export async function getInsights(
+  period: AnalyticsPeriod,
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+): Promise<InsightsData> {
   const days = periodToDays(period);
-  return invokeCommand<InsightsData>("get_insights", {
-    period: { days },
-  });
+  const args: Record<string, unknown> = { period: { days } };
+  if (filters?.playlist && filters.playlist !== "all") {
+    args.playlist = filters.playlist;
+  }
+  if (filters?.matchType && filters.matchType !== "all") {
+    args.match_type = filters.matchType;
+  }
+  return invokeCommand<InsightsData>("get_insights", args);
 }
 
 // Settings
@@ -555,6 +590,7 @@ export async function getSettings(): Promise<AppSettings> {
     overlayShowPlayerScore: settings.overlay_show_player_score ?? true,
     overlayShowBoost: settings.overlay_show_boost ?? false,
     overlayShowMmr: settings.overlay_show_mmr ?? false,
+    overlayShowSpeed: settings.overlay_show_speed ?? false,
     gameRunning: settings.game_running ?? false,
   };
 }
@@ -595,6 +631,7 @@ export async function setSettings(settings: AppSettings): Promise<void> {
       overlay_show_player_score: settings.overlayShowPlayerScore ?? true,
       overlay_show_boost: settings.overlayShowBoost ?? false,
       overlay_show_mmr: settings.overlayShowMmr ?? false,
+      overlay_show_speed: settings.overlayShowSpeed ?? false,
       game_running: settings.gameRunning ?? false,
     },
   });

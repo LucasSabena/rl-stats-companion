@@ -22,11 +22,13 @@ pub struct SessionMatchesQuery {
 pub async fn get_analytics(
     state: State<'_, AppState>,
     period: AnalyticsPeriod,
+    playlist: Option<String>,
+    match_type: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let pool = &state.db_pool;
 
     if period.days == 0 {
-        return get_session_analytics_inner(state).await;
+        return get_session_analytics_inner(state, playlist, match_type).await;
     }
 
     let end = chrono::Utc::now();
@@ -34,10 +36,25 @@ pub async fn get_analytics(
     let start_str = start.format("%Y-%m-%d").to_string();
     let end_str = end.format("%Y-%m-%d").to_string();
 
-    let rollups = storage::get_daily_rollups(pool, &start_str, &end_str)
-        .map_err(|e| e.to_string())?;
-
     let settings = get_settings(pool).unwrap_or_default();
+    let player_names = storage::identity_candidate_names(&settings);
+
+    let has_filters = playlist.is_some() || match_type.is_some();
+    let rollups = if has_filters {
+        storage::get_daily_rollups_filtered(
+            pool,
+            &start_str,
+            &end_str,
+            settings.local_primary_id.as_deref(),
+            &player_names,
+            playlist.as_deref(),
+            match_type.as_deref(),
+        )
+        .map_err(|e| e.to_string())?
+    } else {
+        storage::get_daily_rollups(pool, &start_str, &end_str)
+            .map_err(|e| e.to_string())?
+    };
 
     let total_matches: i32 = rollups.iter().map(|r| r.matches_played).sum();
     let wins: i32 = rollups.iter().map(|r| r.wins).sum();
@@ -58,17 +75,28 @@ pub async fn get_analytics(
         0.0
     };
 
-    let (avg_score, _player_assists, peak_speed) = if let Some(ref local_id) = settings.local_primary_id {
-        get_player_period_stats(pool, local_id, &start_str, &end_str).unwrap_or((0.0, 0, 0.0))
+    let avg_score: f64 = if total_matches > 0 {
+        rollups
+            .iter()
+            .map(|r| r.avg_score as f64 * r.matches_played as f64)
+            .sum::<f64>()
+            / total_matches as f64
     } else {
-        (0.0, 0, 0.0)
+        0.0
     };
 
-    let streak = if let Some(ref local_id) = settings.local_primary_id {
-        metrics::calculate_streaks(pool, local_id, &start_str, &end_str)
-            .unwrap_or(StreakData { best_streak: 0, current_streak: 0 })
+    let (peak_speed, streak) = if let Some(ref local_id) = settings.local_primary_id {
+        let speed = get_player_period_stats(
+            pool, local_id, &start_str, &end_str,
+            playlist.as_deref(), match_type.as_deref(),
+        ).unwrap_or((0.0, 0, 0.0)).2;
+        let streak_data = metrics::calculate_streaks(
+            pool, local_id, &start_str, &end_str,
+            playlist.as_deref(), match_type.as_deref(),
+        ).unwrap_or(StreakData { best_streak: 0, current_streak: 0 });
+        (speed, streak_data)
     } else {
-        StreakData { best_streak: 0, current_streak: 0 }
+        (0.0, StreakData { best_streak: 0, current_streak: 0 })
     };
 
     let avg_goals = if total_matches > 0 { total_goals as f64 / total_matches as f64 } else { 0.0 };
@@ -108,12 +136,14 @@ pub async fn get_analytics(
 pub async fn get_sessions(
     state: State<'_, AppState>,
     gap_minutes: Option<u32>,
+    playlist: Option<String>,
+    match_type: Option<String>,
 ) -> Result<Vec<MatchSession>, String> {
     let pool = &state.db_pool;
     let settings = get_settings(pool).unwrap_or_default();
     let minutes = gap_minutes.unwrap_or(settings.session_gap_minutes);
 
-    storage::get_match_sessions(pool, minutes)
+    storage::get_match_sessions(pool, minutes, playlist.as_deref(), match_type.as_deref())
         .map_err(|e| e.to_string())
 }
 
@@ -122,9 +152,27 @@ pub async fn get_daily_rollups(
     state: State<'_, AppState>,
     start_date: String,
     end_date: String,
+    playlist: Option<String>,
+    match_type: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let pool = &state.db_pool;
-    match storage::get_daily_rollups(pool, &start_date, &end_date) {
+    let has_filters = playlist.is_some() || match_type.is_some();
+    let rollups = if has_filters {
+        let settings = get_settings(pool).unwrap_or_default();
+        let player_names = storage::identity_candidate_names(&settings);
+        storage::get_daily_rollups_filtered(
+            pool,
+            &start_date,
+            &end_date,
+            settings.local_primary_id.as_deref(),
+            &player_names,
+            playlist.as_deref(),
+            match_type.as_deref(),
+        )
+    } else {
+        storage::get_daily_rollups(pool, &start_date, &end_date)
+    };
+    match rollups {
         Ok(rollups) => Ok(serde_json::json!({ "rollups": rollups })),
         Err(e) => {
             error!(error = %e, "Failed to get daily rollups");
@@ -297,6 +345,8 @@ pub async fn get_session_matches(
 pub async fn get_insights(
     state: State<'_, AppState>,
     period: AnalyticsPeriod,
+    playlist: Option<String>,
+    match_type: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let pool = &state.db_pool;
     let settings = get_settings(pool).unwrap_or_default();
@@ -311,7 +361,10 @@ pub async fn get_insights(
     let start_str = start.format("%Y-%m-%d").to_string();
     let end_str = end.format("%Y-%m-%d").to_string();
 
-    let insights = storage::get_insights(pool, &local_id, &start_str, &end_str)
+    let insights = storage::get_insights(
+        pool, &local_id, &start_str, &end_str,
+        playlist.as_deref(), match_type.as_deref(),
+    )
         .map_err(|e| e.to_string())?;
 
     Ok(insights)
@@ -319,10 +372,15 @@ pub async fn get_insights(
 
 async fn get_session_analytics_inner(
     state: State<'_, AppState>,
+    playlist: Option<String>,
+    match_type: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let pool = &state.db_pool;
     let settings = get_settings(pool).unwrap_or_default();
-    let sessions = storage::get_match_sessions(pool, settings.session_gap_minutes)
+    let sessions = storage::get_match_sessions(
+        pool, settings.session_gap_minutes,
+        playlist.as_deref(), match_type.as_deref(),
+    )
         .map_err(|e| e.to_string())?;
 
     // Use only the most recent session for summary stats
@@ -335,6 +393,8 @@ async fn get_session_analytics_inner(
     let total_conceded = recent.map(|s| s.goals_conceded).unwrap_or(0);
     let total_shots = recent.map(|s| s.total_shots).unwrap_or(0);
     let total_saves = recent.map(|s| s.total_saves).unwrap_or(0);
+    let total_assists = recent.map(|s| s.total_assists).unwrap_or(0);
+    let total_demos = recent.map(|s| s.total_demos).unwrap_or(0);
 
     let (start_str, end_str) = if let Some(s) = recent {
         let start = chrono::DateTime::parse_from_rfc3339(&s.start_time).ok();
@@ -352,16 +412,14 @@ async fn get_session_analytics_inner(
         (today.clone(), today)
     };
 
-    let (avg_score, total_assists, peak_speed) = if let Some(ref local_id) = settings.local_primary_id {
-        get_player_period_stats(pool, local_id, &start_str, &end_str).unwrap_or((0.0, 0, 0.0))
+    let (avg_score, peak_speed) = if let Some(ref local_id) = settings.local_primary_id {
+        let stats = get_player_period_stats(
+            pool, local_id, &start_str, &end_str,
+            playlist.as_deref(), match_type.as_deref(),
+        ).unwrap_or((0.0, 0, 0.0));
+        (stats.0, stats.2)
     } else {
-        (0.0, 0, 0.0)
-    };
-
-    let total_demos = if let Some(ref local_id) = settings.local_primary_id {
-        get_player_demos_in_range(pool, local_id, &start_str, &end_str).unwrap_or(0)
-    } else {
-        0
+        (0.0, 0.0)
     };
 
     let avg_duration: f64 = if total_matches > 0 {
@@ -371,7 +429,10 @@ async fn get_session_analytics_inner(
     };
 
     let streak = if let Some(ref local_id) = settings.local_primary_id {
-        metrics::calculate_streaks(pool, local_id, &start_str, &end_str)
+        metrics::calculate_streaks(
+            pool, local_id, &start_str, &end_str,
+            playlist.as_deref(), match_type.as_deref(),
+        )
             .unwrap_or(StreakData { best_streak: 0, current_streak: 0 })
     } else {
         StreakData { best_streak: 0, current_streak: 0 }
@@ -413,46 +474,44 @@ fn get_player_period_stats(
     local_primary_id: &str,
     start_date: &str,
     end_date: &str,
+    playlist: Option<&str>,
+    match_type: Option<&str>,
 ) -> Result<(f64, i32, f64), String> {
     let conn = get_conn(pool).map_err(|e| e.to_string())?;
+
+    let mut sql = String::from(
+        "SELECT
+            COALESCE(AVG(mp.score), 0.0),
+            COALESCE(SUM(mp.assists), 0),
+            COALESCE(MAX(mp.speed), 0.0)
+         FROM match_players mp
+         JOIN matches m ON mp.match_id = m.id
+         JOIN players p ON mp.player_id = p.id
+         WHERE p.primary_id = ?1
+           AND m.start_time >= ?2
+           AND m.start_time < date(?3, '+1 day')"
+    );
+    let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+    args.push(Box::new(local_primary_id.to_string()));
+    args.push(Box::new(start_date.to_string()));
+    args.push(Box::new(end_date.to_string()));
+
+    if let Some(mt) = match_type {
+        sql.push_str(" AND m.match_type = ?");
+        args.push(Box::new(mt.to_string()));
+    }
+
+    if let Some(pl) = playlist {
+        sql.push_str(" AND m.playlist = ?");
+        args.push(Box::new(pl.to_string()));
+    }
+
+    let params_refs: Vec<&dyn rusqlite::ToSql> = args.iter().map(|a| a.as_ref()).collect();
+
     let (avg_score, total_assists, peak_speed): (f64, i32, f64) = conn
-        .query_row(
-            "SELECT
-                COALESCE(AVG(mp.score), 0.0),
-                COALESCE(SUM(mp.assists), 0),
-                COALESCE(MAX(mp.speed), 0.0)
-             FROM match_players mp
-             JOIN matches m ON mp.match_id = m.id
-             JOIN players p ON mp.player_id = p.id
-             WHERE p.primary_id = ?1
-               AND m.start_time >= ?2
-               AND m.start_time < date(?3, '+1 day')",
-            rusqlite::params![local_primary_id, start_date, end_date],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-        )
+        .query_row(&sql, &*params_refs, |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
         .map_err(|e| e.to_string())?;
     Ok((avg_score, total_assists, peak_speed))
 }
 
-fn get_player_demos_in_range(
-    pool: &crate::core::storage::DbPool,
-    local_primary_id: &str,
-    start_date: &str,
-    end_date: &str,
-) -> Result<i32, String> {
-    let conn = get_conn(pool).map_err(|e| e.to_string())?;
-    let demos: i32 = conn
-        .query_row(
-            "SELECT COALESCE(SUM(mp.demos), 0)
-             FROM match_players mp
-             JOIN matches m ON mp.match_id = m.id
-             JOIN players p ON mp.player_id = p.id
-             WHERE p.primary_id = ?1
-               AND m.start_time >= ?2
-               AND m.start_time < date(?3, '+1 day')",
-            rusqlite::params![local_primary_id, start_date, end_date],
-            |row| row.get(0),
-        )
-        .map_err(|e| e.to_string())?;
-    Ok(demos)
-}
+

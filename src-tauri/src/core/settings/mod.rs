@@ -44,6 +44,7 @@ pub struct AppSettings {
     pub overlay_show_player_score: bool,
     pub overlay_show_boost: bool,
     pub overlay_show_mmr: bool,
+    pub overlay_show_speed: bool,
     pub game_running: bool,
 }
 
@@ -83,6 +84,7 @@ impl Default for AppSettings {
             overlay_show_player_score: true,
             overlay_show_boost: false,
             overlay_show_mmr: false,
+            overlay_show_speed: false,
             game_running: false,
         }
     }
@@ -162,6 +164,10 @@ impl AppSettings {
             (
                 "overlay_show_mmr",
                 self.overlay_show_mmr.to_string(),
+            ),
+            (
+                "overlay_show_speed",
+                self.overlay_show_speed.to_string(),
             ),
             ("game_running", self.game_running.to_string()),
         ]
@@ -271,6 +277,9 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
             }
             "overlay_show_mmr" => {
                 settings.overlay_show_mmr = value.parse().unwrap_or(false)
+            }
+            "overlay_show_speed" => {
+                settings.overlay_show_speed = value.parse().unwrap_or(false)
             }
             "game_running" => {
                 settings.game_running = value.parse().unwrap_or(false)

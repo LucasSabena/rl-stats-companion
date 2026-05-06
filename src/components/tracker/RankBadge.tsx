@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { RankInfo } from "@/lib/types";
 
 const RANK_COLORS: Record<string, string> = {
@@ -45,9 +46,10 @@ interface RankBadgeProps {
 }
 
 export function RankBadge({ rank, mmr, size = "md" }: RankBadgeProps) {
+  const { t } = useTranslation("tracker");
   if (!rank) {
     return (
-      <span className="text-sm text-text-tertiary italic">Sin datos</span>
+      <span className="text-sm text-text-tertiary italic">{t("ranks.noData")}</span>
     );
   }
 
@@ -65,7 +67,7 @@ export function RankBadge({ rank, mmr, size = "md" }: RankBadgeProps) {
     <div className={`inline-flex items-center gap-1.5 rounded-lg border ${borderColor} ${tierColor} ${sizeClasses}`}>
       <span className="font-semibold">{tier.name}</span>
       {division.index > 0 && (
-        <span className="opacity-75">Div {division.index}</span>
+        <span className="opacity-75">{t("ranks.division", { index: division.index })}</span>
       )}
       {mmr != null && (
         <span className="ml-1 text-text-tertiary">{mmr}</span>

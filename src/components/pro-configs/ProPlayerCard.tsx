@@ -1,4 +1,5 @@
 import type { ProPlayer } from "@/lib/proConfigsTypes";
+import { useTranslation } from "react-i18next";
 import { ProPlayerAvatar } from "./ProPlayerAvatar";
 import { ExternalLink, Monitor, Gamepad2, Headphones, Crosshair } from "lucide-react";
 
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function ProPlayerCard({ player }: Props) {
+  const { t } = useTranslation(["proConfigs", "common"]);
   const hasSettings = player.camera || player.controls || player.deadzone || player.hardware;
 
   return (
@@ -45,16 +47,16 @@ export function ProPlayerCard({ player }: Props) {
       {!hasSettings && (
         <div className="rounded-lg border border-border-subtle bg-surface-elevated p-6 text-center">
           <p className="text-text-tertiary">
-            No hay configuraciones disponibles para este jugador en Liquipedia.
+            {t("proConfigs:noSettings")}
           </p>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {player.camera && <CameraPanel camera={player.camera} />}
-        {player.controls && <ControlsPanel controls={player.controls} />}
-        {player.deadzone && <DeadzonePanel deadzone={player.deadzone} />}
-        {player.hardware && <HardwarePanel hardware={player.hardware} />}
+        {player.camera && <CameraPanel camera={player.camera} t={t} />}
+        {player.controls && <ControlsPanel controls={player.controls} t={t} />}
+        {player.deadzone && <DeadzonePanel deadzone={player.deadzone} t={t} />}
+        {player.hardware && <HardwarePanel hardware={player.hardware} t={t} />}
       </div>
     </div>
   );
@@ -62,19 +64,19 @@ export function ProPlayerCard({ player }: Props) {
 
 /* ─── Camera Settings Panel ───────────────────────────────────────────────── */
 
-function CameraPanel({ camera }: { camera: NonNullable<ProPlayer["camera"]> }) {
+function CameraPanel({ camera, t }: { camera: NonNullable<ProPlayer["camera"]>; t: ReturnType<typeof useTranslation>["t"] }) {
   return (
-    <PanelBox icon={<Crosshair size={18} />} title="Camara" lastUpdated={camera.lastUpdated}>
+    <PanelBox icon={<Crosshair size={18} />} title={t("proConfigs:panels.camera.title")} lastUpdated={camera.lastUpdated} t={t}>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <Row label="Camera Shake" value={camera.cameraShake} />
-        <Row label="Ball Camera" value={camera.ballCamera} />
-        <Row label="FOV" value={camera.fov.toString()} />
-        <Row label="Height" value={camera.height.toString()} />
-        <Row label="Angle" value={camera.angle.toFixed(1)} />
-        <Row label="Distance" value={camera.distance.toString()} />
-        <Row label="Stiffness" value={camera.stiffness.toFixed(2)} />
-        <Row label="Swivel Speed" value={camera.swivelSpeed.toFixed(2)} />
-        <Row label="Transition Speed" value={camera.transitionSpeed.toFixed(2)} />
+        <Row label={t("proConfigs:panels.camera.cameraShake")} value={camera.cameraShake} />
+        <Row label={t("proConfigs:panels.camera.ballCamera")} value={camera.ballCamera} />
+        <Row label={t("proConfigs:panels.camera.fov")} value={camera.fov.toString()} />
+        <Row label={t("proConfigs:panels.camera.height")} value={camera.height.toString()} />
+        <Row label={t("proConfigs:panels.camera.angle")} value={camera.angle.toFixed(1)} />
+        <Row label={t("proConfigs:panels.camera.distance")} value={camera.distance.toString()} />
+        <Row label={t("proConfigs:panels.camera.stiffness")} value={camera.stiffness.toFixed(2)} />
+        <Row label={t("proConfigs:panels.camera.swivelSpeed")} value={camera.swivelSpeed.toFixed(2)} />
+        <Row label={t("proConfigs:panels.camera.transitionSpeed")} value={camera.transitionSpeed.toFixed(2)} />
       </div>
     </PanelBox>
   );
@@ -82,18 +84,18 @@ function CameraPanel({ camera }: { camera: NonNullable<ProPlayer["camera"]> }) {
 
 /* ─── Controls Panel ──────────────────────────────────────────────────────── */
 
-function ControlsPanel({ controls }: { controls: NonNullable<ProPlayer["controls"]> }) {
+function ControlsPanel({ controls, t }: { controls: NonNullable<ProPlayer["controls"]>; t: ReturnType<typeof useTranslation>["t"] }) {
   return (
-    <PanelBox icon={<Gamepad2 size={18} />} title="Controles">
+    <PanelBox icon={<Gamepad2 size={18} />} title={t("proConfigs:panels.controls.title")}>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <Row label="Powerslide" value={controls.powerslide || "-"} />
-        <Row label="Air Roll Left" value={controls.airRollLeft || "-"} />
-        <Row label="Air Roll Right" value={controls.airRollRight || "-"} />
-        <Row label="Boost" value={controls.boost || "-"} />
-        <Row label="Jump" value={controls.jump || "-"} />
-        <Row label="Ball Cam" value={controls.ballCam || "-"} />
-        <Row label="Brake" value={controls.brake || "-"} />
-        <Row label="Throttle" value={controls.throttle || "-"} />
+        <Row label={t("proConfigs:panels.controls.powerslide")} value={controls.powerslide || "-"} />
+        <Row label={t("proConfigs:panels.controls.airRollLeft")} value={controls.airRollLeft || "-"} />
+        <Row label={t("proConfigs:panels.controls.airRollRight")} value={controls.airRollRight || "-"} />
+        <Row label={t("proConfigs:panels.controls.boost")} value={controls.boost || "-"} />
+        <Row label={t("proConfigs:panels.controls.jump")} value={controls.jump || "-"} />
+        <Row label={t("proConfigs:panels.controls.ballCam")} value={controls.ballCam || "-"} />
+        <Row label={t("proConfigs:panels.controls.brake")} value={controls.brake || "-"} />
+        <Row label={t("proConfigs:panels.controls.throttle")} value={controls.throttle || "-"} />
       </div>
     </PanelBox>
   );
@@ -101,15 +103,15 @@ function ControlsPanel({ controls }: { controls: NonNullable<ProPlayer["controls
 
 /* ─── Deadzone Panel ──────────────────────────────────────────────────────── */
 
-function DeadzonePanel({ deadzone }: { deadzone: NonNullable<ProPlayer["deadzone"]> }) {
+function DeadzonePanel({ deadzone, t }: { deadzone: NonNullable<ProPlayer["deadzone"]>; t: ReturnType<typeof useTranslation>["t"] }) {
   return (
-    <PanelBox icon={<Crosshair size={18} />} title="Deadzone" lastUpdated={deadzone.lastUpdated}>
+    <PanelBox icon={<Crosshair size={18} />} title={t("proConfigs:panels.deadzone.title")} lastUpdated={deadzone.lastUpdated} t={t}>
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <Row label="Deadzone Shape" value={deadzone.deadzoneShape} />
-        <Row label="Deadzone" value={deadzone.deadzone.toFixed(2)} />
-        <Row label="Dodge Deadzone" value={deadzone.dodgeDeadzone.toFixed(2)} />
-        <Row label="Aerial Sensitivity" value={deadzone.aerialSensitivity.toFixed(2)} />
-        <Row label="Steering Sensitivity" value={deadzone.steeringSensitivity.toFixed(2)} />
+        <Row label={t("proConfigs:panels.deadzone.deadzoneShape")} value={deadzone.deadzoneShape} />
+        <Row label={t("proConfigs:panels.deadzone.deadzone")} value={deadzone.deadzone.toFixed(2)} />
+        <Row label={t("proConfigs:panels.deadzone.dodgeDeadzone")} value={deadzone.dodgeDeadzone.toFixed(2)} />
+        <Row label={t("proConfigs:panels.deadzone.aerialSensitivity")} value={deadzone.aerialSensitivity.toFixed(2)} />
+        <Row label={t("proConfigs:panels.deadzone.steeringSensitivity")} value={deadzone.steeringSensitivity.toFixed(2)} />
       </div>
     </PanelBox>
   );
@@ -117,13 +119,13 @@ function DeadzonePanel({ deadzone }: { deadzone: NonNullable<ProPlayer["deadzone
 
 /* ─── Hardware Panel ──────────────────────────────────────────────────────── */
 
-function HardwarePanel({ hardware }: { hardware: NonNullable<ProPlayer["hardware"]> }) {
+function HardwarePanel({ hardware, t }: { hardware: NonNullable<ProPlayer["hardware"]>; t: ReturnType<typeof useTranslation>["t"] }) {
   return (
-    <PanelBox icon={<Monitor size={18} />} title="Hardware">
+    <PanelBox icon={<Monitor size={18} />} title={t("proConfigs:panels.hardware.title")}>
       <div className="space-y-2 text-sm">
-        <HardwareRow icon={<Gamepad2 size={14} />} label="Controller" value={hardware.controller} />
-        <HardwareRow icon={<Monitor size={14} />} label="Monitor" value={hardware.monitor} />
-        <HardwareRow icon={<Headphones size={14} />} label="Headset" value={hardware.headset} />
+        <HardwareRow icon={<Gamepad2 size={14} />} label={t("proConfigs:panels.hardware.controller")} value={hardware.controller} />
+        <HardwareRow icon={<Monitor size={14} />} label={t("proConfigs:panels.hardware.monitor")} value={hardware.monitor} />
+        <HardwareRow icon={<Headphones size={14} />} label={t("proConfigs:panels.hardware.headset")} value={hardware.headset} />
       </div>
     </PanelBox>
   );
@@ -135,11 +137,13 @@ function PanelBox({
   icon,
   title,
   lastUpdated,
+  t: panelT,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   lastUpdated?: string;
+  t?: ReturnType<typeof useTranslation>["t"];
   children: React.ReactNode;
 }) {
   return (
@@ -149,7 +153,7 @@ function PanelBox({
         <h3 className="font-semibold text-text-primary">{title}</h3>
         {lastUpdated && (
           <span className="ml-auto text-xs text-text-tertiary">
-            Actualizado: {lastUpdated}
+            {panelT ? panelT("proConfigs:panels.updated") : "Actualizado"}: {lastUpdated}
           </span>
         )}
       </div>

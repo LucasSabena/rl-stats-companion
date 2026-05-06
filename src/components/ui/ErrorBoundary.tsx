@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import i18n from "i18next";
 
 interface Props {
   children: ReactNode;
@@ -20,7 +21,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // eslint-disable-next-line no-console
     console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
@@ -29,16 +29,16 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         this.props.fallback ?? (
           <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-            <h2 className="text-xl font-bold text-text-primary">Algo salió mal</h2>
+            <h2 className="text-xl font-bold text-text-primary">{i18n.t("common:errorBoundary.title")}</h2>
             <p className="text-sm text-text-secondary">
-              Se produjo un error inesperado en la vista de partida en directo.
+              {i18n.t("common:errorBoundary.description")}
             </p>
             <button
               type="button"
               onClick={() => window.location.reload()}
               className="rounded-lg bg-accent-primary px-4 py-2 text-sm font-medium text-white hover:bg-accent-primary/90"
             >
-              Recargar aplicación
+              {i18n.t("common:buttons.reload")}
             </button>
           </div>
         )

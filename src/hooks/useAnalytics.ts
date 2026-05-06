@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAnalytics, getDailyRollups, getSessions, getSessionMatches, getInsights } from "@/lib/api";
-import type { AnalyticsData, AnalyticsPeriod, DailyRollup, MatchSession, InsightsData } from "@/lib/types";
+import type { AnalyticsData, AnalyticsPeriod, DailyRollup, MatchSession, InsightsData, PlaylistFilter, MatchTypeFilter } from "@/lib/types";
 import { QUERY_STALE_TIME } from "@/lib/constants";
 
 interface AnalyticsResult {
@@ -9,11 +9,16 @@ interface AnalyticsResult {
   sessions: MatchSession[];
 }
 
-export function useAnalytics(period: AnalyticsPeriod) {
+interface AnalyticsFiltersState {
+  playlist?: PlaylistFilter;
+  matchType?: MatchTypeFilter;
+}
+
+export function useAnalytics(period: AnalyticsPeriod, filters?: AnalyticsFiltersState) {
   return useQuery<AnalyticsResult>({
-    queryKey: ["analytics", period],
+    queryKey: ["analytics", period, filters],
     queryFn: async () => {
-      const result = await getAnalytics(period);
+      const result = await getAnalytics(period, filters);
       return {
         data: result.data,
         rollups: result.rollups ?? [],
@@ -24,18 +29,18 @@ export function useAnalytics(period: AnalyticsPeriod) {
   });
 }
 
-export function useSessions(gapMinutes?: number) {
+export function useSessions(gapMinutes?: number, filters?: AnalyticsFiltersState) {
   return useQuery({
-    queryKey: ["sessions", gapMinutes],
-    queryFn: () => getSessions(gapMinutes),
+    queryKey: ["sessions", gapMinutes, filters],
+    queryFn: () => getSessions(gapMinutes, filters),
     staleTime: QUERY_STALE_TIME.analytics,
   });
 }
 
-export function useDailyRollups(period: AnalyticsPeriod) {
+export function useDailyRollups(period: AnalyticsPeriod, filters?: AnalyticsFiltersState) {
   return useQuery({
-    queryKey: ["rollups", period],
-    queryFn: () => getDailyRollups(period),
+    queryKey: ["rollups", period, filters],
+    queryFn: () => getDailyRollups(period, filters),
     staleTime: QUERY_STALE_TIME.analytics,
     enabled: period !== "session",
   });
@@ -50,10 +55,10 @@ export function useSessionMatches(startTime?: string, endTime?: string) {
   });
 }
 
-export function useInsights(period: AnalyticsPeriod) {
+export function useInsights(period: AnalyticsPeriod, filters?: AnalyticsFiltersState) {
   return useQuery<InsightsData>({
-    queryKey: ["insights", period],
-    queryFn: () => getInsights(period),
+    queryKey: ["insights", period, filters],
+    queryFn: () => getInsights(period, filters),
     staleTime: QUERY_STALE_TIME.analytics,
   });
 }

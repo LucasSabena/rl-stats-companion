@@ -1,4 +1,5 @@
 import { useUIStore } from "@/stores/uiStore";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Sun, Moon } from "lucide-react";
 
@@ -7,6 +8,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ collapsed }: ThemeToggleProps) {
+  const { t } = useTranslation("common");
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
 
@@ -18,8 +20,8 @@ export function ThemeToggle({ collapsed }: ThemeToggleProps) {
         "hover:bg-surface-hover hover:text-text-primary",
         collapsed && "justify-center px-2"
       )}
-      aria-label={theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
-      title={theme === "dark" ? "Tema claro" : "Tema oscuro"}
+      aria-label={theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark")}
+      title={theme === "dark" ? t("theme.light") : t("theme.dark")}
     >
       <span className="relative flex h-5 w-5 items-center justify-center">
         <Sun
@@ -43,7 +45,7 @@ export function ThemeToggle({ collapsed }: ThemeToggleProps) {
       </span>
       {!collapsed && (
         <span className="text-sm font-medium">
-          {theme === "dark" ? "Tema claro" : "Tema oscuro"}
+          {theme === "dark" ? t("theme.light") : t("theme.dark")}
         </span>
       )}
     </button>

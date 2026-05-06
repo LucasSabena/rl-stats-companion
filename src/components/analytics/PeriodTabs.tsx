@@ -1,13 +1,14 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { AnalyticsPeriod } from "@/lib/types";
 
-const periods: { value: AnalyticsPeriod; label: string }[] = [
-  { value: "day", label: "Dia" },
-  { value: "week", label: "Semana" },
-  { value: "month", label: "Mes" },
-  { value: "year", label: "Año" },
-  { value: "alltime", label: "Siempre" },
-  { value: "session", label: "Sesion" },
+const periodKeys: { value: AnalyticsPeriod; key: string }[] = [
+  { value: "day", key: "analytics:periods.day" },
+  { value: "week", key: "analytics:periods.week" },
+  { value: "month", key: "analytics:periods.month" },
+  { value: "year", key: "analytics:periods.year" },
+  { value: "alltime", key: "analytics:periods.alltime" },
+  { value: "session", key: "analytics:periods.session" },
 ];
 
 interface PeriodTabsProps {
@@ -16,9 +17,11 @@ interface PeriodTabsProps {
 }
 
 export function PeriodTabs({ active, onChange }: PeriodTabsProps) {
+  const { t } = useTranslation(["analytics", "common"]);
+
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-panel p-0.5">
-      {periods.map((period) => (
+      {periodKeys.map((period) => (
         <button
           key={period.value}
           onClick={() => onChange(period.value)}
@@ -30,7 +33,7 @@ export function PeriodTabs({ active, onChange }: PeriodTabsProps) {
           )}
           aria-pressed={active === period.value}
         >
-          {period.label}
+          {t(period.key)}
         </button>
       ))}
     </div>

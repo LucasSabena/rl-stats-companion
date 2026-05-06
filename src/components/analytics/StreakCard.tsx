@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
 import { Flame, Trophy } from "lucide-react";
 
@@ -8,6 +9,8 @@ interface StreakCardProps {
 }
 
 export const StreakCard = memo(function StreakCard({ bestStreak, currentStreak }: StreakCardProps) {
+  const { t } = useTranslation(["analytics", "common"]);
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Card className="flex items-center gap-4">
@@ -15,7 +18,7 @@ export const StreakCard = memo(function StreakCard({ bestStreak, currentStreak }
           <Flame size={24} />
         </div>
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">Racha actual</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{t("analytics:streaks.current")}</p>
           <p className="mt-0.5 font-mono text-2xl font-bold tracking-tight text-text-primary">{currentStreak}</p>
         </div>
       </Card>
@@ -25,7 +28,7 @@ export const StreakCard = memo(function StreakCard({ bestStreak, currentStreak }
           <Trophy size={24} />
         </div>
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">Mejor racha</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">{t("analytics:streaks.best")}</p>
           <p className="mt-0.5 font-mono text-2xl font-bold tracking-tight text-text-primary">{bestStreak}</p>
         </div>
       </Card>

@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useUIStore } from "@/stores/uiStore";
 import { useLiveStore } from "@/stores/liveStore";
 import { cn } from "@/lib/utils";
@@ -6,16 +7,17 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Radio, List, BarChart3, Settings, User, Gamepad2, Users } from "lucide-react";
 
 const navItems = [
-  { path: "/", label: "En directo", icon: Radio },
-  { path: "/history", label: "Historial", icon: List },
-  { path: "/analytics", label: "Analisis", icon: BarChart3 },
-  { path: "/players", label: "Jugadores", icon: Users },
-  { path: "/pro-configs", label: "Pro Configs", icon: Gamepad2 },
-  { path: "/profile", label: "Perfil", icon: User },
-  { path: "/settings", label: "Ajustes", icon: Settings },
+  { path: "/", labelKey: "sidebar.live", icon: Radio },
+  { path: "/history", labelKey: "sidebar.history", icon: List },
+  { path: "/analytics", labelKey: "sidebar.analytics", icon: BarChart3 },
+  { path: "/players", labelKey: "sidebar.players", icon: Users },
+  { path: "/pro-configs", labelKey: "sidebar.proConfigs", icon: Gamepad2 },
+  { path: "/profile", labelKey: "sidebar.profile", icon: User },
+  { path: "/settings", labelKey: "sidebar.settings", icon: Settings },
 ];
 
 export function Sidebar() {
+  const { t } = useTranslation("common");
   const expanded = useUIStore((state) => state.sidebarExpanded);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
   const connectionStatus = useLiveStore((state) => state.connectionStatus);
@@ -42,14 +44,14 @@ export function Sidebar() {
             "hover:bg-bg-panel shadow-sm",
             !expanded && "w-full justify-center"
           )}
-          aria-label={expanded ? "Colapsar sidebar" : "Expandir sidebar"}
+          aria-label={expanded ? t("sidebar.collapse") : t("sidebar.expand")}
         >
           {/* App Icon */}
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border-highlight shadow-[var(--shadow-card-inner)]">
             <div className="absolute inset-0 bg-gradient-to-br from-accent-primary to-accent-secondary opacity-20 group-hover:opacity-40 transition-opacity duration-300" />
             <img
               src="/src-tauri/icons/128x128.png"
-              alt="RL Stats"
+              alt={t("brand.name")}
               className="h-full w-full object-cover relative z-10"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
@@ -61,14 +63,14 @@ export function Sidebar() {
                     "from-accent-primary",
                     "to-accent-secondary"
                   );
-                  parent.innerHTML = `<span class="text-sm font-display font-bold text-white tracking-tight z-10 relative">RL</span>`;
+                  parent.innerHTML = `<span class="text-sm font-display font-bold text-white tracking-tight z-10 relative">${t("brand.short")}</span>`;
                 }
               }}
             />
           </div>
           {expanded && (
             <span className="text-base font-display font-bold text-text-primary tracking-tight whitespace-nowrap">
-              RL Stats
+              {t("brand.name")}
             </span>
           )}
         </button>
@@ -91,7 +93,7 @@ export function Sidebar() {
                   !expanded && "justify-center px-2"
                 )
               }
-              aria-label={item.label}
+              aria-label={t(item.labelKey)}
             >
               {({ isActive }) => (
                 <>
@@ -117,7 +119,7 @@ export function Sidebar() {
                         isActive ? "text-accent-primary" : ""
                       )}
                     >
-                      {item.label}
+                      {t(item.labelKey)}
                     </span>
                   )}
                   {/* Active indicator pill */}

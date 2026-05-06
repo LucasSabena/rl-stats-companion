@@ -1,4 +1,5 @@
 import { memo, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { DataTable } from "@/components/ui/DataTable";
 import { cn } from "@/lib/utils";
 import { Crown } from "lucide-react";
@@ -19,25 +20,22 @@ interface PlayerStatsTableProps {
 type Tab = "table" | "compare";
 type StatKey = "goals" | "assists" | "saves" | "shots" | "score" | "demos" | "touches";
 
-const STAT_KEYS: { key: StatKey; label: string }[] = [
-  { key: "goals", label: "Goles" },
-  { key: "assists", label: "Asistencias" },
-  { key: "saves", label: "Paradas" },
-  { key: "shots", label: "Tiros" },
-  { key: "score", label: "Puntos" },
-  { key: "demos", label: "Demos" },
-  { key: "touches", label: "Toques" },
-];
-
-function getTeamBarColor(team: 0 | 1): string {
-  return team === 0 ? "var(--color-team-blue)" : "var(--color-team-orange)";
-}
-
 export const PlayerStatsTable = memo(function PlayerStatsTable({
   players,
 }: PlayerStatsTableProps) {
+  const { t } = useTranslation("matchDetail");
   const [tab, setTab] = useState<Tab>("table");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const STAT_KEYS: { key: StatKey; label: string }[] = useMemo(() => [
+    { key: "goals", label: t("stats.goals") },
+    { key: "assists", label: t("stats.assists") },
+    { key: "saves", label: t("stats.saves") },
+    { key: "shots", label: t("stats.shots") },
+    { key: "score", label: t("stats.score") },
+    { key: "demos", label: t("stats.demos") },
+    { key: "touches", label: t("stats.touches") },
+  ], [t]);
 
   const bestScore = useMemo(
     () => (players.length > 0 ? Math.max(...players.map((p) => p.score)) : 0),
@@ -47,7 +45,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
   const columns = [
     {
       key: "name",
-      header: "Jugador",
+      header: t("stats.player"),
       sortable: true,
       render: (p: PlayerStats) => (
         <div className="flex items-center gap-2">
@@ -58,26 +56,26 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
     },
     {
       key: "team",
-      header: "Equipo",
+      header: t("stats.team"),
       sortable: true,
       render: (p: PlayerStats) =>
         p.team === 0 ? (
           <span className="rounded-full bg-team-blue-bg px-2 py-0.5 text-xs font-medium text-team-blue">
-            Azul
+            {t("teams.blue")}
           </span>
         ) : (
           <span className="rounded-full bg-team-orange-bg px-2 py-0.5 text-xs font-medium text-team-orange">
-            Naranja
+            {t("teams.orange")}
           </span>
         ),
     },
-    { key: "score", header: "Puntos", sortable: true },
-    { key: "goals", header: "Goles", sortable: true },
-    { key: "assists", header: "Asist.", sortable: true },
-    { key: "saves", header: "Paradas", sortable: true },
-    { key: "shots", header: "Tiros", sortable: true },
-    { key: "demos", header: "Demos", sortable: true },
-    { key: "touches", header: "Toques", sortable: true },
+    { key: "score", header: t("stats.score"), sortable: true },
+    { key: "goals", header: t("stats.goals"), sortable: true },
+    { key: "assists", header: t("stats.assistsShort"), sortable: true },
+    { key: "saves", header: t("stats.saves"), sortable: true },
+    { key: "shots", header: t("stats.shots"), sortable: true },
+    { key: "demos", header: t("stats.demos"), sortable: true },
+    { key: "touches", header: t("stats.touches"), sortable: true },
   ];
 
   const compareColumns = [
@@ -121,13 +119,14 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
       });
       return entry;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlayers]);
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold text-text-primary">
-          Estadisticas de jugadores
+          {t("stats.title")}
         </h3>
 
         <div className="flex rounded-lg border border-border-subtle bg-bg-panel p-0.5">
@@ -140,7 +139,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
-            Tabla
+            {t("stats.tabTable")}
           </button>
           <button
             onClick={() => setTab("compare")}
@@ -151,7 +150,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
-            Comparar
+            {t("stats.tabCompare")}
           </button>
         </div>
       </div>
@@ -161,7 +160,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
           columns={columns}
           data={players}
           keyExtractor={(p) => p.id}
-          emptyMessage="No hay datos de jugadores"
+          emptyMessage={t("stats.emptyData")}
           rowClassName={(p: PlayerStats) =>
             p.score === bestScore ? "bg-accent-primary-muted" : undefined
           }
@@ -172,7 +171,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
             columns={compareColumns}
             data={players}
             keyExtractor={(p) => p.id}
-            emptyMessage="No hay datos de jugadores"
+            emptyMessage={t("stats.emptyData")}
           />
 
           <div className="mt-6 rounded-xl border border-border-subtle bg-bg-surface p-4">
@@ -219,7 +218,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
             ) : (
               <div className="flex h-40 items-center justify-center">
                 <p className="text-sm text-text-secondary">
-                  Selecciona al menos 2 jugadores para comparar
+                  {t("stats.selectPlayers")}
                 </p>
               </div>
             )}
@@ -229,3 +228,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
     </div>
   );
 });
+
+function getTeamBarColor(team: 0 | 1): string {
+  return team === 0 ? "var(--color-team-blue)" : "var(--color-team-orange)";
+}

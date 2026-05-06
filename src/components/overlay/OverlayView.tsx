@@ -1,5 +1,7 @@
-import { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { useTranslation } from "react-i18next";
+import { getSettings } from "@/lib/api";
 import { useLiveMatch } from "@/hooks/useLiveMatch";
 import { useLiveMmr } from "@/hooks/useLiveMmr";
 import { useLiveStore } from "@/stores/liveStore";
@@ -14,90 +16,103 @@ const DEFAULT_DISPLAY: OverlayDisplaySettings = {
   showStats: true,
   showTimer: true,
   fontScale: "medium",
-  opacity: 0.75,
+  opacity: 0.85,
   playerScope: "all",
   showNames: true,
   showPlayerScore: true,
-  showBoost: false,
-  showMmr: false,
+  showBoost: true,
+  showMmr: true,
+  showSpeed: true,
 };
 
-// ─── Font Scale Map ─────────────────────────────────────────────────────────
-// Base sizes for overlay — tuned for readability during gameplay
+// --- Font Scale Map ---
 const FONT_SCALE = {
   small: {
-    root: "text-[9px]",
-    score: "text-[20px]",
-    timer: "text-[11px]",
-    name: "max-w-[48px]",
+    root: "text-[10px]",
+    score: "text-[24px]",
+    timer: "text-[12px]",
+    name: "max-w-[60px]",
     playerScore: "text-[11px]",
-    stats: "text-[8px]",
-    mmr: "text-[8px]",
-    arena: "text-[8px]",
-  },
-  medium: {
-    root: "text-[11px]",
-    score: "text-[28px]",
-    timer: "text-[14px]",
-    name: "max-w-[64px]",
-    playerScore: "text-[13px]",
     stats: "text-[9px]",
     mmr: "text-[9px]",
-    arena: "text-[10px]",
+    arena: "text-[9px]",
+  },
+  medium: {
+    root: "text-[12px]",
+    score: "text-[32px]",
+    timer: "text-[14px]",
+    name: "max-w-[80px]",
+    playerScore: "text-[13px]",
+    stats: "text-[11px]",
+    mmr: "text-[11px]",
+    arena: "text-[11px]",
   },
   large: {
-    root: "text-[13px]",
-    score: "text-[36px]",
-    timer: "text-[16px]",
-    name: "max-w-[80px]",
+    root: "text-[14px]",
+    score: "text-[42px]",
+    timer: "text-[18px]",
+    name: "max-w-[110px]",
     playerScore: "text-[15px]",
-    stats: "text-[10px]",
-    mmr: "text-[10px]",
-    arena: "text-[11px]",
+    stats: "text-[13px]",
+    mmr: "text-[13px]",
+    arena: "text-[13px]",
   },
 } as const;
 
-// ─── Font Scale Type ────────────────────────────────────────────────────────
 type FontScale = typeof FONT_SCALE[keyof typeof FONT_SCALE];
 
 export function OverlayView() {
   useLiveMatch();
   const mmrData = useLiveMmr();
 
+  const mmrMap = React.useMemo(() => {
+    const map: Record<string, number | null> = {};
+    if (mmrData.data?.players) {
+      for (const p of mmrData.data.players) {
+        map[p.primaryId] = p.mmr;
+      }
+    }
+    return map;
+  }, [mmrData.data]);
+
   const currentMatch = useLiveStore((s) => s.currentMatch);
   const connectionStatus = useLiveStore((s) => s.connectionStatus);
+
   const [display, setDisplay] = useState<OverlayDisplaySettings>(DEFAULT_DISPLAY);
   const [interactive, setInteractive] = useState(false);
 
-  // Build MMR map from live data
-  const mmrMap = mmrData.data?.players.reduce((acc, p) => {
-    acc[p.primaryId] = p.mmr;
-    return acc;
-  }, {} as Record<string, number | null>) ?? {};
-
   useEffect(() => {
-    document.body.classList.add("overlay-body");
-    document.documentElement.style.background = "transparent";
+    // Cargar configuracion inicial (por si el evento de creacion llego antes de montar)
+    getSettings().then((settings) => {
+      setDisplay({
+        showScore: settings.overlayShowScore ?? true,
+        showPlayers: settings.overlayShowPlayers ?? true,
+        showStats: settings.overlayShowStats ?? true,
+        showTimer: settings.overlayShowTimer ?? true,
+        fontScale: (settings.overlayFontScale as OverlayDisplaySettings["fontScale"]) ?? "medium",
+        opacity: settings.overlayOpacity ?? 0.85,
+        playerScope: (settings.overlayPlayerScope as OverlayDisplaySettings["playerScope"]) ?? "all",
+        showNames: settings.overlayShowNames ?? true,
+        showPlayerScore: settings.overlayShowPlayerScore ?? true,
+        showBoost: settings.overlayShowBoost ?? true,
+        showMmr: settings.overlayShowMmr ?? true,
+        showSpeed: settings.overlayShowSpeed ?? true,
+      });
+    }).catch(console.error);
 
-    return () => {
-      document.body.classList.remove("overlay-body");
-      document.documentElement.style.background = "";
-    };
-  }, []);
-
-  useEffect(() => {
+    // Escuchar cambios desde la UI
     const unlisteners: Array<() => void> = [];
 
-    listen<OverlayDisplaySettings>("overlay-settings-updated", (event) => {
-      setDisplay(event.payload);
+    listen<OverlayDisplaySettings>("overlay-settings-updated", (e) => {
+      setDisplay(e.payload);
     }).then((fn) => unlisteners.push(fn));
 
-    listen<number>("overlay-opacity-changed", (event) => {
-      setDisplay((prev) => ({ ...prev, opacity: event.payload }));
+    listen<number>("overlay-opacity-changed", (e) => {
+      setDisplay((prev) => ({ ...prev, opacity: e.payload }));
     }).then((fn) => unlisteners.push(fn));
 
-    listen<boolean>("overlay-interactive-mode", (event) => {
-      setInteractive(event.payload);
+    listen<boolean>("overlay-interactive-mode", (e) => {
+      setInteractive(e.payload);
     }).then((fn) => unlisteners.push(fn));
 
     return () => {
@@ -110,13 +125,23 @@ export function OverlayView() {
   return (
     <div
       className={cn(
-        "overlay-mode flex h-screen w-screen flex-col overflow-hidden font-sans text-text-primary",
+        "overlay-mode flex h-screen w-screen flex-col overflow-hidden font-sans text-text-primary p-2",
         fs.root,
-        interactive && "pointer-events-auto"
+        interactive && "pointer-events-auto bg-accent-primary/5 rounded-xl border border-accent-primary/20"
       )}
       style={{ opacity: display.opacity }}
     >
-      {interactive && <OverlayDismissButton />}
+      {interactive && (
+        <>
+          <div 
+            className="absolute inset-0 z-40 cursor-move" 
+            data-tauri-drag-region="true"
+          />
+          <div className="z-50 relative">
+            <OverlayDismissButton />
+          </div>
+        </>
+      )}
 
       {currentMatch ? (
         <MatchContent
@@ -136,25 +161,24 @@ export function OverlayView() {
 // ─── Waiting State ──────────────────────────────────────────────────────────
 
 function WaitingState({ connectionStatus }: { connectionStatus: string }) {
+  const { t } = useTranslation(["overlay", "common"]);
   const label =
     connectionStatus === "game_not_running"
-      ? "Esperando Rocket League..."
-      : "Esperando partida...";
+      ? t("overlay:waitingState.noGame")
+      : t("overlay:waitingState.noMatch");
 
   return (
     <div className="flex flex-1 items-center justify-center">
-      <div className="overlay-hud rounded-lg px-4 py-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              connectionStatus === "connected"
-                ? "bg-accent-secondary animate-pulse-subtle"
-                : "bg-accent-warning animate-pulse"
-            )}
-          />
-          <p className="text-text-tertiary">{label}</p>
-        </div>
+      <div className="flex items-center gap-3 rounded-2xl bg-bg-surface/80 backdrop-blur-md px-5 py-3 border border-border-subtle shadow-xl">
+        <span
+          className={cn(
+            "h-2 w-2 rounded-full",
+            connectionStatus === "connected"
+              ? "bg-accent-success animate-pulse-subtle shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+              : "bg-accent-warning animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+          )}
+        />
+        <p className="text-sm font-medium text-text-primary tracking-wide">{label}</p>
       </div>
     </div>
   );
@@ -171,48 +195,88 @@ interface MatchContentProps {
 }
 
 function MatchContent({ match, connectionStatus, display, fontScale, mmrMap }: MatchContentProps) {
+  const { t } = useTranslation(["overlay", "common"]);
   const localTeam = identifyLocalTeam(match.players);
   const allPlayers = match.players;
   const visiblePlayers = display.playerScope === "team" && localTeam !== null
     ? allPlayers.filter((p: Player) => p.team === localTeam)
     : allPlayers;
 
-  const bluePlayers = visiblePlayers.filter((p: Player) => p.team === 0);
-  const orangePlayers = visiblePlayers.filter((p: Player) => p.team === 1);
+  const bluePlayers = visiblePlayers.filter((p: Player) => p.team === 0).sort((a, b) => b.score - a.score);
+  const orangePlayers = visiblePlayers.filter((p: Player) => p.team === 1).sort((a, b) => b.score - a.score);
   const showBothTeams = bluePlayers.length > 0 && orangePlayers.length > 0;
 
   return (
-    <div className="flex flex-1 flex-col gap-1.5 p-2 pt-2.5">
-      {/* ── HUD Panel ── */}
-      <div className="overlay-hud rounded-lg overflow-hidden">
-        {/* Top bar: arena + timer */}
-        {display.showTimer && (
-          <OverlayTopBar
-            arena={match.gameState.arena ?? undefined}
-            timeRemaining={match.gameState.timeRemaining}
-            isOvertime={match.gameState.isOvertime}
-            connectionStatus={connectionStatus}
-            fontScale={fontScale}
-          />
+    <div className="flex flex-1 flex-col gap-2">
+      {/* ── Widget Panel ── */}
+      <div className="flex flex-col rounded-2xl bg-bg-surface/85 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] overflow-hidden">
+        
+        {/* TOP BAR: Score & Timer */}
+        {(display.showScore || display.showTimer) && (
+          <div className="relative flex flex-col items-center bg-black/40 pt-3 pb-2 px-4">
+            
+            {/* Arena Name (Absolute Top) */}
+            {display.showTimer && match.gameState.arena && (
+              <div className="absolute top-1 right-3 flex items-center gap-1.5">
+                <span className={cn("uppercase tracking-[0.2em] font-medium text-text-muted opacity-80", fontScale.arena)}>
+                  {getArenaDisplayName(match.gameState.arena)}
+                </span>
+                <span className={cn("h-1.5 w-1.5 rounded-full shadow-sm", connectionStatus === "connected" ? "bg-accent-success" : "bg-accent-warning")} />
+              </div>
+            )}
+
+            {/* Score & Timer Layout */}
+            <div className="flex items-center justify-center gap-6 w-full">
+              {display.showScore && (
+                <div className="flex-1 flex justify-end">
+                  <span className={cn(
+                    "font-display font-bold tabular-nums drop-shadow-md",
+                    fontScale.score,
+                    match.teamBlueScore > match.teamOrangeScore ? "text-team-blue score-glow-blue" : "text-white"
+                  )}>
+                    {match.teamBlueScore}
+                  </span>
+                </div>
+              )}
+              
+              {display.showTimer && (
+                <div className="flex shrink-0 flex-col items-center justify-center px-4 py-1.5 rounded-lg bg-white/5 border border-white/5">
+                  <span className={cn(
+                    "font-mono font-bold tabular-nums tracking-wider",
+                    fontScale.timer,
+                    match.gameState.isOvertime ? "text-accent-warning animate-overtime" : "text-white"
+                  )}>
+                    {match.gameState.isOvertime ? `+${formatDuration(match.gameState.timeRemaining)}` : formatDuration(match.gameState.timeRemaining)}
+                  </span>
+                  {match.gameState.isOvertime && <span className="text-[9px] font-black tracking-widest text-accent-warning uppercase mt-0.5">{t("overlay:labels.overtime")}</span>}
+                </div>
+              )}
+
+              {display.showScore && (
+                <div className="flex-1 flex justify-start">
+                  <span className={cn(
+                    "font-display font-bold tabular-nums drop-shadow-md",
+                    fontScale.score,
+                    match.teamOrangeScore > match.teamBlueScore ? "text-team-orange score-glow-orange" : "text-white"
+                  )}>
+                    {match.teamOrangeScore}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {/* Blue/Orange subtle gradients */}
+            <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-team-blue/10 to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-team-orange/10 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-team-blue/40 via-white/10 to-team-orange/40" />
+          </div>
         )}
 
-        {/* Score bar */}
-        {display.showScore && (
-          <ScoreRow
-            blueScore={match.teamBlueScore}
-            orangeScore={match.teamOrangeScore}
-            fontScale={fontScale}
-          />
-        )}
-
-        {/* Divider */}
-        <div className="mx-3 h-px bg-border-subtle" />
-
-        {/* Players */}
+        {/* PLAYERS */}
         {display.showPlayers && (
-          <div className="flex gap-1.5 p-1.5 pt-2">
+          <div className="flex flex-col">
             {bluePlayers.length > 0 && (
-              <TeamColumn
+              <TeamSection
                 players={bluePlayers}
                 display={display}
                 mmrMap={mmrMap}
@@ -220,23 +284,16 @@ function MatchContent({ match, connectionStatus, display, fontScale, mmrMap }: M
                 team={0}
               />
             )}
+            
             {showBothTeams && (
-              <>
-                {/* VS divider */}
-                <div className="flex w-px shrink-0 items-center justify-center">
-                  <div className="h-full w-px bg-border-subtle" />
-                </div>
-                <TeamColumn
-                  players={orangePlayers}
-                  display={display}
-                  mmrMap={mmrMap}
-                  fontScale={fontScale}
-                  team={1}
-                />
-              </>
+              <div className="flex items-center justify-center py-0.5 relative">
+                 <div className="absolute w-full h-px bg-white/5" />
+                  <span className="relative z-10 bg-bg-surface px-2 text-[9px] font-bold text-text-muted/50 uppercase tracking-widest">{t("overlay:labels.vs")}</span>
+              </div>
             )}
-            {orangePlayers.length > 0 && !showBothTeams && (
-              <TeamColumn
+            
+            {orangePlayers.length > 0 && (
+              <TeamSection
                 players={orangePlayers}
                 display={display}
                 mmrMap={mmrMap}
@@ -263,113 +320,9 @@ function identifyLocalTeam(players: Player[]): number | null {
   return null;
 }
 
-// ─── Top Bar: Arena + Timer ─────────────────────────────────────────────────
+// ─── Team Section ────────────────────────────────────────────────────────────
 
-function OverlayTopBar({
-  arena,
-  timeRemaining,
-  isOvertime,
-  connectionStatus,
-  fontScale,
-}: {
-  arena?: string;
-  timeRemaining: number;
-  isOvertime: boolean;
-  connectionStatus: string;
-  fontScale: FontScale;
-}) {
-  const isConnected = connectionStatus === "connected";
-
-  return (
-    <div className="flex items-center justify-between px-3 py-1">
-      <div className="flex items-center gap-1.5">
-        {/* Connection dot */}
-        <span
-          className={cn(
-            "h-1 w-1 rounded-full shrink-0",
-            isConnected ? "bg-accent-secondary" : "bg-accent-warning"
-          )}
-        />
-        {/* Arena name */}
-        {arena && (
-          <span className={cn("uppercase tracking-widest text-text-muted", fontScale.arena)}>
-            {getArenaDisplayName(arena)}
-          </span>
-        )}
-      </div>
-
-      {/* Timer */}
-      <div className="flex items-center gap-1.5">
-        {isOvertime && (
-          <span className="text-[8px] font-bold uppercase tracking-wider text-accent-warning animate-overtime">
-            OT
-          </span>
-        )}
-        <span
-          className={cn(
-            "font-display font-bold tabular-nums tracking-tight",
-            fontScale.timer,
-            isOvertime
-              ? "text-accent-warning animate-overtime"
-              : "text-text-secondary"
-          )}
-        >
-          {isOvertime ? `+${formatDuration(timeRemaining)}` : formatDuration(timeRemaining)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Score Row ──────────────────────────────────────────────────────────────
-
-const ScoreRow = memo(function ScoreRow({
-  blueScore,
-  orangeScore,
-  fontScale,
-}: {
-  blueScore: number;
-  orangeScore: number;
-  fontScale: FontScale;
-}) {
-  const blueLeading = blueScore > orangeScore;
-  const orangeLeading = orangeScore > blueScore;
-
-  return (
-    <div className="flex items-center justify-center gap-3 py-1">
-      {/* Blue score */}
-      <span
-        className={cn(
-          "font-display font-bold tabular-nums tracking-tight",
-          fontScale.score,
-          blueLeading ? "text-team-blue score-glow-blue" : "text-text-primary",
-        )}
-      >
-        {blueScore}
-      </span>
-
-      {/* Separator */}
-      <div className="flex flex-col items-center gap-0.5">
-        <span className="text-lg font-bold text-text-muted/40">–</span>
-      </div>
-
-      {/* Orange score */}
-      <span
-        className={cn(
-          "font-display font-bold tabular-nums tracking-tight",
-          fontScale.score,
-          orangeLeading ? "text-team-orange score-glow-orange" : "text-text-primary",
-        )}
-      >
-        {orangeScore}
-      </span>
-    </div>
-  );
-});
-
-// ─── Team Column ────────────────────────────────────────────────────────────
-
-const TeamColumn = memo(function TeamColumn({
+const TeamSection = memo(function TeamSection({
   players,
   display,
   mmrMap,
@@ -385,23 +338,23 @@ const TeamColumn = memo(function TeamColumn({
   const isBlue = team === 0;
 
   return (
-    <div className="flex flex-1 flex-col gap-1">
-      {players.length === 0 ? (
-        <div className="flex h-6 items-center justify-center">
-          <span className="text-text-muted/30">–</span>
-        </div>
-      ) : (
-        players.map((p) => (
-          <OverlayPlayerRow
-            key={p.id}
-            player={p}
-            display={display}
-            mmr={mmrMap[p.id] ?? null}
-            fontScale={fontScale}
-            isBlue={isBlue}
-          />
-        ))
-      )}
+    <div className="flex flex-col py-1.5 px-2 gap-1 relative">
+      {/* Background Accent */}
+      <div className={cn(
+        "absolute inset-0 opacity-[0.03] pointer-events-none",
+        isBlue ? "bg-team-blue" : "bg-team-orange"
+      )} />
+      
+      {players.map((p) => (
+        <OverlayPlayerRow
+          key={p.id}
+          player={p}
+          display={display}
+          mmr={mmrMap[p.id] ?? null}
+          fontScale={fontScale}
+          isBlue={isBlue}
+        />
+      ))}
     </div>
   );
 });
@@ -421,58 +374,80 @@ const OverlayPlayerRow = memo(function OverlayPlayerRow({
   fontScale: FontScale;
   isBlue: boolean;
 }) {
-  const teamBg = isBlue ? "bg-team-blue/5" : "bg-team-orange/5";
-  const teamBorder = isBlue ? "border-team-blue/30" : "border-team-orange/30";
+  const { t } = useTranslation(["overlay", "common"]);
+  const teamColor = isBlue ? "text-team-blue" : "text-team-orange";
 
   return (
-    <div className={cn("relative rounded-md border-l-2 border-transparent", teamBorder)}>
-      {/* Main row */}
-      <div
-        className={cn(
-          "flex items-center gap-1.5 rounded-md px-1.5 py-0.5",
-          teamBg,
-        )}
-      >
-        {/* Player name */}
+    <div className={cn(
+      "relative overflow-hidden rounded-lg border border-white/5 bg-black/20 flex flex-col",
+      "transition-all duration-200"
+    )}>
+      {/* Main row data */}
+      <div className="flex items-center gap-3 px-3 py-2 relative z-10">
+        
+        {/* Color stripe */}
+        <div className={cn("absolute left-0 top-0 bottom-0 w-1", isBlue ? "bg-team-blue" : "bg-team-orange")} />
+
+        {/* Player Name */}
         {display.showNames && (
-          <span className={cn("truncate font-medium text-text-secondary", fontScale.name)}>
+          <span className={cn(
+            "truncate font-display font-semibold tracking-wide ml-1",
+            fontScale.name,
+            "text-white drop-shadow-sm"
+          )}>
             {player.name}
           </span>
         )}
 
-        {/* Score */}
+        {/* Puntos */}
         {display.showPlayerScore && (
-          <span className={cn(
-            "font-mono font-semibold tabular-nums text-text-primary",
-            fontScale.playerScore,
-            !display.showNames && "ml-0"
-          )}>
-            {player.score}
-          </span>
+          <div className="flex items-center gap-1.5 ml-2">
+            <span className={cn(
+              "font-mono font-bold tabular-nums",
+              fontScale.playerScore,
+              teamColor
+            )}>
+              {player.score}
+            </span>
+            <span className="text-[9px] uppercase font-bold text-text-muted/60 tracking-wider">{t("overlay:labels.pts")}</span>
+          </div>
         )}
 
-        {/* Stats: G A S */}
+        {/* Stats (G/A/S) */}
         {display.showStats && (
-          <span className={cn(
-            "flex items-center gap-0.5 font-mono tabular-nums text-text-muted",
-            fontScale.stats,
-            (display.showNames || display.showPlayerScore) && "ml-auto"
+          <div className={cn(
+            "flex items-center gap-2 ml-auto",
+            fontScale.stats
           )}>
-            <StatPill value={player.goals} label="G" />
-            <StatPill value={player.assists} label="A" />
-            <StatPill value={player.saves} label="S" />
-          </span>
+            <StatPill value={player.goals} icon="G" />
+            <StatPill value={player.assists} icon="A" />
+            <StatPill value={player.saves} icon="S" />
+          </div>
         )}
 
-        {/* MMR badge */}
+        {/* MMR */}
         {display.showMmr && mmr !== null && (
           <MmrBadge mmr={mmr} fontScale={fontScale} />
         )}
+
+        {/* Speed */}
+        {display.showSpeed && (
+          <SpeedBadge speed={player.speed} fontScale={fontScale} />
+        )}
       </div>
 
-      {/* Boost bar (below row) */}
+      {/* Boost Bar (always bottom inside the card) */}
       {display.showBoost && (
-        <BoostBar boost={player.boostAmount} />
+        <div className="w-full bg-black/60 h-1.5 relative z-10">
+          <div
+            className={cn(
+              "h-full transition-all duration-300 ease-out",
+              player.boostAmount > 60 ? "bg-accent-success shadow-[0_0_6px_rgba(16,185,129,0.5)]" :
+              player.boostAmount > 25 ? "bg-accent-warning" : "bg-accent-danger"
+            )}
+            style={{ width: `${Math.min(100, Math.max(0, player.boostAmount))}%` }}
+          />
+        </div>
       )}
     </div>
   );
@@ -480,59 +455,55 @@ const OverlayPlayerRow = memo(function OverlayPlayerRow({
 
 // ─── Stat Pill ──────────────────────────────────────────────────────────────
 
-function StatPill({ value, label }: { value: number; label: string }) {
-  const hasValue = value > 0;
+function StatPill({ value, icon }: { value: number; icon: string }) {
+  const active = value > 0;
   return (
-    <span className={cn(
-      "inline-flex items-center gap-px rounded px-0.5 py-px",
-      hasValue ? "bg-text-muted/10 text-text-tertiary" : "text-text-muted/40"
+    <div className={cn(
+      "flex items-center gap-1 rounded bg-white/5 px-1.5 py-0.5 border border-white/5",
+      active ? "text-white" : "text-text-muted/40"
     )}>
-      <span>{value}</span>
-      <span className="text-[7px] uppercase">{label}</span>
-    </span>
+      <span className="font-mono font-semibold tabular-nums">{value}</span>
+      <span className={cn("text-[9px] font-black uppercase", active ? "text-text-muted" : "text-text-muted/30")}>{icon}</span>
+    </div>
   );
 }
 
 // ─── MMR Badge ──────────────────────────────────────────────────────────────
 
 function MmrBadge({ mmr, fontScale }: { mmr: number; fontScale: FontScale }) {
-  // Color coding: high (>1500) = green, mid (>1000) = yellow, low = muted
-  const colorClass =
-    mmr > 1500 ? "mmr-high" :
-    mmr > 1000 ? "mmr-mid" :
-    "mmr-low";
-
-  const bgClass =
-    mmr > 1500 ? "bg-boost-full/10" :
-    mmr > 1000 ? "bg-boost-mid/10" :
-    "bg-text-muted/5";
+  const isHigh = mmr > 1500;
+  const isMid = mmr > 1000;
 
   return (
-    <span className={cn(
-      "ml-auto inline-flex items-center rounded px-1 py-px font-mono font-semibold tabular-nums",
+    <div className={cn(
+      "ml-2 flex items-center justify-center rounded px-2 py-0.5 font-mono font-bold tabular-nums border",
       fontScale.mmr,
-      colorClass,
-      bgClass,
+      isHigh ? "bg-accent-success/10 text-accent-success border-accent-success/20" :
+      isMid ? "bg-accent-warning/10 text-accent-warning border-accent-warning/20" :
+      "bg-white/5 text-text-secondary border-white/10"
     )}>
       {mmr}
-    </span>
+    </div>
   );
 }
 
-// ─── Boost Bar ──────────────────────────────────────────────────────────────
+// ─── Speed Badge ────────────────────────────────────────────────────────────
 
-function BoostBar({ boost }: { boost: number }) {
-  const pct = Math.min(100, Math.max(0, boost));
-  const colorClass =
-    pct > 60 ? "bg-boost-full" :
-    pct > 25 ? "bg-boost-mid" : "bg-boost-low";
+function SpeedBadge({ speed, fontScale }: { speed: number; fontScale: FontScale }) {
+  const kmh = Math.round(speed * 0.036);
+  const isFast = kmh > 200;
+  const isMid = kmh > 100;
 
   return (
-    <div className="h-px w-full bg-text-muted/10">
-      <div
-        className={cn("h-full transition-all duration-200", colorClass)}
-        style={{ width: `${pct}%` }}
-      />
+    <div className={cn(
+      "ml-2 flex items-center gap-1 rounded px-2 py-0.5 font-mono font-bold tabular-nums border",
+      fontScale.mmr,
+      isFast ? "bg-accent-warning/10 text-accent-warning border-accent-warning/20" :
+      isMid ? "bg-accent-primary/10 text-accent-primary border-accent-primary/20" :
+      "bg-white/5 text-text-secondary border-white/10"
+    )}>
+      <span>{kmh}</span>
+      <span className="text-[8px] font-semibold opacity-60">km/h</span>
     </div>
   );
 }

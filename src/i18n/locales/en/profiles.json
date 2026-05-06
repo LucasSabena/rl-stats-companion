@@ -1,0 +1,69 @@
+{
+  "profilePage": {
+    "title": "Profile",
+    "notConfigured": {
+      "title": "Profile not configured",
+      "description": "To view your MMR and stats, configure your platform and username in Settings. Then click 'Connect' to load your data."
+    },
+    "connect": "Connect",
+    "connecting": "Connecting...",
+    "connectionError": "Error connecting to Tracker Network",
+    "refresh": "Refresh",
+    "sections": {
+      "ranked": "Ranked",
+      "extraModes": "Extra Modes",
+      "casual": "Casual",
+      "careerStats": "Career Stats",
+      "linkedAccounts": "Linked Accounts",
+      "seasonRank": "Season Rank"
+    },
+    "totalMatches": "{{count}} total matches played",
+    "refreshError": "Refresh error: {{message}}",
+    "refreshErrorFallback": "Try again in a few minutes."
+  },
+  "title": "Player Profiles",
+  "description": "Each profile has its own match history and settings.",
+  "activeLabel": "Active profile",
+  "activeBadge": "Active",
+  "noProfiles": "No profiles yet. Create one to get started.",
+  "buttons": {
+    "create": "Create new profile",
+    "activate": "Activate",
+    "rename": "Rename",
+    "delete": "Delete"
+  },
+  "errors": {
+    "duplicateName": "A profile with that name already exists.",
+    "emptyName": "The name cannot be empty."
+  },
+  "modals": {
+    "create": {
+      "title": "Create new profile",
+      "description": "Each profile has its own match history and settings.",
+      "profileName": "Profile name",
+      "profileNamePlaceholder": "e.g. Friends, Girlfriend...",
+      "profileNameRequired": "The profile name is required.",
+      "playerName": "Your Rocket League nickname",
+      "playerNamePlaceholder": "Your in-game name",
+      "playerNameRequired": "The nickname is required.",
+      "submit": "Create profile"
+    },
+    "delete": {
+      "title": "Delete profile",
+      "description": "Are you sure you want to delete the profile \"{{name}}\"? This action cannot be undone.",
+      "warning": "All matches and statistics associated with this profile will be lost.",
+      "submit": "Delete"
+    },
+    "switch": {
+      "title": "Switch profile",
+      "description": "You are about to switch to the \"{{name}}\" profile. The app will restart to load the new profile's data.",
+      "restartNow": "Restart now"
+    },
+    "rename": {
+      "title": "Rename profile",
+      "description": "Enter a new name for this profile.",
+      "newName": "New name",
+      "emptyError": "The name cannot be empty."
+    }
+  }
+}

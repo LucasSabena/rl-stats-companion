@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useProfileStore } from "@/stores/profileStore";
@@ -11,6 +12,7 @@ import {
 } from "@/components/settings/ProfileModals";
 
 export function ProfileManagement() {
+  const { t } = useTranslation(["profiles", "common"]);
   const {
     profiles,
     activeProfile,
@@ -61,7 +63,7 @@ export function ProfileManagement() {
     const trimmedPlayerName = playerName.trim();
     if (!trimmed) return;
     if (profiles.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
-      setCreateError("Ya existe un perfil con ese nombre.");
+      setCreateError(t("profiles:errors.duplicateName"));
       return;
     }
     setCreateError("");
@@ -103,7 +105,7 @@ export function ProfileManagement() {
     if (!pendingProfileId) return;
     const trimmed = newName.trim();
     if (!trimmed) {
-      setRenameError("El nombre no puede estar vacío.");
+      setRenameError(t("profiles:errors.emptyName"));
       return;
     }
     if (trimmed === renameCurrentName) {
@@ -111,7 +113,7 @@ export function ProfileManagement() {
       return;
     }
     if (profiles.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) {
-      setRenameError("Ya existe un perfil con ese nombre.");
+      setRenameError(t("profiles:errors.duplicateName"));
       return;
     }
     setRenameError("");
@@ -123,11 +125,11 @@ export function ProfileManagement() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h4 className="text-base font-semibold text-text-primary">Perfiles de jugador</h4>
-          <p className="text-sm text-text-secondary">Cada perfil tiene su propio historial y configuración.</p>
+          <h4 className="text-base font-semibold text-text-primary">{t("profiles:title")}</h4>
+          <p className="text-sm text-text-secondary">{t("profiles:description")}</p>
         </div>
         <Button variant="secondary" leftIcon={Plus} onClick={() => setIsCreateOpen(true)} isLoading={isLoading}>
-          Crear nuevo perfil
+          {t("profiles:buttons.create")}
         </Button>
       </div>
 
@@ -136,10 +138,10 @@ export function ProfileManagement() {
           <User size={20} className="shrink-0 text-white" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">{activeProfile.name}</p>
-            <p className="text-xs text-white/80">Perfil activo</p>
+            <p className="text-xs text-white/80">{t("profiles:activeLabel")}</p>
           </div>
           <span className="shrink-0 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">
-            Activo
+            {t("profiles:activeBadge")}
           </span>
         </Card>
       )}
@@ -147,7 +149,7 @@ export function ProfileManagement() {
       {profiles.length === 0 && !isLoading && (
         <div className="flex items-center gap-2 rounded-lg border border-border-subtle bg-bg-surface p-4 text-sm text-text-secondary">
           <AlertCircle size={18} className="shrink-0 text-text-tertiary" />
-          No hay perfiles. Crea uno para comenzar.
+          {t("profiles:noProfiles")}
         </div>
       )}
 
@@ -170,7 +172,7 @@ export function ProfileManagement() {
                 <div className="flex shrink-0 items-center gap-2">
                   {isActive ? (
                     <span className="rounded-full bg-accent-primary/20 px-2.5 py-0.5 text-xs font-semibold text-accent-primary">
-                      Activo
+                      {t("profiles:activeBadge")}
                     </span>
                   ) : (
                     <Button
@@ -179,7 +181,7 @@ export function ProfileManagement() {
                       onClick={() => openSwitch(profile.id, profile.name)}
                       isLoading={isLoading}
                     >
-                      Activar
+                      {t("profiles:buttons.activate")}
                     </Button>
                   )}
                   <Button
@@ -189,7 +191,7 @@ export function ProfileManagement() {
                     onClick={() => openRename(profile.id, profile.name)}
                     isLoading={isLoading}
                   >
-                    Renombrar
+                      {t("profiles:buttons.rename")}
                   </Button>
                   <Button
                     variant="ghost"
@@ -199,7 +201,7 @@ export function ProfileManagement() {
                     disabled={isActive || profiles.length <= 1}
                     isLoading={isLoading}
                   >
-                    Eliminar
+                      {t("profiles:buttons.delete")}
                   </Button>
                 </div>
               </Card>

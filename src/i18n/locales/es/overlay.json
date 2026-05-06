@@ -1,0 +1,117 @@
+{
+  "waitingState": {
+    "noGame": "Esperando Rocket League...",
+    "noMatch": "Esperando partida..."
+  },
+  "dismissButton": {
+    "ariaLabel": "Cerrar overlay",
+    "title": "Cerrar overlay"
+  },
+  "labels": {
+    "overtime": "Overtime",
+    "pts": "PTS",
+    "vs": "VS"
+  },
+  "config": {
+    "title": "Overlay In-Game",
+    "description": "Muestra estadísticas, marcador y jugadores en tiempo real directamente sobre la pantalla de Rocket League.",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "loading": "Cargando overlay...",
+    "loadError": "No se pudo cargar la config del overlay",
+    "sections": {
+      "position": "Posición",
+      "appearance": "Apariencia",
+      "displayData": "Datos a Mostrar"
+    },
+    "positionPresets": {
+      "topLeft": "top left",
+      "topRight": "top right",
+      "bottomLeft": "bottom left",
+      "bottomRight": "bottom right",
+      "custom": "Personalizado"
+    },
+    "axis": {
+      "x": "Eje X",
+      "y": "Eje Y"
+    },
+    "dimensions": {
+      "width": "Ancho (px)",
+      "height": "Alto (px)"
+    },
+    "transparency": "Transparencia",
+    "fontSize": "Tamaño de fuente",
+    "fontSizeOptions": {
+      "small": "Pequeña",
+      "medium": "Normal",
+      "large": "Grande"
+    },
+    "displayElements": {
+      "visibleElements": "Elementos visibles",
+      "mainScore": "Marcador principal",
+      "gameTimer": "Tiempo de juego / Arena",
+      "playerList": "Lista de Jugadores",
+      "playerNames": "Nombres de Jugadores",
+      "playerScore": "Puntaje del Jugador",
+      "stats": "Estadísticas (G/A/S)",
+      "boost": "Medidor de Boost",
+      "speed": "Velocidad (km/h)",
+      "mmr": "MMR Estimado"
+    },
+    "playersOnScreen": "Jugadores en pantalla",
+    "allPlayers": "Todos los jugadores",
+    "myTeam": "Solo mi equipo",
+    "clickThrough": "Click-through",
+    "clickThroughTooltip": "Si está activo, los clicks ignoran el overlay",
+    "buttons": {
+      "testPosition": "Testear Posición",
+      "apply": "Aplicar Cambios"
+    },
+    "toasts": {
+      "overlayActivated": "Overlay activado",
+      "overlayDeactivated": "Overlay desactivado",
+      "interactiveMode": "Modo interactivo",
+      "interactiveMessage": "Arrastra el overlay para reposicionarlo (8 segundos)",
+      "settingsSaved": "Configuración guardada",
+      "settingsSavedMessage": "El overlay se ha actualizado.",
+      "saveError": "Error al guardar"
+    }
+  },
+  "streaming": {
+    "title": "Streaming OBS",
+    "activeTitle": "Streaming activo",
+    "description": "Inicia el servidor local para que OBS Studio capture los datos de tus partidas en tiempo real.",
+    "tooltip": "Transmite datos en vivo a OBS Studio mediante overlays de navegador locales.",
+    "serverRunning": "Servidor overlay corriendo en el puerto {{port}}.",
+    "clientsConnected": "{{count}} cliente(s) conectado(s).",
+    "waitingConnections": "Esperando conexiones...",
+    "startStreaming": "Iniciar streaming",
+    "stop": "Detener",
+    "port": "Puerto:",
+    "portDefault": "Puerto del servidor local (por defecto 9528)",
+    "connectedClients": "Clientes conectados:",
+    "overlayUrls": "URLs de overlay",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "copyTooltip": "Copiar URL",
+    "copiedTooltipDone": "Copiado!",
+    "loadingUrls": "Cargando URLs de overlay...",
+    "howToOBS": "Como usar con OBS Studio:",
+    "step1": "Inicia el servidor de streaming con el boton de arriba.",
+    "step2": "Abre OBS Studio y agrega una nueva fuente de tipo <bold>Navegador</bold>.",
+    "step3": "Copia la URL del overlay que quieras mostrar y pegala en el campo <bold>URL</bold> de la fuente.",
+    "step4": "Ajusta la anchura y altura segun el diseno del overlay.",
+    "step5": "Asegurate de que el puerto ({{port}}) no este bloqueado por tu firewall local.",
+    "toasts": {
+      "started": "Streaming iniciado",
+      "startedMessage": "Servidor overlay activo en el puerto {{port}}.",
+      "stopped": "Streaming detenido",
+      "stoppedMessage": "Servidor overlay detenido correctamente.",
+      "startError": "Error al iniciar",
+      "stopError": "Error al detener",
+      "copyError": "Error al copiar",
+      "copyErrorMessage": "No se pudo copiar al portapapeles.",
+      "unknownError": "Error desconocido"
+    }
+  }
+}

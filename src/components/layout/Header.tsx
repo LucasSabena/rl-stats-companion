@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLiveStore } from "@/stores/liveStore";
 import { useProfileStore } from "@/stores/profileStore";
 import { cn } from "@/lib/utils";
@@ -12,16 +13,18 @@ import {
   SwitchProfileModal,
 } from "@/components/settings/ProfileModals";
 
-const pageTitles: Record<string, string> = {
-  "/": "Live Dashboard",
-  "/history": "Historial de Partidas",
-  "/analytics": "Análisis de Rendimiento",
-  "/pro-configs": "Configuraciones Pro",
-  "/settings": "Ajustes",
-};
-
 export function Header() {
+  const { t } = useTranslation("common");
   const location = useLocation();
+
+  const pageTitles: Record<string, string> = {
+    "/": t("pageTitles.live"),
+    "/history": t("pageTitles.history"),
+    "/analytics": t("pageTitles.analytics"),
+    "/pro-configs": t("pageTitles.proConfigs"),
+    "/settings": t("pageTitles.settings"),
+  };
+
   const connectionStatus = useLiveStore((state) => state.connectionStatus);
   const currentMatch = useLiveStore((state) => state.currentMatch);
 
@@ -42,7 +45,7 @@ export function Header() {
   }, [fetchProfiles]);
 
   const isLive = connectionStatus === "connected" && currentMatch !== null;
-  const title = pageTitles[location.pathname] || "RL Stats";
+  const title = pageTitles[location.pathname] || t("pageTitles.fallback");
 
   const profileOptions = profiles.map((p) => ({ value: p.id, label: p.name }));
 
@@ -93,12 +96,12 @@ export function Header() {
 
           {isLive ? (
             <Badge variant="live">
-              En directo
+              {t("status.live")}
             </Badge>
           ) : (
             <Badge variant="default" className="opacity-80">
               <Radio size={10} className="mr-1.5" />
-              Esperando a Rocket League...
+              {t("connection.waitingForGame")}
             </Badge>
           )}
         </div>
@@ -111,7 +114,7 @@ export function Header() {
               options={profileOptions}
               value={activeProfile?.id ?? ""}
               onChange={handleSwitchProfile}
-              placeholder="Seleccionar perfil"
+              placeholder={t("profile.selectPlaceholder")}
               size="sm"
               align="right"
             />
@@ -120,7 +123,7 @@ export function Header() {
               size="sm"
               onClick={() => setIsCreateOpen(true)}
             >
-              + Nuevo
+              {t("profile.new")}
             </Button>
           </div>
 
@@ -133,7 +136,7 @@ export function Header() {
               "bg-accent-danger"
             )} />
             <span className="text-[10px] font-mono text-text-secondary uppercase tracking-widest">
-              {connectionStatus === "connected" ? "Online" : connectionStatus === "connecting" ? "Connecting" : "Offline"}
+              {connectionStatus === "connected" ? t("connection.online") : connectionStatus === "connecting" ? t("connection.connecting") : t("connection.offline")}
             </span>
           </div>
         </div>
