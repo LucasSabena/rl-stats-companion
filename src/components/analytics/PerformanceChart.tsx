@@ -1,5 +1,4 @@
 import { memo, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import {
@@ -15,34 +14,33 @@ import {
   Bar,
 } from "recharts";
 import { BarChart3 } from "lucide-react";
-import type { DailyRollup } from "@/lib/types";
+import type { DailyRollup, DataScope } from "@/lib/types";
 
 type ChartMetric = "winRate" | "matchesPlayed" | "avgScore" | "goals" | "assists" | "saves" | "demos";
 
 interface PerformanceChartProps {
   data: DailyRollup[];
   defaultMetric?: ChartMetric;
+  scope?: DataScope;
 }
 
-const METRIC_KEYS: { key: ChartMetric; labelKey: string; color: string; type: "rate" | "volume" }[] = [
-  { key: "winRate", labelKey: "analytics:chart.metrics.wr", color: "var(--color-accent-primary)", type: "rate" },
-  { key: "matchesPlayed", labelKey: "analytics:chart.metrics.matches", color: "var(--color-accent-purple)", type: "volume" },
-  { key: "avgScore", labelKey: "analytics:chart.metrics.score", color: "var(--color-accent-success)", type: "volume" },
-  { key: "goals", labelKey: "analytics:chart.metrics.goals", color: "var(--color-accent-secondary)", type: "volume" },
-  { key: "assists", labelKey: "analytics:chart.metrics.assists", color: "var(--color-accent-purple)", type: "volume" },
-  { key: "saves", labelKey: "analytics:chart.metrics.saves", color: "var(--color-accent-primary)", type: "volume" },
-  { key: "demos", labelKey: "analytics:chart.metrics.demos", color: "var(--color-accent-danger)", type: "volume" },
+const METRICS: { key: ChartMetric; label: string; color: string; type: "rate" | "volume" }[] = [
+  { key: "winRate", label: "WR", color: "var(--color-accent-primary)", type: "rate" },
+  { key: "matchesPlayed", label: "Part.", color: "var(--color-accent-purple)", type: "volume" },
+  { key: "avgScore", label: "Punt.", color: "var(--color-accent-success)", type: "volume" },
+  { key: "goals", label: "Goles", color: "var(--color-accent-secondary)", type: "volume" },
+  { key: "assists", label: "Asist.", color: "var(--color-accent-purple)", type: "volume" },
+  { key: "saves", label: "Paradas", color: "var(--color-accent-primary)", type: "volume" },
+  { key: "demos", label: "Demos", color: "var(--color-accent-danger)", type: "volume" },
 ];
 
 export const PerformanceChart = memo(function PerformanceChart({
   data,
   defaultMetric = "winRate",
+  scope,
 }: PerformanceChartProps) {
-  const { t } = useTranslation(["analytics", "common"]);
   const [metric, setMetric] = useState<ChartMetric>(defaultMetric);
   const [combo, setCombo] = useState(true);
-
-  const METRICS = METRIC_KEYS.map((m) => ({ ...m, label: t(m.labelKey) }));
 
   const chartData = useMemo(() => {
     return data.map((d) => ({
@@ -74,7 +72,7 @@ export const PerformanceChart = memo(function PerformanceChart({
   if (chartData.length === 0) {
     return (
       <Card className="flex h-64 items-center justify-center">
-        <p className="text-sm text-text-secondary">{t("analytics:chart.noData")}</p>
+        <p className="text-sm text-text-secondary">No hay datos para este periodo</p>
       </Card>
     );
   }
@@ -82,7 +80,9 @@ export const PerformanceChart = memo(function PerformanceChart({
   return (
     <Card>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="font-display text-sm font-semibold text-text-primary">{t("analytics:chart.evolution")}</h3>
+        <h3 className="font-display text-sm font-semibold text-text-primary">
+          {scope === "team" ? "Evolución del equipo" : "Evolución"}
+        </h3>
 
         <div className="flex items-center gap-2">
           <div className="flex flex-wrap items-center gap-0.5 rounded-lg border border-border-subtle bg-bg-panel p-0.5">
@@ -112,12 +112,12 @@ export const PerformanceChart = memo(function PerformanceChart({
             )}
           >
             <BarChart3 size={14} />
-            {t("analytics:chart.combo")}
+            Combo
           </button>
         </div>
       </div>
 
-      <div role="img" aria-label={t("analytics:chart.ariaLabel", { metric: currentMetricDef.label })} className="h-80 max-sm:h-64">
+      <div role="img" aria-label={`Gráfico de evolución de ${currentMetricDef.label}`} className="h-80 max-sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           {combo ? (
             <ComposedChart data={chartData}>
@@ -163,7 +163,7 @@ export const PerformanceChart = memo(function PerformanceChart({
                 yAxisId="left"
                 type="monotone"
                 dataKey="winRate"
-                name={t("analytics:chart.winRate")}
+                name="Win Rate (%)"
                 stroke="var(--color-accent-primary)"
                 strokeWidth={2}
                 fill="url(#gradient-winRate)"

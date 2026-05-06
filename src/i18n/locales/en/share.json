@@ -1,0 +1,11 @@
+{
+  "modal": {
+    "title": "Share Summary",
+    "description": "Generate an image ready to share on social media.",
+    "close": "Close",
+    "copyClipboard": "Copy",
+    "copied": "Copied!",
+    "download": "Download PNG",
+    "generating": "Generating image..."
+  }
+}

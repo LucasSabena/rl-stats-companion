@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAnalytics, getDailyRollups, getSessions, getSessionMatches, getInsights } from "@/lib/api";
-import type { AnalyticsData, AnalyticsPeriod, DailyRollup, MatchSession, InsightsData, PlaylistFilter, MatchTypeFilter } from "@/lib/types";
+import type { AnalyticsData, AnalyticsPeriod, DailyRollup, MatchSession, InsightsData, PlaylistFilter, MatchTypeFilter, DataScope } from "@/lib/types";
 import { QUERY_STALE_TIME } from "@/lib/constants";
 
 interface AnalyticsResult {
@@ -12,6 +12,7 @@ interface AnalyticsResult {
 interface AnalyticsFiltersState {
   playlist?: PlaylistFilter;
   matchType?: MatchTypeFilter;
+  scope?: DataScope;
 }
 
 export function useAnalytics(period: AnalyticsPeriod, filters?: AnalyticsFiltersState) {

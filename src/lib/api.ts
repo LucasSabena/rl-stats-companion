@@ -31,6 +31,8 @@ import {
   type Profile,
   type PlaylistFilter,
   type MatchTypeFilter,
+  type DataScope,
+  type FriendRecord,
 } from "./types";
 import { formatLocalDateFromUnix } from "./utils";
 
@@ -481,7 +483,7 @@ export async function updateMatch(
 // Analytics
 export async function getAnalytics(
   period: AnalyticsPeriod,
-  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter; scope?: DataScope }
 ): Promise<{ data: AnalyticsData; rollups?: DailyRollup[]; sessions?: MatchSession[] }> {
   const days = periodToDays(period);
   const args: Record<string, unknown> = { period: { days } };
@@ -490,6 +492,9 @@ export async function getAnalytics(
   }
   if (filters?.matchType && filters.matchType !== "all") {
     args.match_type = filters.matchType;
+  }
+  if (filters?.scope) {
+    args.scope = filters.scope;
   }
   const response = await invokeCommand<RawAnalyticsResponse>("get_analytics", args);
 
@@ -502,18 +507,19 @@ export async function getAnalytics(
 
 export async function getSessions(
   gapMinutes?: number,
-  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter; scope?: DataScope }
 ): Promise<MatchSession[]> {
   return invokeCommand<MatchSession[]>("get_sessions", {
     gapMinutes: gapMinutes ?? undefined,
     playlist: filters?.playlist && filters.playlist !== "all" ? filters.playlist : undefined,
     match_type: filters?.matchType && filters.matchType !== "all" ? filters.matchType : undefined,
+    scope: filters?.scope ?? undefined,
   });
 }
 
 export async function getDailyRollups(
   period: AnalyticsPeriod,
-  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter; scope?: DataScope }
 ): Promise<DailyRollup[]> {
   const end = new Date();
   const start = new Date(end);
@@ -527,6 +533,9 @@ export async function getDailyRollups(
   }
   if (filters?.matchType && filters.matchType !== "all") {
     args.match_type = filters.matchType;
+  }
+  if (filters?.scope) {
+    args.scope = filters.scope;
   }
   const response = await invokeCommand<{ rollups: RawDailyRollup[] }>("get_daily_rollups", args);
   return response.rollups.map(mapRollup);
@@ -544,7 +553,7 @@ export async function getSessionMatches(
 
 export async function getInsights(
   period: AnalyticsPeriod,
-  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter }
+  filters?: { playlist?: PlaylistFilter; matchType?: MatchTypeFilter; scope?: DataScope }
 ): Promise<InsightsData> {
   const days = periodToDays(period);
   const args: Record<string, unknown> = { period: { days } };
@@ -553,6 +562,9 @@ export async function getInsights(
   }
   if (filters?.matchType && filters.matchType !== "all") {
     args.match_type = filters.matchType;
+  }
+  if (filters?.scope) {
+    args.scope = filters.scope;
   }
   return invokeCommand<InsightsData>("get_insights", args);
 }
@@ -834,4 +846,22 @@ export async function switchProfile(id: string): Promise<void> {
 
 export async function renameProfile(id: string, newName: string): Promise<void> {
   return invokeCommand<void>("rename_profile_cmd", { id, new_name: newName });
+}
+
+// ─── Friends ─────────────────────────────────────────────────────────────────
+
+export async function addFriend(playerId: number, tag?: string): Promise<void> {
+  return invokeCommand<void>("add_friend_cmd", { playerId, tag });
+}
+
+export async function removeFriend(playerId: number): Promise<void> {
+  return invokeCommand<void>("remove_friend_cmd", { playerId });
+}
+
+export async function getFriends(): Promise<FriendRecord[]> {
+  return invokeCommand<FriendRecord[]>("get_friends_cmd");
+}
+
+export async function isFriend(playerId: number): Promise<boolean> {
+  return invokeCommand<boolean>("is_friend_cmd", { playerId });
 }

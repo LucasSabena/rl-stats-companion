@@ -182,6 +182,17 @@ pub static MIGRATIONS: &[Migration] = &[
         name: "add_avg_score_to_daily_rollups",
         sql: "ALTER TABLE daily_rollups ADD COLUMN avg_score INTEGER NOT NULL DEFAULT 0;",
     },
+    Migration {
+        version: 16,
+        name: "create_friends_table",
+        sql: "CREATE TABLE IF NOT EXISTS friends (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id INTEGER NOT NULL UNIQUE REFERENCES players(id) ON DELETE CASCADE,
+            tag TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_friends_player_id ON friends(player_id);",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

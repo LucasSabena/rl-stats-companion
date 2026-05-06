@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card } from "@/components/ui/Card";
-import type { AnalyticsData } from "@/lib/types";
+import type { AnalyticsData, DataScope } from "@/lib/types";
 import type { LucideIcon } from "lucide-react";
 import {
   Trophy,
@@ -26,9 +26,10 @@ interface StatItem {
 
 interface PrimaryStatsRowProps {
   data: AnalyticsData;
+  scope?: DataScope;
 }
 
-export const PrimaryStatsRow = memo(function PrimaryStatsRow({ data }: PrimaryStatsRowProps) {
+export const PrimaryStatsRow = memo(function PrimaryStatsRow({ data, scope }: PrimaryStatsRowProps) {
   const { t } = useTranslation(["analytics", "common"]);
 
   const items: StatItem[] = useMemo(
@@ -48,20 +49,20 @@ export const PrimaryStatsRow = memo(function PrimaryStatsRow({ data }: PrimarySt
         trendValue: t("analytics:stats.winLossTrend", { wins: data.wins, losses: data.losses }),
       },
       {
-        label: t("analytics:stats.totalGoals"),
+        label: scope === "team" ? t("analytics:stats.teamGoals") : t("analytics:stats.totalGoals"),
         value: data.totalGoals,
         icon: Target,
         accent: "orange",
         trendValue: `${data.avgGoals.toFixed(1)} ${t("analytics:stats.perMatch")}`,
       },
       {
-        label: t("analytics:stats.avgScore"),
+        label: scope === "team" ? t("analytics:stats.teamScore") : t("analytics:stats.avgScore"),
         value: Math.round(data.avgScore),
         icon: TrendingUp,
         accent: "purple",
       },
     ],
-    [data, t]
+    [data, t, scope]
   );
 
   return (
@@ -83,43 +84,44 @@ export const PrimaryStatsRow = memo(function PrimaryStatsRow({ data }: PrimarySt
 
 interface SecondaryStatsRowProps {
   data: AnalyticsData;
+  scope?: DataScope;
   streak: { best: number; current: number };
 }
 
-export const SecondaryStatsRow = memo(function SecondaryStatsRow({ data, streak }: SecondaryStatsRowProps) {
+export const SecondaryStatsRow = memo(function SecondaryStatsRow({ data, scope, streak }: SecondaryStatsRowProps) {
   const { t } = useTranslation(["analytics", "common"]);
 
   const items: StatItem[] = useMemo(
     () => [
       {
-        label: t("analytics:stats.totalAssists"),
+        label: scope === "team" ? t("analytics:stats.teamAssists") : t("analytics:stats.totalAssists"),
         value: data.totalAssists,
         icon: Zap,
         accent: "purple",
         trendValue: `${data.avgAssists.toFixed(1)} ${t("analytics:stats.perMatch")}`,
       },
       {
-        label: t("analytics:stats.totalSaves"),
+        label: scope === "team" ? t("analytics:stats.teamSaves") : t("analytics:stats.totalSaves"),
         value: data.totalSaves,
         icon: Shield,
         accent: "blue",
         trendValue: `${data.avgSaves.toFixed(1)} ${t("analytics:stats.perMatch")}`,
       },
       {
-        label: t("analytics:stats.totalShots"),
+        label: scope === "team" ? t("analytics:stats.teamShots") : t("analytics:stats.totalShots"),
         value: data.totalShots,
         icon: Crosshair,
         accent: "orange",
         trendValue: `${data.avgShots.toFixed(1)} ${t("analytics:stats.perMatch")}`,
       },
       {
-        label: t("analytics:stats.totalDemos"),
+        label: scope === "team" ? t("analytics:stats.teamDemos") : t("analytics:stats.totalDemos"),
         value: data.totalDemos,
         icon: Flame,
         accent: "orange",
       },
     ],
-    [data, t]
+    [data, t, scope]
   );
 
   return (

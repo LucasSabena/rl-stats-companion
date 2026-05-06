@@ -1,0 +1,11 @@
+{
+  "modal": {
+    "title": "Compartir Resumen",
+    "description": "Generá una imagen lista para compartir en redes.",
+    "close": "Cerrar",
+    "copyClipboard": "Copiar",
+    "copied": "Copiado!",
+    "download": "Descargar PNG",
+    "generating": "Generando imagen..."
+  }
+}

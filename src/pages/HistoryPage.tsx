@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMatchHistory } from "@/hooks/useMatchHistory";
 import { useDeleteMatch } from "@/hooks/useDeleteMatch";
 import { useUpdateMatch } from "@/hooks/useUpdateMatch";
+import { useDailyRollups } from "@/hooks/useAnalytics";
+import { useFriends } from "@/hooks/useFriends";
+import { useSettings } from "@/hooks/useSettings";
 import { MatchList } from "@/components/history/MatchList";
 import { FilterBar } from "@/components/history/FilterBar";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -11,8 +14,18 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import { ShareModal } from "@/components/share/ShareModal";
+import { buildDayShareContext } from "@/lib/shareContext";
 import type { MatchFilters, MatchSummary } from "@/lib/types";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, Share2 } from "lucide-react";
+
+function toISODate(ts?: number | null): string | null {
+  if (!ts) return null;
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
 
 function filtersToParams(filters: MatchFilters): URLSearchParams {
   const params = new URLSearchParams();
@@ -45,7 +58,7 @@ function paramsToFilters(params: URLSearchParams): MatchFilters {
 }
 
 export function HistoryPage() {
-  const { t } = useTranslation(["history", "common"]);
+  const { t, i18n } = useTranslation(["history", "common"]);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilters = paramsToFilters(searchParams);
   const [filters, setFilters] = useState<MatchFilters>(initialFilters);
@@ -110,13 +123,43 @@ export function HistoryPage() {
     }
   };
 
-  const selectBaseClasses =
-    "h-10 w-full rounded-md border bg-bg-surface px-3 text-sm text-text-primary border-border-subtle focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50";
+
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const { data: friends, isLoading: friendsLoading } = useFriends();
+  const { data: settings } = useSettings();
+  const { data: rollupsData } = useDailyRollups("week");
+
+  const friendsPresent = useMemo(() => friends?.map((f) => f.name) ?? [], [friends]);
+  const username = settings?.playerName ?? "Yo";
+
+  const shareDate = useMemo(() => {
+    if (filters.dateFrom && filters.dateTo && filters.dateFrom === filters.dateTo) {
+      return toISODate(filters.dateFrom);
+    }
+    return toISODate(Date.now());
+  }, [filters]);
+
+  const shareContext = useMemo(() => {
+    if (!rollupsData || rollupsData.length === 0) return null;
+    const rollup = rollupsData.find((r) => r.date === shareDate) || rollupsData[0];
+    if (!rollup) return null;
+    return buildDayShareContext(rollup, friendsPresent, username, i18n.language);
+  }, [rollupsData, shareDate, friendsPresent, username, i18n.language]);
 
   return (
     <PageContainer>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-text-primary">{t("history:pageTitle")}</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          leftIcon={Share2}
+          onClick={() => setShareOpen(true)}
+          disabled={!shareContext || friendsLoading}
+        >
+          {t("common:buttons.share", { defaultValue: "Compartir" })}
+        </Button>
       </div>
 
       <FilterBar filters={filters} onChange={handleFiltersChange} />
@@ -201,36 +244,30 @@ export function HistoryPage() {
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-text-secondary">{t("history:modals.edit.matchTypeLabel")}</label>
-            <select
-              value={editMatchType}
-              onChange={(e) => setEditMatchType(e.target.value)}
-              className={selectBaseClasses}
-            >
-              <option value="">—</option>
-              {matchTypeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={editMatchType || ""}
+              onChange={(val) => setEditMatchType(val)}
+              options={[{ value: "", label: "—" }, ...matchTypeOptions]}
+              className="w-full"
+            />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-text-secondary">{t("history:modals.edit.playlistLabel")}</label>
-            <select
-              value={editPlaylist}
-              onChange={(e) => setEditPlaylist(e.target.value)}
-              className={selectBaseClasses}
-            >
-              <option value="">—</option>
-              {playlistOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={editPlaylist || ""}
+              onChange={(val) => setEditPlaylist(val)}
+              options={[{ value: "", label: "—" }, ...playlistOptions]}
+              className="w-full"
+            />
           </div>
         </div>
       </Modal>
+
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        context={shareContext}
+      />
     </PageContainer>
   );
 }

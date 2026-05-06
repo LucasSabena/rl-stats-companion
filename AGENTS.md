@@ -1,186 +1,137 @@
 # RL Stats — Agent Guide
 
-> Project: `api-rocketleague` — A local-first desktop companion app for Rocket League Stats API.
-> Stack: Tauri 2 (Rust) + React + TypeScript + SQLite
-> License: MIT (Open Source)
+> Tauri 2 (Rust) + React 19 + TypeScript + SQLite. Windows-only desktop app that consumes the local Rocket League Stats API TCP stream (`127.0.0.1:49123`).
 
 ---
 
-## Project Context
+## Commands & Verification Order
 
-This is a **local-first, open-source Windows desktop application** that consumes the official Rocket League Stats API (local TCP stream on `127.0.0.1:49123`). It provides live match dashboards, personal match history, and performance analytics. The app is designed to be lightweight, secure, and privacy-respecting.
-
-**Key constraint**: The Rocket League Stats API is a **local-only, client-side API**. There is no public web API for account history, MMR, or ranks. The app must run on the same Windows PC where Rocket League is installed.
-
-**What the API provides**:
-- Real-time match events: `UpdateState`, `BallHit`, `GoalScored`, `StatfeedEvent`, `MatchCreated`, `MatchEnded`, etc.
-- Per-player data: name, team, score, goals, shots, assists, saves, touches, demos, speed, boost amount
-- Game state: teams, score, time, overtime, ball speed, arena, target
-
-**What the API does NOT provide**:
-- Official MMR / rank / division data
-- Historical match data from Psyonix servers
-- Playlist/mode detection (reliable)
-- Distance traveled, total boost used (must be estimated)
-
----
-
-## Build & Development
-
-### Prerequisites
-- Rust toolchain (stable)
-- Node.js 20+ with pnpm (recommended)
-- Windows 10/11 (target platform)
-- Rocket League installed (for testing the Stats API stream)
-
-### Development Commands
+**Frontend** (run in repo root):
 ```bash
-# Install dependencies
-pnpm install
-
-# Run in development mode (Tauri dev server + Rust compilation)
-pnpm tauri dev
-
-# Build for production
-pnpm tauri build
-
-# Run Rust tests
-cd src-tauri && cargo test
-
-# Run frontend tests
-pnpm test
-
-# Run linting
-pnpm lint
-rustc --edition 2021 --deny warnings src-tauri/src/lib.rs
+pnpm install              # pnpm 9, Node 20+
+pnpm exec tsc --noEmit    # typecheck first
+pnpm lint                 # ESLint with --max-warnings 0
+pnpm vitest run           # unit tests (CI mode; `pnpm test` starts watch mode)
+pnpm build                # Vite production build
 ```
 
-### Project Structure
-```
-api-rocketleague/
-├── src/                      # React frontend (Vite + TypeScript)
-│   ├── components/           # UI components
-│   ├── pages/                # Route-level pages
-│   ├── hooks/                # React hooks
-│   ├── stores/               # Zustand stores
-│   ├── lib/                  # Utilities, types, constants
-│   └── styles/               # Tailwind + global styles
-├── src-tauri/                # Rust backend (Tauri)
-│   ├── src/
-│   │   ├── main.rs           # Entry point
-│   │   ├── lib.rs            # Tauri command exports
-│   │   ├── core/             # Domain logic
-│   │   │   ├── ingestor/     # TCP stream consumer
-│   │   │   ├── parser/       # Event parsing
-│   │   │   ├── models/       # Domain types
-│   │   │   ├── storage/      # SQLite persistence
-│   │   │   ├── metrics/      # Derived metrics engine
-│   │   │   └── session/      # Session management
-│   │   └── updater/          # Auto-update logic
-│   └── tauri.conf.json
-├── docs/                     # Project documentation
-├── tests/                    # E2E tests (Playwright)
-└── package.json
+**Rust** (run in `src-tauri/`):
+```bash
+cargo check --all-targets --all-features
+cargo test --all-targets --all-features
+cargo clippy --all-targets --all-features -- -D warnings
+cargo fmt -- --check
 ```
 
----
+**Development**:
+```bash
+pnpm tauri dev            # Vite on :1420 + Tauri dev build
+pnpm tauri build          # Production bundle; output in src-tauri/target/release/bundle/
+```
 
-## Coding Conventions
-
-### Rust (Backend)
-- Edition 2021, `deny(warnings)` in CI
-- Use `thiserror` for custom error types
-- Use `serde` for serialization
-- Use `tokio` for async runtime
-- Domain logic lives in `src/core/`, never in command handlers
-- SQLite via `rusqlite` with connection pooling via `r2d2`
-- All file system access goes through Tauri APIs, not direct paths
-- Log with `tracing`, never `println!` in production code
-
-### TypeScript / React (Frontend)
-- Strict TypeScript (`strict: true`)
-- React 19+ with functional components only
-- State: Zustand for global, `useState/useReducer` for local
-- Data fetching: TanStack Query for async state
-- Components: composition over inheritance
-- No `any` types without explicit `// @ts-expect-error` justification
-- Tailwind CSS for all styling — no inline styles
-- shadcn/ui primitives as base, custom components on top
-
-### Naming
-- Rust: `snake_case` for files/vars, `PascalCase` for types/structs, `SCREAMING_SNAKE_CASE` for constants
-- TypeScript: `camelCase` for vars/functions, `PascalCase` for types/components, `UPPER_SNAKE_CASE` for constants
-- Files: `kebab-case` for components, `snake_case` for utilities
+**CI order** (from `.github/workflows/ci.yml`):
+1. Frontend (`ubuntu-latest`): `tsc --noEmit` → `lint` → `vitest run --coverage` → `build`
+2. Rust (`windows-latest`): `cargo check` → `cargo test` → `cargo clippy -D warnings` → `cargo fmt --check`
 
 ---
 
-## Security Rules
+## Architecture & Entrypoints
 
-1. **No remote backend by default** — the app is local-first. Any cloud feature must be opt-in.
-2. **Minimal Tauri permissions** — only enable plugins/commands that are strictly needed. Review `tauri.conf.json > capabilities` before adding new ones.
-3. **No shell plugin** — unless explicitly required and documented. Use `opener` plugin for opening external URLs.
-4. **Sanitize all external input** — release notes from updater, any future network data.
-5. **Secrets in CI only** — signing keys, API tokens must be GitHub Secrets. Never commit them.
-6. **Signed updates only** — updater must verify signatures with the embedded public key.
-7. **CSP strict** — `default-src 'self'` in production builds.
-8. **No telemetry without consent** — crash reports or diagnostics require explicit user opt-in.
-9. **SQLite parameterized queries** — always use `?` placeholders, never string interpolation for SQL.
-10. **Data stays local** — match history, player names, stats never leave the device unless user explicitly exports.
+- `src/main.tsx` — Frontend React entrypoint (Vite, React Router)
+- `src-tauri/src/main.rs` — Rust binary entrypoint (just calls `rl_stats_lib::run()`)
+- `src-tauri/src/lib.rs` — Tauri app builder, state initialization, event processing loop
+- `src-tauri/src/core/` — **All domain logic lives here**; command handlers in `src-tauri/src/commands/` must only delegate
+- `src-tauri/src/core/mod.rs` — Module registry: `autostart`, `ingestor`, `metrics`, `mmr`, `models`, `obs_text`, `overlay`, `parser`, `process_watcher`, `profiles`, `rlstats_api`, `session`, `settings`, `storage`, `tracker_api`
 
----
+**Runtime flow**:
+`Rocket League ──TCP 49123──► Ingestor ──► Parser ──► SessionManager ──► Storage (SQLite)`
+- `process_events()` in `lib.rs` drives the main event loop, emits Tauri events (`live-update`, `match-summary`, `live-event`), and broadcasts to the OBS overlay server
+- Background tasks spawned via `tauri::async_runtime::spawn`: event processing, tracker profile refresh loop
 
-## Testing Requirements
-
-- **Rust**: Unit tests for parser, metrics engine, storage. Integration tests with captured event streams.
-- **Frontend**: Vitest for unit tests, React Testing Library for components.
-- **E2E**: Playwright for critical user flows (live match → history → detail).
-- **Replay tests**: Use captured JSONL event logs as fixtures for deterministic backend tests.
-- Minimum coverage target: 70% for core modules.
+**OBS Overlay**: HTTP/WebSocket server on `127.0.0.1:9528` (port configurable in settings). Embedded overlay assets in `src-tauri/overlays/`.
 
 ---
 
-## Release Process
+## Toolchain Quirks
 
-1. Version bump in `package.json`, `Cargo.toml`, and `tauri.conf.json`
-2. Update `CHANGELOG.md`
-3. Create git tag `vX.Y.Z`
-4. GitHub Actions builds Windows x64 installer + updater artifacts
-5. Sign artifacts with code signing certificate (production)
-6. Publish GitHub Release with `latest.json` manifest for updater
-7. Verify updater works from previous version
-
----
-
-## Communication
-
-- **Language**: Spanish for user-facing content, English for code and technical docs
-- **Issues**: Use GitHub Issues with labels: `bug`, `feature`, `enhancement`, `security`, `docs`
-- **Discussions**: Use GitHub Discussions for questions and ideas
-- **Security reports**: Email or private GitHub Security Advisory
+- **Tailwind CSS v4** via `@tailwindcss/vite` plugin (not v3)
+- **TypeScript strict** with `noUnusedLocals` and `noUnusedParameters` enabled
+- **Path alias**: `@/` → `src/` (configured in both `vite.config.ts` and `tsconfig.json`)
+- **Vite dev server**: port `1420`, strict; HMR on `1421` when `TAURI_DEV_HOST` is set
+- **Vitest config is inline** in `vite.config.ts` (no separate `vitest.config.ts`)
+- **ESLint**: disables `react-refresh/only-export-components` and `no-undef`; ignores `src-tauri/target/**`
 
 ---
 
-## Key Decisions (ADRs)
+## Rust Conventions
 
-| Decision | Rationale | Date |
-|----------|-----------|------|
-| Tauri over Electron | Smaller binaries, better security, Rust backend | 2026-05-02 |
-| Rust over Go (Wails) | Better parsing performance, memory safety, ecosystem for this use case | 2026-05-02 |
-| React + web UI over native Rust UI | Faster development, better design flexibility, rich charting libraries | 2026-05-02 |
-| SQLite over embedded NoSQL | Structured data, migrations, query flexibility, small footprint | 2026-05-02 |
-| Local-first over cloud | Privacy, zero server costs, works offline, aligns with API constraint | 2026-05-02 |
-| No MMR/rank in V1 | API doesn't provide it; external sources unreliable/ToS-risky | 2026-05-02 |
-| shadcn/ui primitives | Accessible, customizable, Tailwind-native, no runtime dependency | 2026-05-02 |
+- Edition 2021; CI enforces `-D warnings` via Clippy
+- Custom errors via `thiserror` (`src-tauri/src/error.rs`)
+- Serialization via `serde`
+- Async runtime: `tokio`
+- SQLite via `rusqlite` (bundled, chrono features) with `r2d2` connection pooling, WAL mode
+- Logging via `tracing`; never `println!` in production code
+- All FS access through Tauri APIs
+- Windows-only: `winreg` dependency for registry access
 
 ---
 
-## Useful Resources
+## Security & Permissions
 
-- [Rocket League Stats API Docs](https://www.rocketleague.com/en/developer/stats-api)
-- [Tauri Documentation](https://tauri.app/)
-- [Tauri Updater Plugin](https://tauri.app/plugin/updater/)
-- [Rust Book](https://doc.rust-lang.org/book/)
-- [rlstatsapi Rust library](https://github.com/xentrick/rlstatsapi) — reference for event parsing
-- [RocketLeagueStatsAPI Python library](https://github.com/manucabral/RocketLeagueStatsAPI) — reference for event schema
-- [AGENTS.md Spec](https://agents.md/)
-- [DESIGN.md Spec](https://stitch.withgoogle.com/docs/design-md/overview)
+- **No shell plugin** — use `opener` plugin for external URLs
+- **Minimal Tauri permissions** — review `tauri.conf.json > capabilities` before adding commands
+- **CSP strict**: `default-src 'self'`; `connect-src` limited to GitHub domains for updater
+- **SQLite**: always use parameterized queries (`?` placeholders)
+- **Data stays local** — match history, player names, stats never leave the device unless explicitly exported
+- **No telemetry without consent**
+- **Signed updates only** — updater verifies signatures with embedded public key
+- **Secrets in CI only** — `TAURI_SIGNING_PRIVATE_KEY` and password via GitHub Secrets
+
+---
+
+## App Behavior Gotchas
+
+- **Tray icon**: Closing the main window hides it to tray; use tray menu or click to restore. Quit exits the app
+- **Autostart**: App can launch with `--minimized` flag; in that case the window starts hidden
+- **Single instance**: enforced via `tauri-plugin-single-instance`; second launch focuses existing window
+- **Overlay window**: separate Tauri window named `overlay`, transparent, always-on-top, auto-shown/hidden based on game process detection
+- **ProcessWatcher**: detects if `RocketLeague.exe` is running and emits `game-status-changed` events
+- **Profiles**: multiple user profiles supported; each profile gets its own SQLite database in app data dir
+- **Tracker auto-refresh**: background loop fetches Tracker Network or RLStats profile data if configured
+
+---
+
+## Version Bumping
+
+Must stay in sync across **three files**:
+1. `package.json`
+2. `src-tauri/Cargo.toml`
+3. `src-tauri/tauri.conf.json`
+
+Release is triggered by git tags `v*.*.*`. The release workflow builds NSIS + MSI installers and generates `latest.json` for the Tauri updater.
+
+---
+
+## Testing
+
+- **Frontend**: Vitest + React Testing Library + jsdom
+- **Rust**: Unit tests in modules; integration tests with captured event streams
+- **Coverage**: configured in `vite.config.ts`; excludes `dist/`, `src-tauri/`, `src-tauri/target/`, `src-tauri/overlays/`
+- **E2E**: Playwright planned but directory is currently empty
+
+---
+
+## Language & Communication
+
+- **User-facing content**: Spanish (primary), English, Portuguese (i18n via `react-i18next`)
+- **Code and technical docs**: English
+- Issue labels: `bug`, `feature`, `enhancement`, `security`, `docs`
+
+---
+
+## Key References
+
+- [Architecture](docs/ARCHITECTURE.md) — data flow, DB schema, module breakdown
+- [Design System](docs/DESIGN.md) — colors, typography, components, animations
+- [Release Process](docs/RELEASE.md) — version bumping, CI/CD, updater testing
+- [Security & Privacy](docs/SECURITY.md) — threat model, operational security rules

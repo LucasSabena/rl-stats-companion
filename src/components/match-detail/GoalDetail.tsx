@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Goal, UserCheck, Timer, Zap } from "lucide-react";
+import { useFriends } from "@/hooks/useFriends";
 import type { Goal as GoalType } from "@/lib/types";
 
 interface GoalDetailProps {
@@ -11,7 +12,8 @@ interface GoalDetailProps {
 }
 
 export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
-  const { t } = useTranslation("matchDetail");
+  const { t } = useTranslation(["matchDetail", "players"]);
+  const { data: friends } = useFriends();
 
   if (goals.length === 0) return null;
 
@@ -23,7 +25,7 @@ export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
       <div className="flex items-center gap-3 mb-5">
         <div className="flex items-center gap-1.5">
           <Goal size={18} className="text-yellow-400" />
-          <h3 className="text-sm font-semibold text-text-primary">{t("goals.title")}</h3>
+          <h3 className="text-sm font-semibold text-text-primary">{t("matchDetail:goals.title")}</h3>
         </div>
         <div className="flex items-center gap-4 ml-auto">
           <div className="flex items-center gap-1.5">
@@ -41,7 +43,11 @@ export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
         {goals.map((goal, idx) => {
           const isBlue = goal.scorerTeam === 0;
           const goalNumber = (isBlue ? team0Goals.indexOf(goal) : team1Goals.indexOf(goal)) + 1;
-          const teamLabel = isBlue ? t("teams.blueShort") : t("teams.orangeShort");
+          const teamLabel = isBlue ? t("matchDetail:teams.blueShort") : t("matchDetail:teams.orangeShort");
+          
+          const isScorerFriend = friends?.some(f => f.primary_id === goal.scorerId);
+          const isAssisterFriend = goal.assisterId ? friends?.some(f => f.primary_id === goal.assisterId) : false;
+
           return (
             <Card
               key={goal.id || idx}
@@ -77,14 +83,28 @@ export const GoalDetail = memo(function GoalDetail({ goals }: GoalDetailProps) {
 
               {/* Center: scorer + assister */}
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-text-primary truncate">
-                  {goal.scorerName}
-                </p>
-                {goal.assisterName && (
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
-                    <UserCheck size={11} className="text-text-tertiary" />
-                    <span className="font-medium text-text-primary">{goal.assisterName}</span>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-text-primary truncate">
+                    {goal.scorerName}
                   </p>
+                  {isScorerFriend && (
+                    <span className="shrink-0 rounded-full bg-accent-primary/15 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-primary">
+                      {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+                    </span>
+                  )}
+                </div>
+                {goal.assisterName && (
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <p className="flex items-center gap-1 text-xs text-text-secondary">
+                      <UserCheck size={11} className="text-text-tertiary" />
+                      <span className="font-medium text-text-primary">{goal.assisterName}</span>
+                    </p>
+                    {isAssisterFriend && (
+                      <span className="shrink-0 rounded-full bg-accent-primary/15 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-primary">
+                        {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 

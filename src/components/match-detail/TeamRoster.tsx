@@ -1,8 +1,9 @@
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { Crown, Users } from "lucide-react";
+import { Crown, Medal } from "lucide-react";
 import type { PlayerStats } from "@/lib/types";
+import { useFriends } from "@/hooks/useFriends";
 
 interface TeamRosterProps {
   players: PlayerStats[];
@@ -20,28 +21,20 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-function detectParty(players: PlayerStats[], current: PlayerStats): boolean {
-  const prefixes = players.map((p) => {
-    const idx = Math.max(p.name.indexOf(" "), p.name.indexOf("_"), p.name.indexOf("|"));
-    return idx > 0 ? p.name.slice(0, idx).toLowerCase() : "";
-  });
-  const currentPrefix = prefixes.find((_, i) => players[i].id === current.id) ?? "";
-  if (currentPrefix && prefixes.filter((p) => p === currentPrefix).length > 1) return true;
-
-  const teamScores = players.filter((p) => p.team === current.team).map((p) => p.score);
-  const maxTeamScore = teamScores.length ? Math.max(...teamScores) : 0;
-  if (current.score === maxTeamScore && current.score > 100) return true;
-
-  return false;
-}
-
 export const TeamRoster = memo(function TeamRoster({
   players,
   teamNum,
   teamName,
   teamColorClass,
 }: TeamRosterProps) {
-  const { t } = useTranslation("matchDetail");
+  const { t } = useTranslation(["matchDetail", "players"]);
+  const { data: friends } = useFriends();
+
+  const sortedAllPlayers = useMemo(
+    () => [...players].sort((a, b) => b.score - a.score),
+    [players]
+  );
+
   const teamPlayers = useMemo(
     () => players.filter((p) => p.team === teamNum),
     [players, teamNum]
@@ -68,7 +61,10 @@ export const TeamRoster = memo(function TeamRoster({
 
       <div className="space-y-2">
         {teamPlayers.map((player) => {
-          const isParty = detectParty(players, player);
+          const rank = sortedAllPlayers.findIndex((p) => p.id === player.id) + 1;
+          const isTop3 = rank <= 3;
+          const isMVP = rank === 1;
+
           return (
             <div
               key={player.id}
@@ -89,13 +85,32 @@ export const TeamRoster = memo(function TeamRoster({
                   <span className="truncate text-sm font-medium text-text-primary">
                     {player.name}
                   </span>
-                  {player.mvp && (
-                    <Crown size={12} className="shrink-0 text-accent-warning" />
+                  
+                  {isMVP && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-accent-warning/15 border border-accent-warning/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent-warning">
+                      <Crown size={10} />
+                      MVP
+                    </span>
                   )}
-                  {isParty && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent-purple-subtle border border-accent-purple/20 px-1.5 py-0.5 text-[10px] font-semibold text-accent-purple">
-                      <Users size={10} />
-                      Party
+
+                  {isTop3 && (
+                    <div 
+                      className={cn(
+                        "flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-bold",
+                        rank === 1 ? "text-yellow-400 bg-yellow-400/10" :
+                        rank === 2 ? "text-gray-300 bg-gray-300/10" :
+                        "text-orange-400 bg-orange-400/10"
+                      )}
+                      title={rank === 1 ? "Oro" : rank === 2 ? "Plata" : "Bronce"}
+                    >
+                      <Medal size={10} />
+                      {rank}º
+                    </div>
+                  )}
+
+                  {friends?.some((f) => f.primary_id === player.id) && (
+                    <span className="shrink-0 rounded-full bg-accent-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent-primary">
+                      {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
                     </span>
                   )}
                 </div>

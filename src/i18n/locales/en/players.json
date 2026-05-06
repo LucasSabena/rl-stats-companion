@@ -14,6 +14,7 @@
     "emptyDescription": "Play some matches to start building your directory.",
     "badgeSoloRival": "Solo opponent",
     "badgeSoloTeammate": "Solo teammate",
+    "badgeFriend": "Friend",
     "matchCount": "{{count}} match",
     "matchCount_plural": "{{count}} matches",
     "teammateShort": "tm8",
@@ -38,6 +39,8 @@
     "opponent": "Opponent",
     "matchFallback": "Match",
     "arenaFallback": "Arena",
+    "addFriend": "Add Friend",
+    "removeFriend": "Remove Friend",
     "stats": {
       "winRate": "Win Rate",
       "winLoss": "W - L",

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { formatBoost, formatSpeed } from "@/lib/utils";
 import type { LiveMmrPlayer, Player } from "@/lib/types";
 import { useTranslation } from "react-i18next";
+import { useFriends } from "@/hooks/useFriends";
 
 interface PlayerCardProps {
   player: Player;
@@ -12,7 +13,8 @@ interface PlayerCardProps {
 }
 
 export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr, mmrLoading }: PlayerCardProps) {
-  const { t } = useTranslation(["live", "common"]);
+  const { t } = useTranslation(["live", "common", "players"]);
+  const { data: friends } = useFriends();
   const isBlue = player.team === 0;
   const hasMmr = mmr?.mmr !== null && mmr?.mmr !== undefined;
   const mmrLabel = hasMmr ? `MMR ${mmr?.mmr}` : null;
@@ -48,6 +50,11 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
               {isCurrentUser && (
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-accent-primary">
                   {t("live:players.you")}
+                </span>
+              )}
+              {friends?.some((f) => f.primary_id === player.id) && (
+                <span className="shrink-0 rounded-full bg-accent-primary/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-primary">
+                  {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
                 </span>
               )}
             </div>

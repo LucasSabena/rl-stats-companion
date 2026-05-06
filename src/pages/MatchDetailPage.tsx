@@ -1,24 +1,32 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMatchDetail } from "@/hooks/useMatchDetail";
+import { useFriends } from "@/hooks/useFriends";
+import { useSettings } from "@/hooks/useSettings";
 import { MatchHeader } from "@/components/match-detail/MatchHeader";
 import { MatchInfoPanel } from "@/components/match-detail/MatchInfoPanel";
 import { TeamRoster } from "@/components/match-detail/TeamRoster";
 import { ScoreTimeline } from "@/components/match-detail/ScoreTimeline";
 import { PlayerStatsTable } from "@/components/match-detail/PlayerStatsTable";
 import { GoalDetail } from "@/components/match-detail/GoalDetail";
+import { ShareModal } from "@/components/share/ShareModal";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
-import { Gamepad2, ArrowLeft } from "lucide-react";
+import { buildMatchShareContext } from "@/lib/shareContext";
+import { Gamepad2, ArrowLeft, Share2 } from "lucide-react";
 
 export function MatchDetailPage() {
-  const { t } = useTranslation(["matchDetail", "common"]);
+  const { t, i18n } = useTranslation(["matchDetail", "common"]);
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const id = Number(matchId);
   const { data, isLoading, isError } = useMatchDetail(id);
+  const { data: friends } = useFriends();
+  const { data: settings } = useSettings();
+  const [shareOpen, setShareOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -75,15 +83,45 @@ export function MatchDetailPage() {
   const hasGoals = data.goals.length > 0;
   const goalsExist = data.events.some((e) => e.type === "GoalScored");
 
+  const friendPrimaryIds = new Set(friends?.map((f) => f.primary_id) ?? []);
+  const friendsInMatch = data.players
+    .filter((p) => friendPrimaryIds.has(p.id))
+    .map((p) => p.name);
+
+  const shareContext = buildMatchShareContext(
+    data,
+    friendsInMatch,
+    settings?.playerName ?? "Yo",
+    settings?.localPrimaryId,
+    i18n.language
+  );
+
   return (
     <PageContainer>
-      <Button
-        variant="ghost"
-        leftIcon={ArrowLeft}
-        onClick={() => navigate("/history")}
-      >
-        {t("matchDetail:page.backToHistory")}
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          leftIcon={ArrowLeft}
+          onClick={() => navigate("/history")}
+        >
+          {t("matchDetail:page.backToHistory")}
+        </Button>
+        <Button
+          variant="secondary"
+          leftIcon={Share2}
+          onClick={() => setShareOpen(true)}
+          size="sm"
+        >
+          {t("common:share.button", { defaultValue: "Compartir" })}
+        </Button>
+      </div>
+
+      {/* Share modal */}
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        context={shareContext}
+      />
 
       {/* Sección 1: Header — marcador grande + metadata */}
       <div className="mt-4">

@@ -277,6 +277,8 @@ export type PlaylistFilter =
 
 export type MatchTypeFilter = "all" | MatchType;
 
+export type DataScope = "me" | "team";
+
 export interface AppSettings {
   playerName?: string;
   localPrimaryId?: string | null;
@@ -559,4 +561,49 @@ export interface Profile {
   id: string;
   name: string;
   createdAt: string;
+}
+
+// ─── Friends ─────────────────────────────────────────────────────────────────
+
+export interface FriendRecord {
+  id: number;
+  player_id: number;
+  primary_id: string;
+  name: string;
+  tag: string | null;
+  created_at: string;
+}
+
+// ─── Share ───────────────────────────────────────────────────────────────────
+
+export type ShareType = "match" | "session" | "day" | "week";
+
+export interface ShareContext {
+  type: ShareType;
+  title: string;
+  subtitle?: string;
+  username?: string;
+  stats: ShareStat[];
+  friendsPresent?: string[];
+  teamScore?: number;
+  opponentScore?: number;
+  win?: boolean;
+  dateLabel: string;
+  matchPlayers?: SharePlayer[];
+
+}
+
+export interface ShareStat {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}
+
+export interface SharePlayer {
+  name: string;
+  score: number;
+  goals: number;
+  assists: number;
+  saves: number;
+  isLocal: boolean;
 }

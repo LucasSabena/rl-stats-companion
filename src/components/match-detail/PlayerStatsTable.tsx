@@ -2,7 +2,8 @@ import { memo, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { DataTable } from "@/components/ui/DataTable";
 import { cn } from "@/lib/utils";
-import { Crown } from "lucide-react";
+import { Crown, Medal } from "lucide-react";
+import { useFriends } from "@/hooks/useFriends";
 import {
   BarChart,
   Bar,
@@ -23,19 +24,25 @@ type StatKey = "goals" | "assists" | "saves" | "shots" | "score" | "demos" | "to
 export const PlayerStatsTable = memo(function PlayerStatsTable({
   players,
 }: PlayerStatsTableProps) {
-  const { t } = useTranslation("matchDetail");
+  const { t } = useTranslation(["matchDetail", "players"]);
+  const { data: friends } = useFriends();
   const [tab, setTab] = useState<Tab>("table");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const STAT_KEYS: { key: StatKey; label: string }[] = useMemo(() => [
-    { key: "goals", label: t("stats.goals") },
-    { key: "assists", label: t("stats.assists") },
-    { key: "saves", label: t("stats.saves") },
-    { key: "shots", label: t("stats.shots") },
-    { key: "score", label: t("stats.score") },
-    { key: "demos", label: t("stats.demos") },
-    { key: "touches", label: t("stats.touches") },
+    { key: "goals", label: t("matchDetail:stats.goals") },
+    { key: "assists", label: t("matchDetail:stats.assists") },
+    { key: "saves", label: t("matchDetail:stats.saves") },
+    { key: "shots", label: t("matchDetail:stats.shots") },
+    { key: "score", label: t("matchDetail:stats.score") },
+    { key: "demos", label: t("matchDetail:stats.demos") },
+    { key: "touches", label: t("matchDetail:stats.touches") },
   ], [t]);
+
+  const sortedAllPlayers = useMemo(
+    () => [...players].sort((a, b) => b.score - a.score),
+    [players]
+  );
 
   const bestScore = useMemo(
     () => (players.length > 0 ? Math.max(...players.map((p) => p.score)) : 0),
@@ -45,23 +52,52 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
   const columns = [
     {
       key: "name",
-      header: t("stats.player"),
+      header: t("matchDetail:stats.player"),
       sortable: true,
-      render: (p: PlayerStats) => (
-        <div className="flex items-center gap-2">
-          {p.mvp && <Crown size={14} className="shrink-0 text-accent-warning" />}
-          <span className="font-medium text-text-primary">{p.name}</span>
-        </div>
-      ),
+      render: (p: PlayerStats) => {
+        const rank = sortedAllPlayers.findIndex((item) => item.id === p.id) + 1;
+        const isMVP = rank === 1;
+        const isTop3 = rank <= 3;
+        
+        return (
+          <div className="flex items-center gap-2">
+            {isMVP && (
+              <span className="inline-flex items-center gap-1 rounded bg-accent-warning/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-warning ring-1 ring-inset ring-accent-warning/20">
+                <Crown size={8} />
+                MVP
+              </span>
+            )}
+            {isTop3 && (
+              <div 
+                className={cn(
+                  "flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-bold",
+                  rank === 1 ? "text-yellow-400 bg-yellow-400/10" :
+                  rank === 2 ? "text-gray-300 bg-gray-300/10" :
+                  "text-orange-400 bg-orange-400/10"
+                )}
+              >
+                <Medal size={10} />
+                {rank}º
+              </div>
+            )}
+            <span className="font-medium text-text-primary">{p.name}</span>
+            {friends?.some((f) => f.primary_id === p.id) && (
+              <span className="shrink-0 rounded-full bg-accent-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent-primary">
+                {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "team",
-      header: t("stats.team"),
+      header: t("matchDetail:stats.team"),
       sortable: true,
       render: (p: PlayerStats) =>
         p.team === 0 ? (
           <span className="rounded-full bg-team-blue-bg px-2 py-0.5 text-xs font-medium text-team-blue">
-            {t("teams.blue")}
+            {t("matchDetail:teams.blue")}
           </span>
         ) : (
           <span className="rounded-full bg-team-orange-bg px-2 py-0.5 text-xs font-medium text-team-orange">

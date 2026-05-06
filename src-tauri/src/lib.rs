@@ -113,6 +113,10 @@ pub fn run() {
             commands::profiles::delete_profile_cmd,
             commands::profiles::switch_profile_cmd,
             commands::profiles::rename_profile_cmd,
+            commands::friends::add_friend_cmd,
+            commands::friends::remove_friend_cmd,
+            commands::friends::get_friends_cmd,
+            commands::friends::is_friend_cmd,
         ])
         .setup(move |app| {
             #[cfg(all(desktop, not(debug_assertions)))]

@@ -522,6 +522,7 @@ mod storage_crud_tests {
                     demos: 1,
                     speed: 1200.0,
                     boost: 50,
+                    mmr: None,
                 },
             },
         )

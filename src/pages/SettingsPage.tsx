@@ -8,6 +8,8 @@ import { OverlayConfig } from "@/components/settings/OverlayConfig";
 import { OverlayStreaming } from "@/components/settings/OverlayStreaming";
 import { TrackerSetup } from "@/components/settings/TrackerSetup";
 import { ProfileManagement } from "@/components/settings/ProfileManagement";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
+import { Settings, Gamepad2, Database, LayoutTemplate, MonitorPlay, Users } from "lucide-react";
 
 export function SettingsPage() {
   const { t } = useTranslation("settings");
@@ -17,7 +19,7 @@ export function SettingsPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-3 pb-4 border-b border-border-subtle">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-primary-subtle">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-primary"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <Settings size={20} className="text-accent-primary" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-text-primary">{t("pageTitle")}</h2>
@@ -25,79 +27,60 @@ export function SettingsPage() {
           </div>
         </div>
 
-        <div className="columns-1 gap-6 lg:columns-2">
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.profiles")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-            <ProfileManagement />
-          </section>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="mb-6 w-full flex-wrap h-auto justify-start gap-1 bg-transparent border-none p-0">
+            <TabsTrigger value="general" className="data-[state=active]:bg-bg-surface data-[state=active]:border-border-subtle border border-transparent rounded-lg py-2 px-4">
+              <Settings size={14} className="mr-2" />
+              {t("pageSections.general")}
+            </TabsTrigger>
+            <TabsTrigger value="game" className="data-[state=active]:bg-bg-surface data-[state=active]:border-border-subtle border border-transparent rounded-lg py-2 px-4">
+              <Gamepad2 size={14} className="mr-2" />
+              Game Config
+            </TabsTrigger>
+            <TabsTrigger value="overlay" className="data-[state=active]:bg-bg-surface data-[state=active]:border-border-subtle border border-transparent rounded-lg py-2 px-4">
+              <LayoutTemplate size={14} className="mr-2" />
+              Overlay
+            </TabsTrigger>
+            <TabsTrigger value="streaming" className="data-[state=active]:bg-bg-surface data-[state=active]:border-border-subtle border border-transparent rounded-lg py-2 px-4">
+              <MonitorPlay size={14} className="mr-2" />
+              Streaming
+            </TabsTrigger>
+            <TabsTrigger value="profiles" className="data-[state=active]:bg-bg-surface data-[state=active]:border-border-subtle border border-transparent rounded-lg py-2 px-4">
+              <Users size={14} className="mr-2" />
+              {t("pageSections.profiles")}
+            </TabsTrigger>
+            <TabsTrigger value="data" className="data-[state=active]:bg-bg-surface data-[state=active]:border-border-subtle border border-transparent rounded-lg py-2 px-4">
+              <Database size={14} className="mr-2" />
+              {t("pageSections.data")}
+            </TabsTrigger>
+          </TabsList>
 
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.streamingOBS")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-            <OverlayStreaming />
-          </section>
-
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.overlayInGame")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-            <OverlayConfig />
-          </section>
-
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.general")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
+          <TabsContent value="general" className="space-y-6">
             <SettingsPanel />
-          </section>
-
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.game")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-            <IniHelper />
-          </section>
-
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.trackerNetwork")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-            <TrackerSetup />
-          </section>
-
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.data")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
-            <DataManagement />
-          </section>
-
-          <section className="mb-6 break-inside-avoid">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="h-px flex-1 bg-border-subtle" />
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">{t("pageSections.updates")}</h3>
-              <div className="h-px flex-1 bg-border-subtle" />
-            </div>
             <UpdateChecker />
-          </section>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="game" className="space-y-6">
+            <IniHelper />
+            <TrackerSetup />
+          </TabsContent>
+
+          <TabsContent value="overlay" className="space-y-6">
+            <OverlayConfig />
+          </TabsContent>
+
+          <TabsContent value="streaming" className="space-y-6">
+            <OverlayStreaming />
+          </TabsContent>
+
+          <TabsContent value="profiles" className="space-y-6">
+            <ProfileManagement />
+          </TabsContent>
+
+          <TabsContent value="data" className="space-y-6">
+            <DataManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </PageContainer>
   );

@@ -14,6 +14,7 @@
     "emptyDescription": "Jugá algunas partidas para empezar a construir tu directorio.",
     "badgeSoloRival": "Solo rival",
     "badgeSoloTeammate": "Solo compañero",
+    "badgeFriend": "Amigo",
     "matchCount": "{{count}} partida",
     "matchCount_plural": "{{count}} partidas",
     "teammateShort": "compa",
@@ -38,6 +39,8 @@
     "opponent": "Rival",
     "matchFallback": "Partida",
     "arenaFallback": "Arena",
+    "addFriend": "Agregar amigo",
+    "removeFriend": "Quitar amigo",
     "stats": {
       "winRate": "Win Rate",
       "winLoss": "W - L",

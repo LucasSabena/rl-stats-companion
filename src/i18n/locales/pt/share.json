@@ -1,0 +1,11 @@
+{
+  "modal": {
+    "title": "Compartilhar Resumo",
+    "description": "Gere uma imagem pronta para compartilhar nas redes.",
+    "close": "Fechar",
+    "copyClipboard": "Copiar",
+    "copied": "Copiado!",
+    "download": "Baixar PNG",
+    "generating": "Gerando imagem..."
+  }
+}

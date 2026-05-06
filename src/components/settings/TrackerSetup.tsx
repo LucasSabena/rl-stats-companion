@@ -4,6 +4,7 @@ import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { useFetchTrackerProfile } from "@/hooks/useTrackerProfile";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
 import { CheckCircle, XCircle, RefreshCw, Link, ExternalLink, Eye, EyeOff, Info } from "lucide-react";
 import type { AppSettings, TrackerPlatform } from "@/lib/types";
 
@@ -208,15 +209,12 @@ export function TrackerSetup() {
           {/* Platform */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-text-secondary">{t("tracker:setup.platformLabel")}</label>
-            <select
+            <Select
               value={localPlatform || platform}
-              onChange={(e) => setLocalPlatform(e.target.value as TrackerPlatform)}
-              className="w-full rounded-lg border border-border-subtle bg-bg-base px-3.5 py-2.5 text-sm text-text-primary focus:border-accent-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/20 appearance-none cursor-pointer bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM3Yjg5YTgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSI2IDkgMTIgMTUgMTggOSIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right:12px_center] bg-no-repeat pr-10 transition-all duration-200 hover:border-border-highlight"
-            >
-              {PLATFORMS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
+              onChange={(val) => setLocalPlatform(val as TrackerPlatform)}
+              options={PLATFORMS}
+              className="w-full"
+            />
           </div>
 
           {/* Username */}

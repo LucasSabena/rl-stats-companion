@@ -1,12 +1,16 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { usePlayerDetail } from "@/hooks/usePlayerDirectory";
+import { useFriends } from "@/hooks/useFriends";
+import { useAddFriend, useRemoveFriend } from "@/hooks/useFriends";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
+import { Button } from "@/components/ui/Button";
 import {
   ArrowLeft,
   Shield,
@@ -18,6 +22,8 @@ import {
   HeartHandshake,
   Crosshair,
   Zap,
+  UserPlus,
+  UserMinus,
 } from "lucide-react";
 
 function formatDate(iso: string) {
@@ -49,10 +55,38 @@ export function PlayerDetailPage() {
   const id = playerId ? parseInt(playerId, 10) : 0;
 
   const { data: player, isLoading } = usePlayerDetail(id);
+  const { data: friends } = useFriends();
+  const addFriend = useAddFriend();
+  const removeFriend = useRemoveFriend();
+
+  const isFriend = friends?.some((f) => f.player_id === id) ?? false;
+
+  const handleToggleFriend = () => {
+    if (isFriend) {
+      removeFriend.mutate(id);
+    } else {
+      addFriend.mutate({ playerId: id, tag: player?.name });
+    }
+  };
 
   return (
     <PageContainer>
-      <h2 className="text-2xl font-bold text-text-primary">{t("players:detail.title")}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-text-primary">{t("players:detail.title")}</h2>
+        {!isLoading && player && (
+          <Button
+            variant={isFriend ? "danger" : "secondary"}
+            leftIcon={isFriend ? UserMinus : UserPlus}
+            onClick={handleToggleFriend}
+            isLoading={addFriend.isPending || removeFriend.isPending}
+            size="sm"
+          >
+            {isFriend
+              ? t("players:detail.removeFriend", { defaultValue: "Quitar amigo" })
+              : t("players:detail.addFriend", { defaultValue: "Agregar amigo" })}
+          </Button>
+        )}
+      </div>
 
       <button
         onClick={() => navigate("/players")}
@@ -79,9 +113,16 @@ export function PlayerDetailPage() {
         <>
           {/* Header */}
           <Card className="mb-4 p-5">
-            <h1 className="mb-1 text-2xl font-bold text-text-primary">
-              {player.name}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-text-primary">
+                {player.name}
+              </h1>
+              {isFriend && (
+                <span className="shrink-0 rounded-full bg-accent-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-primary">
+                  {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-text-tertiary">
               {t("players:detail.playerId", { id: player.player_id })} · {player.primary_id}
             </p>

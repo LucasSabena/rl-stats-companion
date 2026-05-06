@@ -1,13 +1,14 @@
 pub mod analytics;
 pub mod detect;
+pub mod friends;
 pub mod history;
 pub mod live;
 pub mod mmr;
 pub mod overlay;
 pub mod overlay_window;
 pub mod players;
+pub mod profiles;
 pub mod rlstats;
 pub mod settings;
 pub mod tracker;
 pub mod window;
-pub mod profiles;

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/utils";
 import { Shield, ShieldAlert, Crosshair } from "lucide-react";
+import { useFriends } from "@/hooks/useFriends";
 import type { RlEvent } from "@/lib/types";
 
 interface ScoreTimelineProps {
@@ -16,13 +17,14 @@ export const ScoreTimeline = memo(function ScoreTimeline({
   team0Name,
   team1Name,
 }: ScoreTimelineProps) {
-  const { t } = useTranslation("matchDetail");
+  const { t } = useTranslation(["matchDetail", "players"]);
+  const { data: friends } = useFriends();
   const [team0Score, setTeam0Score] = useState(0);
   const [team1Score, setTeam1Score] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const resolvedTeam0Name = team0Name ?? t("teams.blue");
-  const resolvedTeam1Name = team1Name ?? t("teams.orange");
+  const resolvedTeam0Name = team0Name ?? t("matchDetail:teams.blue");
+  const resolvedTeam1Name = team1Name ?? t("matchDetail:teams.orange");
 
   useEffect(() => {
     let t0 = 0;
@@ -50,14 +52,16 @@ export const ScoreTimeline = memo(function ScoreTimeline({
 
   if (displayEvents.length === 0) return null;
 
+  const isFriend = (name: string) => friends?.some(f => f.name === name);
+
   return (
     <div className="rounded-xl border border-border-subtle bg-bg-surface p-6 shadow-level-1">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-sm font-semibold text-text-primary">
-          {t("timeline.title")}
+          {t("matchDetail:timeline.title")}
         </h3>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-text-tertiary mr-1">{t("timeline.goalsLabel")}</span>
+          <span className="text-xs text-text-tertiary mr-1">{t("matchDetail:timeline.goalsLabel")}</span>
           <span className="text-xs font-mono font-bold text-team-blue tabular-nums">{team0Score}</span>
           <span className="text-xs text-text-tertiary">{resolvedTeam0Name}</span>
           <span className="text-xs text-text-tertiary">—</span>
@@ -76,7 +80,7 @@ export const ScoreTimeline = memo(function ScoreTimeline({
           const team = (data.team as number) ?? 0;
 
           if (event.type === "GoalScored") {
-            const scorerName = (data.scorer_name as string) ?? t("timeline.unknownScorer");
+            const scorerName = (data.scorer_name as string) ?? t("matchDetail:timeline.unknownScorer");
             const assisterName = data.assister_name as string | undefined;
             const teamColor = team === 0 ? "bg-team-blue" : "bg-team-orange";
             const goalsBefore = displayEvents
@@ -92,6 +96,9 @@ export const ScoreTimeline = memo(function ScoreTimeline({
                 [0, 0]
               );
 
+            const scorerIsFriend = isFriend(scorerName);
+            const assisterIsFriend = assisterName ? isFriend(assisterName) : false;
+
             return (
               <div key={event.id} className="relative mb-5 last:mb-0">
                 <div
@@ -106,13 +113,27 @@ export const ScoreTimeline = memo(function ScoreTimeline({
                       {time}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-text-primary truncate">
-                        {scorerName}
-                      </p>
-                      {assisterName && (
-                        <p className="text-xs text-text-tertiary truncate">
-                          + {assisterName}
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-text-primary truncate">
+                          {scorerName}
                         </p>
+                        {scorerIsFriend && (
+                          <span className="shrink-0 rounded-full bg-accent-primary/15 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-primary">
+                            {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+                          </span>
+                        )}
+                      </div>
+                      {assisterName && (
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-text-tertiary truncate">
+                            + {assisterName}
+                          </p>
+                          {assisterIsFriend && (
+                            <span className="shrink-0 rounded-full bg-accent-primary/15 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-primary">
+                              {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -124,10 +145,11 @@ export const ScoreTimeline = memo(function ScoreTimeline({
             );
           }
 
-          const label = getStatfeedLabel(data, t);
+          const label = getStatfeedLabel(data, (key) => t(`matchDetail:${key}`));
           const iconColorClass = getStatfeedColor(data);
-          const playerName = (data.player_name as string) ?? t("timeline.unknownPlayer");
+          const playerName = (data.player_name as string) ?? t("matchDetail:timeline.unknownPlayer");
           const Icon = getStatfeedIcon(data);
+          const playerIsFriend = isFriend(playerName);
 
           if (!label) return null;
 
@@ -144,9 +166,14 @@ export const ScoreTimeline = memo(function ScoreTimeline({
                   {time}
                 </span>
                 <Icon size={11} className={cn("shrink-0", iconColorClass)} />
-                <span className="text-xs text-text-secondary truncate min-w-0">
+                <span className={cn("text-xs truncate min-w-0", playerIsFriend ? "text-accent-primary font-medium" : "text-text-secondary")}>
                   {playerName}
                 </span>
+                {playerIsFriend && (
+                  <span className="shrink-0 rounded-full bg-accent-primary/15 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wider text-accent-primary">
+                    {t("players:directory.badgeFriend", { defaultValue: "Amigo" })}
+                  </span>
+                )}
                 <span
                   className={cn(
                     "text-xs font-medium ml-auto shrink-0",

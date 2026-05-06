@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ChevronDown, Check } from "lucide-react";
@@ -15,7 +15,10 @@ interface SelectProps {
   placeholder?: string;
   className?: string;
   align?: "left" | "right";
+  placement?: "bottom" | "top";
   size?: "sm" | "md";
+  icon?: ReactNode;
+  disabled?: boolean;
 }
 
 export function Select({
@@ -25,7 +28,10 @@ export function Select({
   placeholder,
   className,
   align = "left",
+  placement = "bottom",
   size = "md",
+  icon,
+  disabled,
 }: SelectProps) {
   const { t } = useTranslation("common");
   const resolvedPlaceholder = placeholder ?? t("select.placeholder");
@@ -66,7 +72,8 @@ export function Select({
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        onClick={() => !disabled && setOpen(!open)}
         className={cn(
           height,
           "flex items-center gap-1.5 rounded-md border bg-bg-surface px-3",
@@ -74,9 +81,12 @@ export function Select({
           "border-border-subtle text-text-primary",
           "hover:border-border-highlight transition-colors duration-150",
           "focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary/50",
-          open && "border-accent-primary ring-1 ring-accent-primary/50"
+          open && "border-accent-primary ring-1 ring-accent-primary/50",
+          disabled && "opacity-50 cursor-not-allowed hover:border-border-subtle"
         )}
       >
+
+        {icon && <span className="shrink-0 text-text-tertiary mr-1">{icon}</span>}
         <span
           className={cn(
             "flex-1 text-left truncate",
@@ -97,8 +107,11 @@ export function Select({
       {open && (
         <div
           className={cn(
-            "absolute z-40 mt-1 min-w-[var(--radix-popover-trigger-width)] rounded-lg border border-border-subtle bg-bg-surface py-1 shadow-level-3 animate-in fade-in-0 zoom-in-95 origin-top",
-            align === "right" ? "right-0" : "left-0"
+            "absolute z-40 min-w-[var(--radix-popover-trigger-width)] rounded-lg border border-border-subtle bg-bg-surface py-1 shadow-level-3 animate-in fade-in-0",
+            align === "right" ? "right-0" : "left-0",
+            placement === "top"
+              ? "bottom-full mb-1 origin-bottom zoom-in-95"
+              : "top-full mt-1 origin-top zoom-in-95"
           )}
         >
           {options.map((option) => {

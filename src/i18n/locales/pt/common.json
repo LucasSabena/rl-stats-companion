@@ -67,5 +67,8 @@
   "brand": {
     "name": "RL Stats",
     "short": "RL"
+  },
+  "share": {
+    "button": "Compartilhar"
   }
 }

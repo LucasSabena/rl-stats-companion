@@ -7,6 +7,7 @@ import { detectRlPath } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Select } from "@/components/ui/Select";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, FolderSearch, MonitorUp } from "lucide-react";
@@ -19,10 +20,7 @@ const inputClass = cn(
   "hover:border-border-highlight"
 );
 
-const selectClass = cn(
-  inputClass,
-  "cursor-pointer appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM3Yjg5YTgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWxpbmUgcG9pbnRzPSI2IDkgMTIgMTUgMTggOSIvPjwvc3ZnPg==')] bg-[length:16px] bg-[right:12px_center] bg-no-repeat pr-10"
-);
+
 
 export function SettingsPanel() {
   const { t } = useTranslation(["settings", "common"]);
@@ -143,11 +141,22 @@ export function SettingsPanel() {
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-secondary">{t("settings:fields.platform")}</label>
-            <select {...register("platform")} className={selectClass}>
-              <option value="">{t("settings:fields.platformAutoDetect")}</option>
-              <option value="steam">Steam</option>
-              <option value="epic">Epic Games</option>
-            </select>
+            <Controller
+              name="platform"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={(field.value as string) || ""}
+                  onChange={(val) => field.onChange(val || null)}
+                  options={[
+                    { value: "", label: String(t("settings:fields.platformAutoDetect")) },
+                    { value: "steam", label: "Steam" },
+                    { value: "epic", label: "Epic Games" }
+                  ]}
+                  className="w-full"
+                />
+              )}
+            />
             {errors.platform && <p className="text-xs text-accent-danger">{errors.platform.message}</p>}
           </div>
           <div className="space-y-2">

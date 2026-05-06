@@ -342,8 +342,16 @@ impl SessionManager {
             .filter(|p| my_team.is_some() && Some(p.team_num) != my_team)
             .map(|p| p.stats.goals)
             .sum();
-        let total_shots: i32 = players_vec.iter().map(|p| p.stats.shots).sum();
-        let total_saves: i32 = players_vec.iter().map(|p| p.stats.saves).sum();
+        let total_shots: i32 = players_vec
+            .iter()
+            .filter(|p| Some(p.team_num) == my_team)
+            .map(|p| p.stats.shots)
+            .sum();
+        let total_saves: i32 = players_vec
+            .iter()
+            .filter(|p| Some(p.team_num) == my_team)
+            .map(|p| p.stats.saves)
+            .sum();
         let total_demos: i32 = players_vec
             .iter()
             .filter(|p| Some(p.team_num) == my_team)

@@ -3,9 +3,9 @@ import { Globe } from "lucide-react";
 import { Select, type SelectOption } from "@/components/ui/Select";
 
 const LANGUAGES: SelectOption[] = [
-  { value: "es", label: "Espanol" },
+  { value: "es", label: "Español" },
   { value: "en", label: "English" },
-  { value: "pt", label: "Portugues" },
+  { value: "pt", label: "Português" },
 ];
 
 export function LanguageSelector() {
@@ -28,6 +28,7 @@ export function LanguageSelector() {
         value={i18n.language?.split("-")[0] ?? "es"}
         onChange={handleChange}
         size="sm"
+        placement="top"
       />
     </div>
   );
