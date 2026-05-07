@@ -185,9 +185,8 @@ jobs:
           gh release upload "${{ github.ref_name }}" "$($installer.FullName)" --clobber
           gh release upload "${{ github.ref_name }}" "$($installerSig.FullName)" --clobber
 
-          $releaseJson = gh release view "${{ github.ref_name }}" --json assets | ConvertFrom-Json
-          $assetUrl = ($releaseJson.assets | Where-Object { $_.name -like "*setup.exe" }).browser_download_url
-          if (-not $assetUrl) { throw "Uploaded installer asset URL not found" }
+          $assetUrl = gh api repos/LucasSabena/rl-stats/releases/tags/${{ github.ref_name }} --jq '.assets[] | select(.name | endswith("setup.exe")) | .browser_download_url'
+          if ([string]::IsNullOrWhiteSpace($assetUrl)) { throw "Uploaded installer asset URL not found" }
 
           $latestJsonPath = Join-Path $env:RUNNER_TEMP "latest.json"
           $latestJson = @{

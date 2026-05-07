@@ -66,15 +66,17 @@ pub async fn get_matches(
 
                 if let Some(rf) = result_filter {
                     match rf {
-                        "win" if m.winner.is_none()
-                            || local_team.is_none()
-                            || m.winner != local_team =>
+                        "win"
+                            if m.winner.is_none()
+                                || local_team.is_none()
+                                || m.winner != local_team =>
                         {
                             continue;
                         }
-                        "loss" if m.winner.is_none()
-                            || local_team.is_none()
-                            || m.winner == local_team =>
+                        "loss"
+                            if m.winner.is_none()
+                                || local_team.is_none()
+                                || m.winner == local_team =>
                         {
                             continue;
                         }
