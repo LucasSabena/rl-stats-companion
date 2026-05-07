@@ -296,6 +296,7 @@ fn extract_single_player(player: &Value) -> LivePlayer {
             .or_else(|| player.get("boost"))
             .and_then(|v| v.as_i64())
             .unwrap_or(0) as i32,
+        kickoff_goals: 0,
     };
     sanitize_player(&mut parsed);
     parsed

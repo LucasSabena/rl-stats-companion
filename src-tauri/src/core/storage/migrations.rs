@@ -198,6 +198,11 @@ pub static MIGRATIONS: &[Migration] = &[
         name: "add_head_to_head_to_match_players",
         sql: "ALTER TABLE match_players ADD COLUMN head_to_head_json TEXT;",
     },
+    Migration {
+        version: 18,
+        name: "add_kickoff_goals",
+        sql: "ALTER TABLE match_players ADD COLUMN kickoff_goals INTEGER NOT NULL DEFAULT 0;\n         ALTER TABLE daily_rollups ADD COLUMN kickoff_goals_scored INTEGER NOT NULL DEFAULT 0;\n         ALTER TABLE daily_rollups ADD COLUMN kickoff_goals_conceded INTEGER NOT NULL DEFAULT 0;",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

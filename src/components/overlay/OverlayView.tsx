@@ -490,9 +490,11 @@ function MmrBadge({ mmr, fontScale }: { mmr: number; fontScale: FontScale }) {
 // ─── Speed Badge ────────────────────────────────────────────────────────────
 
 function SpeedBadge({ speed, fontScale }: { speed: number; fontScale: FontScale }) {
-  const displaySpeed = Math.round(speed / 50);
-  const isSupersonic = displaySpeed >= 44;
-  const isFast = displaySpeed >= 28;
+  // Rocket League speedometer scale: supersonic = ~82 game units at ~2200 uu/s
+  const RL_SPEED_FACTOR = 2200 / 82; // ≈ 26.829
+  const displaySpeed = Math.round(speed / RL_SPEED_FACTOR);
+  const isSupersonic = displaySpeed >= 82;
+  const isFast = displaySpeed >= 50;
 
   return (
     <div className={cn(

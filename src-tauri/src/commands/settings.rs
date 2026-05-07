@@ -301,6 +301,10 @@ fn import_data_json_internal(
                 let demos = mp.get("demos").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
                 let speed = mp.get("speed").and_then(|v| v.as_f64()).unwrap_or(0.0);
                 let boost = mp.get("boost").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                let kickoff_goals = mp
+                    .get("kickoff_goals")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0) as i32;
 
                 storage::upsert_match_player_row(
                     &conn,
@@ -320,6 +324,7 @@ fn import_data_json_internal(
                             speed,
                             boost,
                             mmr: None,
+                            kickoff_goals,
                             head_to_head: None,
                         },
                         head_to_head_json: None,

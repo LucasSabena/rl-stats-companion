@@ -242,7 +242,9 @@ pub fn run() {
             let ingestor = start_ingestor(port, Arc::clone(&game_running_flag));
             let ingestor_status = Arc::clone(&ingestor.status);
 
-            let session_manager = Arc::new(RwLock::new(SessionManager::new()));
+            let session_manager = Arc::new(RwLock::new(SessionManager::new(
+                settings.kickoff_goal_threshold_seconds,
+            )));
 
             let session_mgr_clone = Arc::clone(&session_manager);
             let db_pool_clone = Arc::clone(&db_pool);

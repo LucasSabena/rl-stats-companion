@@ -41,10 +41,15 @@ pub struct SessionManager {
     max_player_count: usize,
     last_touch_team: Option<i32>,
     mmr_snapshot: Option<MatchMmrSnapshot>,
+    // Kickoff goal tracking
+    kickoff_threshold_seconds: i32,
+    round_start_game_time: i32,
+    round_start_wall_time: Option<chrono::DateTime<chrono::Utc>>,
+    kickoff_goals_by_player: HashMap<String, i32>,
 }
 
 impl SessionManager {
-    pub fn new() -> Self {
+    pub fn new(kickoff_threshold_seconds: i32) -> Self {
         Self {
             phase: MatchPhase::Waiting,
             match_id: None,
@@ -64,6 +69,10 @@ impl SessionManager {
             max_player_count: 0,
             last_touch_team: None,
             mmr_snapshot: None,
+            kickoff_threshold_seconds,
+            round_start_game_time: 0,
+            round_start_wall_time: None,
+            kickoff_goals_by_player: HashMap::new(),
         }
     }
 
@@ -155,10 +164,50 @@ impl SessionManager {
             RlEvent::ClockUpdatedSeconds { time } => {
                 self.time_remaining = *time;
             }
+            RlEvent::RoundStarted | RlEvent::CountdownBegin if self.phase == MatchPhase::Active => {
+                let event_name = match &event {
+                    RlEvent::RoundStarted => "RoundStarted",
+                    _ => "CountdownBegin",
+                };
+                info!("{} event", event_name);
+                self.round_start_game_time = self.time_remaining;
+                self.round_start_wall_time = Some(Utc::now());
+                let json = serde_json::json!({"time_remaining": self.time_remaining}).to_string();
+                self.events.push((event_name.into(), json, Utc::now()));
+            }
             RlEvent::GoalScored { data } if self.phase == MatchPhase::Active => {
                 info!(scorer = %data.scorer.name, "Goal scored");
                 let json = serde_json::to_string(&data).unwrap_or_default();
                 self.events.push(("GoalScored".into(), json, Utc::now()));
+
+                let is_kickoff_goal = if self.is_overtime {
+                    // In overtime, game.time is 0 and doesn't change, so use wall-clock time
+                    if let Some(round_start) = self.round_start_wall_time {
+                        let elapsed = (Utc::now() - round_start).num_seconds();
+                        elapsed <= self.kickoff_threshold_seconds as i64 && elapsed >= 0
+                    } else {
+                        false
+                    }
+                } else {
+                    // Check if goal happened within threshold seconds of round start game time
+                    // After a round starts, time_remaining decreases. So if the current
+                    // time_remaining is still close to the round_start_game_time, it's a kickoff goal.
+                    self.time_remaining
+                        >= self.round_start_game_time - self.kickoff_threshold_seconds
+                };
+
+                if is_kickoff_goal {
+                    let scorer_id = &data.scorer.id;
+                    *self
+                        .kickoff_goals_by_player
+                        .entry(scorer_id.clone())
+                        .or_insert(0) += 1;
+                    info!(
+                        scorer = %data.scorer.name,
+                        scorer_id = %scorer_id,
+                        "Kickoff goal detected"
+                    );
+                }
             }
             RlEvent::StatfeedEvent { data } if self.phase == MatchPhase::Active => {
                 debug!(event = %data.event_name, target = %data.main_target.name, "Statfeed event");
@@ -277,6 +326,7 @@ impl SessionManager {
                     .and_then(|snap| snap.mmr_by_primary_id.get(primary_id))
                     .copied()
                     .flatten();
+                let kickoff_goals = *self.kickoff_goals_by_player.get(primary_id).unwrap_or(&0);
                 let player_stats = PlayerStats {
                     score: live.score,
                     goals: live.goals,
@@ -289,6 +339,7 @@ impl SessionManager {
                     speed: live.speed,
                     boost: live.boost,
                     mmr,
+                    kickoff_goals,
                     head_to_head: None,
                 };
 
@@ -390,6 +441,17 @@ impl SessionManager {
             .map(|p| p.stats.score)
             .sum();
 
+        let my_kickoff_goals: i32 = players_vec
+            .iter()
+            .filter(|p| Some(p.team_num) == my_team)
+            .map(|p| p.stats.kickoff_goals)
+            .sum();
+        let their_kickoff_goals: i32 = players_vec
+            .iter()
+            .filter(|p| my_team.is_some() && Some(p.team_num) != my_team)
+            .map(|p| p.stats.kickoff_goals)
+            .sum();
+
         let summary = SessionSummary {
             match_guid: guid.clone(),
             duration_seconds: duration,
@@ -398,6 +460,8 @@ impl SessionManager {
             winner,
             players: players_vec,
             match_type: self.match_type.clone(),
+            kickoff_goals_scored: my_kickoff_goals,
+            kickoff_goals_conceded: their_kickoff_goals,
         };
 
         if let Err(error) = insert_session_conn(&conn, match_id, &summary) {
@@ -422,6 +486,8 @@ impl SessionManager {
                 total_demos,
                 total_assists,
                 avg_score: my_score,
+                kickoff_goals_scored: my_kickoff_goals,
+                kickoff_goals_conceded: their_kickoff_goals,
             };
             if let Err(error) = upsert_daily_rollup_conn(&conn, &rollup) {
                 let _ = conn.execute("ROLLBACK", []);
@@ -471,6 +537,9 @@ impl SessionManager {
         self.max_player_count = 0;
         self.last_touch_team = None;
         self.mmr_snapshot = None;
+        self.round_start_game_time = 0;
+        self.round_start_wall_time = None;
+        self.kickoff_goals_by_player.clear();
     }
 
     fn has_meaningful_match_data(&self) -> bool {
@@ -509,7 +578,7 @@ fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> Option<S
 
 impl Default for SessionManager {
     fn default() -> Self {
-        Self::new()
+        Self::new(7)
     }
 }
 

@@ -18,6 +18,7 @@ export interface Player {
   boostAmount: number;
   speed: number;
   mmr?: number | null;
+  kickoffGoals?: number;
 }
 
 export interface PlayerStats extends Player {
@@ -156,6 +157,10 @@ export interface AnalyticsData {
   totalSaves: number;
   totalShots: number;
   totalDemos: number;
+  totalKickoffGoalsScored: number;
+  totalKickoffGoalsConceded: number;
+  avgKickoffGoalsScored: number;
+  avgKickoffGoalsConceded: number;
   bestStreak: number;
   currentStreak: number;
   peakSpeed: number;
@@ -190,6 +195,8 @@ export interface MatchSession {
   total_saves: number;
   total_assists: number;
   total_demos: number;
+  kickoff_goals_scored?: number;
+  kickoff_goals_conceded?: number;
 }
 
 export interface SessionMatchPlayer {
@@ -205,6 +212,7 @@ export interface SessionMatchPlayer {
   touches: number;
   name: string;
   primary_id: string;
+  kickoff_goals?: number;
 }
 
 export interface SessionMatch {
@@ -225,6 +233,8 @@ export interface SessionMatch {
   local_team: number | null;
   is_win: boolean;
   goal_diff: number | null;
+  kickoff_goals_scored?: number;
+  kickoff_goals_conceded?: number;
 }
 
 export interface InsightsData {
@@ -293,6 +303,7 @@ export interface AppSettings {
   trackerAutoRefresh?: boolean;
   trackerRefreshIntervalMin?: number;
   sessionGapMinutes?: number;
+  kickoffGoalThresholdSeconds?: number;
   overlayEnabled?: boolean;
   overlayOpacity?: number;
   overlayPositionX?: number;

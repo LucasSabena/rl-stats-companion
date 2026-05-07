@@ -26,6 +26,7 @@ pub struct AppSettings {
     pub tracker_auto_refresh: bool,
     pub tracker_refresh_interval_min: u32,
     pub session_gap_minutes: u32,
+    pub kickoff_goal_threshold_seconds: i32,
     // ─── Overlay window settings ─────────────────────────────────────────
     pub overlay_enabled: bool,
     pub overlay_opacity: f64,
@@ -67,6 +68,7 @@ impl Default for AppSettings {
             tracker_auto_refresh: true,
             tracker_refresh_interval_min: 5,
             session_gap_minutes: 30,
+            kickoff_goal_threshold_seconds: 7,
             overlay_enabled: false,
             overlay_opacity: 0.75,
             overlay_position_x: 40,
@@ -130,6 +132,10 @@ impl AppSettings {
                 self.tracker_refresh_interval_min.to_string(),
             ),
             ("session_gap_minutes", self.session_gap_minutes.to_string()),
+            (
+                "kickoff_goal_threshold_seconds",
+                self.kickoff_goal_threshold_seconds.to_string(),
+            ),
             ("overlay_enabled", self.overlay_enabled.to_string()),
             ("overlay_opacity", self.overlay_opacity.to_string()),
             ("overlay_position_x", self.overlay_position_x.to_string()),
@@ -217,6 +223,9 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
                 settings.tracker_refresh_interval_min = value.parse().unwrap_or(5)
             }
             "session_gap_minutes" => settings.session_gap_minutes = value.parse().unwrap_or(30),
+            "kickoff_goal_threshold_seconds" => {
+                settings.kickoff_goal_threshold_seconds = value.parse().unwrap_or(7)
+            }
             "overlay_enabled" => settings.overlay_enabled = value.parse().unwrap_or(false),
             "overlay_opacity" => settings.overlay_opacity = value.parse::<f64>().unwrap_or(0.75),
             "overlay_position_x" => settings.overlay_position_x = value.parse().unwrap_or(40),

@@ -28,7 +28,11 @@
     "peakSpeed": "Max speed",
     "avgDuration": "Avg. duration",
     "perMatch": "/ match",
-    "winLossTrend": "{{wins}}W / {{losses}}L"
+    "winLossTrend": "{{wins}}W / {{losses}}L",
+    "totalKickoffGoalsScored": "Kickoff goals scored",
+    "totalKickoffGoalsConceded": "Kickoff goals conceded",
+    "avgKickoffGoalsScored": "Kickoff goals / match",
+    "avgKickoffGoalsConceded": "Kickoff goals conceded / match"
   },
   "streaks": {
     "label": "Streak",

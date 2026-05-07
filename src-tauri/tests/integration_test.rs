@@ -232,7 +232,7 @@ mod session_tests {
 
     #[test]
     fn session_state_transitions_from_fixture() {
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
         assert_eq!(
             session.phase(),
             &rl_stats_lib::core::session::MatchPhase::Waiting
@@ -250,7 +250,7 @@ mod session_tests {
 
     #[test]
     fn session_short_match_transitions_to_finished() {
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
         replay_fixture_into_session("short_match.jsonl", &mut session);
         assert_eq!(
             session.phase(),
@@ -261,7 +261,7 @@ mod session_tests {
     #[test]
     fn session_persists_match_to_db() {
         let (pool, _path) = temp_db_pool();
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
 
         replay_fixture_into_session("short_match.jsonl", &mut session);
 
@@ -304,7 +304,7 @@ mod session_tests {
 
     #[test]
     fn session_tracks_live_state() {
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
         replay_fixture_into_session("full_match.jsonl", &mut session);
 
         let live = session.live_state();
@@ -318,7 +318,7 @@ mod session_tests {
 
     #[test]
     fn session_accumulates_player_stats() {
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
         replay_fixture_into_session("full_match.jsonl", &mut session);
 
         let live = session.live_state();
@@ -336,7 +336,7 @@ mod session_tests {
 
     #[test]
     fn session_preserves_previous_players_on_partial_snapshot() {
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
 
         let mut initial_players = HashMap::new();
         initial_players.insert(
@@ -401,7 +401,7 @@ mod session_tests {
     #[test]
     fn session_double_start_is_handled() {
         // Two MatchCreated events in sequence should reset, not panic.
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
         session.handle_event(RlEvent::MatchCreated);
         assert_eq!(
             session.phase(),
@@ -533,6 +533,7 @@ mod storage_crud_tests {
                     speed: 1200.0,
                     boost: 50,
                     mmr: None,
+                    kickoff_goals: 0,
                     head_to_head: None,
                 },
                 head_to_head_json: None,
@@ -747,7 +748,7 @@ mod storage_crud_tests {
     #[test]
     fn session_fully_persists_with_rollup() {
         let (pool, path) = init_test_pool();
-        let mut session = SessionManager::new();
+        let mut session = SessionManager::new(7);
 
         replay_fixture_into_session("short_match.jsonl", &mut session);
         let summary = session.persist_finished_match(&pool).unwrap();
@@ -831,7 +832,7 @@ mod metrics_tests {
 #[test]
 fn full_match_lifecycle_persist_and_verify() {
     let (pool, path) = temp_db_pool();
-    let mut session = SessionManager::new();
+    let mut session = SessionManager::new(7);
 
     // Replay full match
     replay_fixture_into_session("full_match.jsonl", &mut session);

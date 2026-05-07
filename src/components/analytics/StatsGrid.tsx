@@ -13,6 +13,8 @@ import {
   TrendingUp,
   Swords,
   Flame,
+  Rocket,
+  AlertTriangle,
 } from "lucide-react";
 
 interface StatItem {
@@ -120,12 +122,26 @@ export const SecondaryStatsRow = memo(function SecondaryStatsRow({ data, scope, 
         icon: Flame,
         accent: "orange",
       },
+      {
+        label: t("analytics:stats.totalKickoffGoalsScored"),
+        value: data.totalKickoffGoalsScored,
+        icon: Rocket,
+        accent: "green",
+        trendValue: `${data.avgKickoffGoalsScored.toFixed(1)} ${t("analytics:stats.perMatch")}`,
+      },
+      {
+        label: t("analytics:stats.totalKickoffGoalsConceded"),
+        value: data.totalKickoffGoalsConceded,
+        icon: AlertTriangle,
+        accent: "orange",
+        trendValue: `${data.avgKickoffGoalsConceded.toFixed(1)} ${t("analytics:stats.perMatch")}`,
+      },
     ],
     [data, t, scope]
   );
 
   return (
-    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
       {items.map((item) => (
         <StatCard
           key={item.label}

@@ -15,6 +15,7 @@ export const settingsSchema = z.object({
   platform: z.preprocess(emptyStringToNull, z.enum(["steam", "epic"]).nullable()),
   defaultMatchType: z.enum(["ranked", "casual", "tournament", "training", "other"]),
   sessionGapMinutes: z.number().int().min(5).max(120),
+  kickoffGoalThresholdSeconds: z.number().int().min(1).max(20),
 });
 
 export type SettingsFormInput = z.input<typeof settingsSchema>;

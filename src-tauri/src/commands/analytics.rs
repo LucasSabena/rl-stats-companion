@@ -267,6 +267,19 @@ pub async fn get_analytics(
         0.0
     };
 
+    let total_kickoff_goals_scored: i32 = rollups.iter().map(|r| r.kickoff_goals_scored).sum();
+    let total_kickoff_goals_conceded: i32 = rollups.iter().map(|r| r.kickoff_goals_conceded).sum();
+    let avg_kickoff_goals_scored = if total_matches > 0 {
+        total_kickoff_goals_scored as f64 / total_matches as f64
+    } else {
+        0.0
+    };
+    let avg_kickoff_goals_conceded = if total_matches > 0 {
+        total_kickoff_goals_conceded as f64 / total_matches as f64
+    } else {
+        0.0
+    };
+
     Ok(serde_json::json!({
         "rollups": rollups,
         "summary": {
@@ -287,6 +300,10 @@ pub async fn get_analytics(
             "totalShots": total_shots,
             "totalDemos": total_demos,
             "totalConceded": total_conceded,
+            "totalKickoffGoalsScored": total_kickoff_goals_scored,
+            "totalKickoffGoalsConceded": total_kickoff_goals_conceded,
+            "avgKickoffGoalsScored": avg_kickoff_goals_scored,
+            "avgKickoffGoalsConceded": avg_kickoff_goals_conceded,
             "bestStreak": streak.best_streak,
             "currentStreak": streak.current_streak,
             "peakSpeed": peak_speed,
@@ -427,7 +444,7 @@ pub async fn get_session_matches(
         let sql = format!(
             "SELECT mp.match_id, mp.team_num, mp.score, mp.goals, mp.shots, mp.assists,
                     mp.saves, mp.demos, mp.speed, mp.boost,
-                    mp.touches, p.name, p.primary_id
+                    mp.touches, mp.kickoff_goals, p.name, p.primary_id
              FROM match_players mp
              JOIN players p ON mp.player_id = p.id
              WHERE mp.match_id IN ({})",
@@ -453,8 +470,9 @@ pub async fn get_session_matches(
                         "speed": row.get::<_, f64>(8)?,
                         "boost": row.get::<_, i32>(9)?,
                         "touches": row.get::<_, i32>(10)?,
-                        "name": row.get::<_, String>(11)?,
-                        "primary_id": row.get::<_, String>(12)?,
+                        "kickoff_goals": row.get::<_, i32>(11)?,
+                        "name": row.get::<_, String>(12)?,
+                        "primary_id": row.get::<_, String>(13)?,
                     }),
                 ))
             })
@@ -508,6 +526,22 @@ pub async fn get_session_matches(
             scored - conceded
         });
 
+        let my_kickoff_goals = local_team.map(|lt| {
+            players
+                .iter()
+                .filter(|p| p["team_num"].as_i64() == Some(lt as i64))
+                .map(|p| p["kickoff_goals"].as_i64().unwrap_or(0) as i32)
+                .sum::<i32>()
+        });
+
+        let their_kickoff_goals = local_team.map(|lt| {
+            players
+                .iter()
+                .filter(|p| p["team_num"].as_i64() != Some(lt as i64))
+                .map(|p| p["kickoff_goals"].as_i64().unwrap_or(0) as i32)
+                .sum::<i32>()
+        });
+
         result.push(serde_json::json!({
             "id": match_id,
             "guid": m["guid"],
@@ -526,6 +560,8 @@ pub async fn get_session_matches(
             "local_team": local_team,
             "is_win": is_win,
             "goal_diff": my_diffs,
+            "my_kickoff_goals": my_kickoff_goals,
+            "their_kickoff_goals": their_kickoff_goals,
         }));
     }
 
@@ -683,6 +719,19 @@ async fn get_session_analytics_inner(
         0.0
     };
 
+    let total_kickoff_goals_scored: i32 = sessions.iter().map(|s| s.kickoff_goals_scored).sum();
+    let total_kickoff_goals_conceded: i32 = sessions.iter().map(|s| s.kickoff_goals_conceded).sum();
+    let avg_kickoff_goals_scored = if total_matches > 0 {
+        total_kickoff_goals_scored as f64 / total_matches as f64
+    } else {
+        0.0
+    };
+    let avg_kickoff_goals_conceded = if total_matches > 0 {
+        total_kickoff_goals_conceded as f64 / total_matches as f64
+    } else {
+        0.0
+    };
+
     Ok(serde_json::json!({
         "sessions": sessions,
         "summary": {
@@ -701,6 +750,10 @@ async fn get_session_analytics_inner(
             "totalShots": total_shots,
             "totalDemos": total_demos,
             "totalConceded": total_conceded,
+            "totalKickoffGoalsScored": total_kickoff_goals_scored,
+            "totalKickoffGoalsConceded": total_kickoff_goals_conceded,
+            "avgKickoffGoalsScored": avg_kickoff_goals_scored,
+            "avgKickoffGoalsConceded": avg_kickoff_goals_conceded,
             "bestStreak": streak.best_streak,
             "currentStreak": streak.current_streak,
             "peakSpeed": peak_speed,

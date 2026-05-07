@@ -45,6 +45,7 @@ export function SettingsPanel() {
       platform: null,
       defaultMatchType: "ranked",
       sessionGapMinutes: 30,
+      kickoffGoalThresholdSeconds: 7,
     },
   });
 
@@ -57,6 +58,7 @@ export function SettingsPanel() {
         platform: settings.platform as "steam" | "epic" | null,
         defaultMatchType: settings.defaultMatchType ?? "ranked",
         sessionGapMinutes: settings.sessionGapMinutes ?? 30,
+        kickoffGoalThresholdSeconds: settings.kickoffGoalThresholdSeconds ?? 7,
       });
     }
   }, [settings, reset]);
@@ -70,6 +72,7 @@ export function SettingsPanel() {
       platform: data.platform,
       defaultMatchType: data.defaultMatchType,
       sessionGapMinutes: data.sessionGapMinutes,
+      kickoffGoalThresholdSeconds: data.kickoffGoalThresholdSeconds,
     }, {
       onSuccess: () =>
         addToast({ type: "success", title: t("settings:toasts.saved.title"), message: t("settings:toasts.saved.message") }),
@@ -238,6 +241,30 @@ export function SettingsPanel() {
             </p>
             {errors.sessionGapMinutes && (
               <p className="text-xs text-accent-danger">{errors.sessionGapMinutes.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="kickoffGoalThresholdSeconds" className="text-sm font-medium text-text-secondary">
+              {t("settings:fields.kickoffGoalThreshold")}
+            </label>
+            <Controller name="kickoffGoalThresholdSeconds" control={control}
+              render={({ field }) => (
+                <input
+                  id="kickoffGoalThresholdSeconds"
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={field.value}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  className={cn(inputClass, "w-28 text-center")}
+                />
+              )} />
+            <p className="text-xs text-text-muted">
+              {t("settings:fields.kickoffGoalThresholdHelper")}
+            </p>
+            {errors.kickoffGoalThresholdSeconds && (
+              <p className="text-xs text-accent-danger">{errors.kickoffGoalThresholdSeconds.message}</p>
             )}
           </div>
 

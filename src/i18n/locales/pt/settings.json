@@ -28,7 +28,9 @@
     "autoStart": "Iniciar com o Windows",
     "autoStartDescription": "Abrir o RL Stats quando o computador ligar",
     "sessionGap": "Intervalo de sessão (minutos)",
-    "sessionGapHelper": "Minutos entre partidas para considerar a mesma sessão (5-120, padrão 30)."
+    "sessionGapHelper": "Minutos entre partidas para considerar a mesma sessão (5-120, padrão 30).",
+    "kickoffGoalThreshold": "Segundos para gol de saque",
+    "kickoffGoalThresholdHelper": "Segundos após o saque para considerar um gol como gol de saque (1-20, padrão 7)."
   },
   "matchTypes": {
     "ranked": "Competitivo",

@@ -28,7 +28,9 @@
     "autoStart": "Iniciar con Windows",
     "autoStartDescription": "Arrancar RL Stats al encender el equipo",
     "sessionGap": "Brecha entre sesiones (minutos)",
-    "sessionGapHelper": "Minutos entre partidas para considerarlas la misma sesion (5-120, por defecto 30)."
+    "sessionGapHelper": "Minutos entre partidas para considerarlas la misma sesion (5-120, por defecto 30).",
+    "kickoffGoalThreshold": "Segundos para gol de saque",
+    "kickoffGoalThresholdHelper": "Segundos tras el saque para considerar un gol como gol de saque (1-20, por defecto 7)."
   },
   "matchTypes": {
     "ranked": "Ranked",

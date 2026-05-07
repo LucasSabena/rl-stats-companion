@@ -28,7 +28,9 @@
     "autoStart": "Start with Windows",
     "autoStartDescription": "Launch RL Stats when the computer starts",
     "sessionGap": "Session gap (minutes)",
-    "sessionGapHelper": "Minutes between matches to consider them the same session (5-120, default 30)."
+    "sessionGapHelper": "Minutes between matches to consider them the same session (5-120, default 30).",
+    "kickoffGoalThreshold": "Kickoff goal seconds",
+    "kickoffGoalThresholdHelper": "Seconds after kickoff to consider a goal as a kickoff goal (1-20, default 7)."
   },
   "matchTypes": {
     "ranked": "Ranked",

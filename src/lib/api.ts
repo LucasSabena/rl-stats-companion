@@ -230,6 +230,10 @@ interface RawAnalyticsSummary {
   totalShots: number;
   totalDemos: number;
   totalConceded?: number;
+  totalKickoffGoalsScored?: number;
+  totalKickoffGoalsConceded?: number;
+  avgKickoffGoalsScored?: number;
+  avgKickoffGoalsConceded?: number;
   bestStreak: number;
   currentStreak: number;
   peakSpeed: number;
@@ -400,6 +404,10 @@ function mapSummaryToAnalyticsData(
     totalSaves: summary.totalSaves,
     totalShots: summary.totalShots,
     totalDemos: summary.totalDemos,
+    totalKickoffGoalsScored: summary.totalKickoffGoalsScored ?? 0,
+    totalKickoffGoalsConceded: summary.totalKickoffGoalsConceded ?? 0,
+    avgKickoffGoalsScored: summary.avgKickoffGoalsScored ?? 0,
+    avgKickoffGoalsConceded: summary.avgKickoffGoalsConceded ?? 0,
     bestStreak: summary.bestStreak,
     currentStreak: summary.currentStreak,
     peakSpeed: summary.peakSpeed,

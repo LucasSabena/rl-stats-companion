@@ -43,6 +43,7 @@ pub struct PlayerStats {
     pub speed: f64,
     pub boost: i32,
     pub mmr: Option<i32>,
+    pub kickoff_goals: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub head_to_head: Option<HeadToHeadRecord>,
 }
@@ -65,6 +66,7 @@ pub struct LivePlayer {
     pub demos: i32,
     pub speed: f64,
     pub boost: i32,
+    pub kickoff_goals: i32,
 }
 
 /// Ball state from the API.
@@ -220,6 +222,8 @@ pub struct DailyRollup {
     pub total_demos: i32,
     pub total_assists: i32,
     pub avg_score: i32,
+    pub kickoff_goals_scored: i32,
+    pub kickoff_goals_conceded: i32,
 }
 
 /// Data for CrossbarHit events.
@@ -239,6 +243,8 @@ pub struct SessionSummary {
     pub winner: Option<i32>,
     pub players: Vec<Player>,
     pub match_type: Option<String>,
+    pub kickoff_goals_scored: i32,
+    pub kickoff_goals_conceded: i32,
 }
 
 /// Head-to-head record between the local player and another player.

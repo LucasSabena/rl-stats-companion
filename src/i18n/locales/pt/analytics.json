@@ -28,7 +28,11 @@
     "peakSpeed": "Velocidade máxima",
     "avgDuration": "Duração média",
     "perMatch": "/ partida",
-    "winLossTrend": "{{wins}}V / {{losses}}D"
+    "winLossTrend": "{{wins}}V / {{losses}}D",
+    "totalKickoffGoalsScored": "Gols de saque (marcados)",
+    "totalKickoffGoalsConceded": "Gols de saque (sofridos)",
+    "avgKickoffGoalsScored": "Gols de saque / partida",
+    "avgKickoffGoalsConceded": "Gols de saque sofridos / partida"
   },
   "streaks": {
     "label": "Sequência",
