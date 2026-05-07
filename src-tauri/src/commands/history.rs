@@ -55,13 +55,9 @@ pub async fn get_matches(
     ) {
         Ok(matches) => {
             let match_ids: Vec<i64> = matches.iter().map(|m| m.id).collect();
-            let local_stats_by_match = storage::get_local_match_stats(
-                pool,
-                &match_ids,
-                local_primary_id,
-                &player_names,
-            )
-            .unwrap_or_default();
+            let local_stats_by_match =
+                storage::get_local_match_stats(pool, &match_ids, local_primary_id, &player_names)
+                    .unwrap_or_default();
             let mut result: Vec<serde_json::Value> = Vec::new();
             for m in matches {
                 let local_team = local_stats_by_match
@@ -71,12 +67,14 @@ pub async fn get_matches(
                 if let Some(rf) = result_filter {
                     match rf {
                         "win" => {
-                            if m.winner.is_none() || local_team.is_none() || m.winner != local_team {
+                            if m.winner.is_none() || local_team.is_none() || m.winner != local_team
+                            {
                                 continue;
                             }
                         }
                         "loss" => {
-                            if m.winner.is_none() || local_team.is_none() || m.winner == local_team {
+                            if m.winner.is_none() || local_team.is_none() || m.winner == local_team
+                            {
                                 continue;
                             }
                         }

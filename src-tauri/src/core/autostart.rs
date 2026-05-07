@@ -1,7 +1,7 @@
 #[cfg(target_os = "windows")]
-use winreg::{enums::HKEY_CURRENT_USER, RegKey};
-#[cfg(target_os = "windows")]
 use tracing::{info, warn};
+#[cfg(target_os = "windows")]
+use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 
 const AUTOSTART_REG_PATH: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const APP_NAME: &str = "RLStats";
@@ -26,12 +26,10 @@ pub fn enable_autostart() {
     match RegKey::predef(HKEY_CURRENT_USER)
         .open_subkey_with_flags(AUTOSTART_REG_PATH, winreg::enums::KEY_WRITE)
     {
-        Ok(run_key) => {
-            match run_key.set_value(APP_NAME, &exe_path) {
-                Ok(()) => info!(path = %exe_path, "Autostart enabled"),
-                Err(e) => warn!(error = %e, "Failed to set autostart registry value"),
-            }
-        }
+        Ok(run_key) => match run_key.set_value(APP_NAME, &exe_path) {
+            Ok(()) => info!(path = %exe_path, "Autostart enabled"),
+            Err(e) => warn!(error = %e, "Failed to set autostart registry value"),
+        },
         Err(e) => warn!(error = %e, "Failed to open Run registry key"),
     }
 }

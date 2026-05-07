@@ -4,7 +4,11 @@ use crate::core::tracker_api::{
 };
 use crate::error::{AppError, AppResult};
 
-pub fn parse_profile_html(html: &str, platform: &str, _identifier: &str) -> AppResult<TrackerProfile> {
+pub fn parse_profile_html(
+    html: &str,
+    platform: &str,
+    _identifier: &str,
+) -> AppResult<TrackerProfile> {
     let username = extract_username(html, platform)?;
     let avatar_url = extract_avatar(html);
     let overview = extract_career_stats(html);
@@ -37,12 +41,16 @@ fn extract_username(html: &str, platform: &str) -> AppResult<String> {
         "Epic" => "Epic.svg",
         "PS4" | "PSN" => "PS4.svg",
         "Xbox" => "Xbox.svg",
-        _ => return Err(AppError::ParseError("Plataforma no soportada para RLStats.".into())),
+        _ => {
+            return Err(AppError::ParseError(
+                "Plataforma no soportada para RLStats.".into(),
+            ))
+        }
     };
 
-    let start = html
-        .find(platform_icon)
-        .ok_or_else(|| AppError::ParseError("No se encontro el icono de plataforma en RLStats.".into()))?;
+    let start = html.find(platform_icon).ok_or_else(|| {
+        AppError::ParseError("No se encontro el icono de plataforma en RLStats.".into())
+    })?;
 
     let after_icon = &html[start..];
     let h1_end = after_icon.find("</h1>").unwrap_or(after_icon.len());
@@ -55,7 +63,9 @@ fn extract_username(html: &str, platform: &str) -> AppResult<String> {
     let name = raw[..span_pos].trim();
 
     if name.is_empty() || name.starts_with('<') {
-        return Err(AppError::ParseError("No se pudo extraer el nombre de usuario de RLStats.".into()));
+        return Err(AppError::ParseError(
+            "No se pudo extraer el nombre de usuario de RLStats.".into(),
+        ));
     }
 
     Ok(name.to_string())
@@ -191,9 +201,7 @@ fn extract_td_texts(html_fragment: &str) -> Vec<String> {
     texts
 }
 
-fn extract_skill_tables(
-    html: &str,
-) -> (RankedPlaylists, ExtraPlaylists, Option<PlaylistStats>) {
+fn extract_skill_tables(html: &str) -> (RankedPlaylists, ExtraPlaylists, Option<PlaylistStats>) {
     let section_start = match html.find("id=\"skills\"") {
         Some(pos) => pos,
         None => return (empty_ranked(), empty_extra(), None),
@@ -240,7 +248,10 @@ fn extract_tables(html: &str) -> Vec<String> {
 
     while let Some(start) = remaining.find("<table") {
         let after = &remaining[start..];
-        let end = after.find("</table>").map(|p| start + p + 8).unwrap_or(remaining.len());
+        let end = after
+            .find("</table>")
+            .map(|p| start + p + 8)
+            .unwrap_or(remaining.len());
 
         tables.push(remaining[start..end].to_string());
         remaining = &remaining[end..];
@@ -259,33 +270,22 @@ fn parse_skill_table(table_html: &str) -> Vec<(String, PlaylistStats)> {
     let rank_names = extract_row_td_or_th(&rows[1]);
     let divisions = extract_row_td_or_th(&rows[2]);
     let mmrs = extract_row_td_or_th(&rows[3]);
-    let matches_played = extract_row_td_or_th(
-        rows.get(5).unwrap_or(&String::new()),
-    );
-    let win_streaks = extract_row_td_or_th(
-        rows.get(6).unwrap_or(&String::new()),
-    );
+    let matches_played = extract_row_td_or_th(rows.get(5).unwrap_or(&String::new()));
+    let win_streaks = extract_row_td_or_th(rows.get(6).unwrap_or(&String::new()));
 
-    let count = headers.len();
     let mut results = Vec::new();
 
-    for i in 0..count {
-        let key = normalize_rlstats_header(&headers[i]);
+    for (i, header) in headers.iter().enumerate() {
+        let key = normalize_rlstats_header(header);
         if key.is_empty() {
             continue;
         }
 
         let rank_name = rank_names.get(i).map(|s| s.as_str()).unwrap_or("");
         let division = divisions.get(i).map(|s| s.as_str()).unwrap_or("");
-        let mmr = mmrs
-            .get(i)
-            .and_then(|s| s.parse::<i64>().ok());
-        let mp = matches_played
-            .get(i)
-            .and_then(|s| extract_int_from_text(s));
-        let ws = win_streaks
-            .get(i)
-            .and_then(|s| extract_int_from_text(s));
+        let mmr = mmrs.get(i).and_then(|s| s.parse::<i64>().ok());
+        let mp = matches_played.get(i).and_then(|s| extract_int_from_text(s));
+        let ws = win_streaks.get(i).and_then(|s| extract_int_from_text(s));
 
         let rank_info = if rank_name == "Unranked" || rank_name.is_empty() {
             None
@@ -323,14 +323,11 @@ fn parse_casual_table(table_html: &str) -> Option<PlaylistStats> {
         return None;
     }
 
-    let mmr = table_html
-        .split("Rating")
-        .nth(1)
-        .and_then(|part| {
-            part.split('<')
-                .next()
-                .and_then(|s| s.trim().parse::<i64>().ok())
-        });
+    let mmr = table_html.split("Rating").nth(1).and_then(|part| {
+        part.split('<')
+            .next()
+            .and_then(|s| s.trim().parse::<i64>().ok())
+    });
 
     Some(PlaylistStats {
         rank: None,
@@ -347,7 +344,10 @@ fn extract_rows(table_html: &str) -> Vec<String> {
 
     while let Some(tr_start) = remaining.find("<tr") {
         let after = &remaining[tr_start..];
-        let tr_end = after.find("</tr>").map(|p| tr_start + p + 5).unwrap_or(remaining.len());
+        let tr_end = after
+            .find("</tr>")
+            .map(|p| tr_start + p + 5)
+            .unwrap_or(remaining.len());
 
         rows.push(remaining[tr_start..tr_end].to_string());
         remaining = &remaining[tr_end..];
@@ -418,13 +418,28 @@ fn normalize_rlstats_header(header: &str) -> String {
 
 fn rank_tier_index(name: &str) -> i32 {
     let tiers = [
-        "unranked", "bronze i", "bronze ii", "bronze iii",
-        "silver i", "silver ii", "silver iii",
-        "gold i", "gold ii", "gold iii",
-        "platinum i", "platinum ii", "platinum iii",
-        "diamond i", "diamond ii", "diamond iii",
-        "champion i", "champion ii", "champion iii",
-        "grand champion i", "grand champion ii", "grand champion iii",
+        "unranked",
+        "bronze i",
+        "bronze ii",
+        "bronze iii",
+        "silver i",
+        "silver ii",
+        "silver iii",
+        "gold i",
+        "gold ii",
+        "gold iii",
+        "platinum i",
+        "platinum ii",
+        "platinum iii",
+        "diamond i",
+        "diamond ii",
+        "diamond iii",
+        "champion i",
+        "champion ii",
+        "champion iii",
+        "grand champion i",
+        "grand champion ii",
+        "grand champion iii",
         "supersonic legend",
     ];
     tiers
@@ -451,10 +466,10 @@ fn extract_season_reward_rank(html: &str) -> Option<RankInfo> {
     let before = &html[..start];
     let h2_start = before.rfind("<h2")?;
     let h2_content_start = html[h2_start..].find('>').map(|p| h2_start + p + 1)?;
-    let h2_end = html[h2_content_start..].find("</h2>").map(|p| h2_content_start + p)?;
-    let rank_name = html[h2_content_start..h2_end]
-        .trim()
-        .to_string();
+    let h2_end = html[h2_content_start..]
+        .find("</h2>")
+        .map(|p| h2_content_start + p)?;
+    let rank_name = html[h2_content_start..h2_end].trim().to_string();
 
     if rank_name.is_empty() || rank_name == "Unranked" {
         return None;
@@ -500,5 +515,9 @@ fn calculate_total_matches(
         }
     }
 
-    if has_any { Some(total) } else { None }
+    if has_any {
+        Some(total)
+    } else {
+        None
+    }
 }

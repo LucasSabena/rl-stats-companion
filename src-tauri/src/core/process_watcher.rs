@@ -37,11 +37,14 @@ impl ProcessWatcher {
                     last_state = running;
                     game_running.store(running, Ordering::SeqCst);
                     info!(running, "Rocket League process state changed");
-                    
+
                     // Emit Tauri event so frontend and overlay can react
-                    let _ = app_handle.emit("game-status-changed", serde_json::json!({
-                        "running": running
-                    }));
+                    let _ = app_handle.emit(
+                        "game-status-changed",
+                        serde_json::json!({
+                            "running": running
+                        }),
+                    );
                 }
                 thread::sleep(Duration::from_secs(2));
             }

@@ -28,9 +28,7 @@ pub async fn fetch_rlstats_profile(state: State<'_, AppState>) -> Result<Tracker
         "psn" => "PS4",
         "switch" => "Switch",
         other => {
-            return Err(format!(
-                "Plataforma no soportada para RLStats: {other}"
-            ));
+            return Err(format!("Plataforma no soportada para RLStats: {other}"));
         }
     };
 
@@ -42,12 +40,8 @@ pub async fn fetch_rlstats_profile(state: State<'_, AppState>) -> Result<Tracker
         .await
         .map_err(|e| e.to_string())?;
 
-    let profile = crate::core::rlstats_api::parse_profile_html(
-        &html,
-        &platform,
-        &username,
-    )
-    .map_err(|e| e.to_string())?;
+    let profile = crate::core::rlstats_api::parse_profile_html(&html, &platform, &username)
+        .map_err(|e| e.to_string())?;
 
     let profile_json =
         serde_json::to_string(&profile).map_err(|e| format!("Failed to serialize profile: {e}"))?;

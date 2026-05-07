@@ -1,4 +1,6 @@
-use crate::core::models::{DailyRollup, HeadToHeadRecord, Match, MatchEvent, Player, SessionSummary};
+use crate::core::models::{
+    DailyRollup, HeadToHeadRecord, Match, MatchEvent, Player, SessionSummary,
+};
 use crate::error::{AppError, AppResult};
 use chrono::{DateTime, Timelike, Utc};
 use r2d2::{Pool, PooledConnection};
@@ -324,7 +326,9 @@ pub fn insert_match(
     playlist: Option<&str>,
 ) -> AppResult<i64> {
     let conn = get_conn(pool)?;
-    insert_match_conn(&conn, guid, start_time, arena, is_online, match_type, playlist)
+    insert_match_conn(
+        &conn, guid, start_time, arena, is_online, match_type, playlist,
+    )
 }
 
 /// Update match with end-of-game data.
@@ -492,8 +496,7 @@ pub fn get_match_detail(pool: &DbPool, match_id: i64) -> AppResult<(Match, Vec<P
 
     let player_iter = stmt.query_map(params![match_id], |row| {
         let h2h_json: Option<String> = row.get(15)?;
-        let h2h = h2h_json
-            .and_then(|s| serde_json::from_str::<HeadToHeadRecord>(&s).ok());
+        let h2h = h2h_json.and_then(|s| serde_json::from_str::<HeadToHeadRecord>(&s).ok());
         Ok(Player {
             id: row.get(0)?,
             primary_id: row.get(1)?,
@@ -606,11 +609,9 @@ pub fn delete_match(pool: &DbPool, match_id: i64) -> AppResult<()> {
 
     let settings = crate::core::settings::get_settings(pool).unwrap_or_default();
     let names = identity_candidate_names(&settings);
-    if let Err(e) = rebuild_daily_rollups_for_identity(
-        pool,
-        settings.local_primary_id.as_deref(),
-        &names,
-    ) {
+    if let Err(e) =
+        rebuild_daily_rollups_for_identity(pool, settings.local_primary_id.as_deref(), &names)
+    {
         tracing::warn!(error = %e, "Failed to rebuild daily rollups after match deletion");
     }
     Ok(())
@@ -670,6 +671,7 @@ pub fn get_daily_rollups(
 
 /// Compute daily rollups from matches with optional playlist/match_type filters.
 /// Used when the pre-aggregated daily_rollups table cannot satisfy filter requirements.
+#[allow(clippy::too_many_arguments)]
 pub fn get_daily_rollups_filtered(
     pool: &DbPool,
     start_date: &str,
@@ -685,7 +687,7 @@ pub fn get_daily_rollups_filtered(
     let mut sql = String::from(
         "SELECT id, start_time, score_blue, score_orange, winner, duration_seconds
          FROM matches
-         WHERE start_time >= ?1 AND start_time < date(?2, '+1 day')"
+         WHERE start_time >= ?1 AND start_time < date(?2, '+1 day')",
     );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     args.push(Box::new(start_date.to_string()));
@@ -778,7 +780,11 @@ pub fn get_daily_rollups_filtered(
                     )
                     .unwrap_or((0, 0, 0, 0, 0, 0))
                 } else if !player_names.is_empty() {
-                    let placeholders = player_names.iter().map(|_| "LOWER(TRIM(p.name)) = LOWER(TRIM(?))").collect::<Vec<_>>().join(" OR ");
+                    let placeholders = player_names
+                        .iter()
+                        .map(|_| "LOWER(TRIM(p.name)) = LOWER(TRIM(?))")
+                        .collect::<Vec<_>>()
+                        .join(" OR ");
                     let sql = format!(
                         "SELECT mp.goals, mp.shots, mp.saves, mp.demos, mp.assists, mp.score
                          FROM match_players mp
@@ -791,7 +797,8 @@ pub fn get_daily_rollups_filtered(
                     for name in player_names {
                         query_args.push(Box::new(name.clone()));
                     }
-                    let params_refs: Vec<&dyn rusqlite::ToSql> = query_args.iter().map(|a| a.as_ref()).collect();
+                    let params_refs: Vec<&dyn rusqlite::ToSql> =
+                        query_args.iter().map(|a| a.as_ref()).collect();
                     conn.query_row(&sql, &*params_refs, |row| {
                         Ok((
                             row.get(0)?,
@@ -807,7 +814,11 @@ pub fn get_daily_rollups_filtered(
                     (0, 0, 0, 0, 0, 0)
                 };
 
-            let their_goals = if my_team == 0 { score_orange } else { score_blue };
+            let their_goals = if my_team == 0 {
+                score_orange
+            } else {
+                score_blue
+            };
 
             rollup.goals_scored += goals;
             rollup.goals_conceded += their_goals;
@@ -815,20 +826,20 @@ pub fn get_daily_rollups_filtered(
             rollup.total_saves += saves;
             rollup.total_demos += demos;
             rollup.total_assists += assists;
-            rollup.avg_duration_seconds =
-                ((rollup.avg_duration_seconds * prev_count) + duration_seconds) / rollup.matches_played;
-            rollup.avg_score =
-                ((rollup.avg_score * prev_count) + score) / rollup.matches_played;
+            rollup.avg_duration_seconds = ((rollup.avg_duration_seconds * prev_count)
+                + duration_seconds)
+                / rollup.matches_played;
+            rollup.avg_score = ((rollup.avg_score * prev_count) + score) / rollup.matches_played;
         } else {
-            let (my_goals, their_goals, total_shots, total_saves, total_demos, total_assists, my_score): (
-                i32,
-                i32,
-                i32,
-                i32,
-                i32,
-                i32,
-                i32,
-            ) = conn
+            let (
+                my_goals,
+                their_goals,
+                total_shots,
+                total_saves,
+                total_demos,
+                total_assists,
+                my_score,
+            ): (i32, i32, i32, i32, i32, i32, i32) = conn
                 .query_row(
                     "SELECT
                         COALESCE(SUM(CASE WHEN team_num = ?1 THEN goals ELSE 0 END), 0),
@@ -877,10 +888,10 @@ pub fn get_daily_rollups_filtered(
             rollup.total_saves += total_saves;
             rollup.total_demos += total_demos;
             rollup.total_assists += total_assists;
-            rollup.avg_duration_seconds =
-                ((rollup.avg_duration_seconds * prev_count) + duration_seconds) / rollup.matches_played;
-            rollup.avg_score =
-                ((rollup.avg_score * prev_count) + my_score) / rollup.matches_played;
+            rollup.avg_duration_seconds = ((rollup.avg_duration_seconds * prev_count)
+                + duration_seconds)
+                / rollup.matches_played;
+            rollup.avg_score = ((rollup.avg_score * prev_count) + my_score) / rollup.matches_played;
         }
     }
 
@@ -1002,7 +1013,7 @@ pub fn rebuild_daily_rollups_for_identity(
         };
 
         upsert_daily_rollup_conn(&conn, &rollup)
-        .map_err(|e| AppError::StorageError(e.to_string()))?;
+            .map_err(|e| AppError::StorageError(e.to_string()))?;
     }
 
     Ok(())
@@ -1121,7 +1132,9 @@ fn get_local_match_stats_from_conn(
     }
 
     // Second pass: aggregate stats
-    for (match_id, team_num, shots, saves, assists, demos, goals, score, primary_id, name) in all_rows {
+    for (match_id, team_num, shots, saves, assists, demos, goals, score, primary_id, name) in
+        all_rows
+    {
         if let Some(entry) = stats_by_match.get_mut(&match_id) {
             let is_local_primary = local_primary_id == Some(primary_id.as_str());
             let is_local_name = normalized_names.contains(&normalize_player_name(&name));
@@ -1584,7 +1597,7 @@ pub fn get_match_sessions(
         "SELECT id, guid, start_time, end_time, arena, score_blue, score_orange, winner,
                 is_online, is_overtime, duration_seconds, match_type, playlist
          FROM matches
-         WHERE 1=1"
+         WHERE 1=1",
     );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
@@ -1681,10 +1694,22 @@ pub fn get_match_sessions(
 
                 if is_individual {
                     goals_scored += local_stats.map(|s| s.goals).unwrap_or(0);
-                    goals_conceded += if lt == 0 { m.score_orange } else { m.score_blue };
+                    goals_conceded += if lt == 0 {
+                        m.score_orange
+                    } else {
+                        m.score_blue
+                    };
                 } else {
-                    goals_scored += if lt == 0 { m.score_blue } else { m.score_orange };
-                    goals_conceded += if lt == 0 { m.score_orange } else { m.score_blue };
+                    goals_scored += if lt == 0 {
+                        m.score_blue
+                    } else {
+                        m.score_orange
+                    };
+                    goals_conceded += if lt == 0 {
+                        m.score_orange
+                    } else {
+                        m.score_blue
+                    };
                 }
             } else {
                 unknown += 1;
@@ -1896,7 +1921,7 @@ pub fn get_friends(pool: &DbPool) -> AppResult<Vec<FriendRecord>> {
         "SELECT f.id, f.player_id, p.primary_id, p.name, f.tag, f.created_at
          FROM friends f
          JOIN players p ON f.player_id = p.id
-         ORDER BY p.name ASC"
+         ORDER BY p.name ASC",
     )?;
     let iter = stmt.query_map([], |row| {
         Ok(FriendRecord {
@@ -1930,9 +1955,8 @@ pub fn is_friend(pool: &DbPool, player_id: i64) -> AppResult<bool> {
 /// Get primary_ids of all friends.
 pub fn get_friend_primary_ids(pool: &DbPool) -> AppResult<std::collections::HashSet<String>> {
     let conn = get_conn(pool)?;
-    let mut stmt = conn.prepare(
-        "SELECT p.primary_id FROM friends f JOIN players p ON f.player_id = p.id"
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT p.primary_id FROM friends f JOIN players p ON f.player_id = p.id")?;
     let iter = stmt.query_map([], |row| row.get::<_, String>(0))?;
     let mut result = std::collections::HashSet::new();
     for r in iter {
@@ -2022,6 +2046,7 @@ pub struct PlayerTeammateEntry {
 
 /// Get the player directory — all players encountered, with aggregate stats
 /// relative to the local player.
+#[allow(clippy::too_many_arguments)]
 pub fn get_player_directory(
     pool: &DbPool,
     local_primary_id: Option<&str>,
@@ -2048,9 +2073,7 @@ pub fn get_player_directory(
 
     let has_search = search.is_some();
     let search_filter = if has_search {
-        format!(
-            "AND (LOWER(p.name) LIKE '%' || LOWER(?2) || '%' OR LOWER(p.primary_id) LIKE '%' || LOWER(?3) || '%')"
-        )
+        "AND (LOWER(p.name) LIKE '%' || LOWER(?2) || '%' OR LOWER(p.primary_id) LIKE '%' || LOWER(?3) || '%')".to_string()
     } else {
         String::new()
     };
@@ -2255,13 +2278,18 @@ pub fn get_player_detail(
     })?;
 
     for entry in iter {
-        summary.recent_matches.push(entry.map_err(|e| AppError::StorageError(e.to_string()))?);
+        summary
+            .recent_matches
+            .push(entry.map_err(|e| AppError::StorageError(e.to_string()))?);
     }
 
     Ok(Some(summary))
 }
 
-fn get_player_id_by_primary_id(conn: &rusqlite::Connection, primary_id: &str) -> AppResult<Option<i64>> {
+fn get_player_id_by_primary_id(
+    conn: &rusqlite::Connection,
+    primary_id: &str,
+) -> AppResult<Option<i64>> {
     conn.query_row(
         "SELECT id FROM players WHERE primary_id = ?1",
         params![primary_id],
@@ -2318,7 +2346,7 @@ pub fn get_analytics_summary_for_identity(
          JOIN players p ON mp.player_id = p.id
          WHERE p.primary_id = ?1
            AND m.start_time >= ?2
-           AND m.start_time < date(?3, '+1 day')"
+           AND m.start_time < date(?3, '+1 day')",
     );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     args.push(Box::new(local_primary_id.to_string()));
@@ -2356,8 +2384,20 @@ pub fn get_analytics_summary_for_identity(
     let mut summary = IndividualAnalyticsSummary::default();
 
     for row in rows {
-        let (winner, team_num, score_blue, score_orange, duration, goals, shots, saves, assists, demos, score, speed) =
-            row.map_err(|e| AppError::StorageError(e.to_string()))?;
+        let (
+            winner,
+            team_num,
+            score_blue,
+            score_orange,
+            duration,
+            goals,
+            shots,
+            saves,
+            assists,
+            demos,
+            score,
+            speed,
+        ) = row.map_err(|e| AppError::StorageError(e.to_string()))?;
 
         summary.total_matches += 1;
         if winner == Some(team_num) {
@@ -2367,7 +2407,11 @@ pub fn get_analytics_summary_for_identity(
         }
 
         summary.total_goals += goals;
-        summary.total_conceded += if team_num == 0 { score_orange } else { score_blue };
+        summary.total_conceded += if team_num == 0 {
+            score_orange
+        } else {
+            score_blue
+        };
         summary.total_shots += shots;
         summary.total_saves += saves;
         summary.total_assists += assists;
@@ -2408,7 +2452,7 @@ pub fn get_insights(
          WHERE p.primary_id = ?1
            AND m.winner IS NOT NULL
            AND m.start_time >= ?2
-           AND m.start_time < date(?3, '+1 day')"
+           AND m.start_time < date(?3, '+1 day')",
     );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     args.push(Box::new(local_primary_id.to_string()));
@@ -2430,34 +2474,47 @@ pub fn get_insights(
     let params_refs: Vec<&dyn rusqlite::ToSql> = args.iter().map(|a| a.as_ref()).collect();
     let mut stmt = conn.prepare(&sql)?;
 
-    let rows: Vec<(Option<i32>, i32, Option<String>, String, i32, i32, i32, i32, i32, i32, i32, i32, i32)> = stmt
-        .query_map(
-            &*params_refs,
-            |row| {
-                Ok((
-                    row.get(0)?,
-                    row.get(1)?,
-                    row.get(2)?,
-                    row.get(3)?,
-                    row.get(4)?,
-                    row.get(5)?,
-                    row.get(6)?,
-                    row.get(7)?,
-                    row.get(8)?,
-                    row.get(9)?,
-                    row.get(10)?,
-                    row.get(11)?,
-                    row.get(12)?,
-                ))
-            },
-        )?
+    type MatchPlayerRow = (
+        Option<i32>,
+        i32,
+        Option<String>,
+        String,
+        i32,
+        i32,
+        i32,
+        i32,
+        i32,
+        i32,
+        i32,
+        i32,
+        i32,
+    );
+    let rows: Vec<MatchPlayerRow> = stmt
+        .query_map(&*params_refs, |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+                row.get(5)?,
+                row.get(6)?,
+                row.get(7)?,
+                row.get(8)?,
+                row.get(9)?,
+                row.get(10)?,
+                row.get(11)?,
+                row.get(12)?,
+            ))
+        })?
         .collect::<Result<Vec<_>, _>>()?;
 
     if rows.is_empty() {
         return Ok(serde_json::json!({ "available": false, "totalMatches": 0 }));
     }
 
-    let mut by_playlist: std::collections::HashMap<String, (i32, i32)> = std::collections::HashMap::new();
+    let mut by_playlist: std::collections::HashMap<String, (i32, i32)> =
+        std::collections::HashMap::new();
     let mut by_hour: std::collections::HashMap<u32, (i32, i32)> = std::collections::HashMap::new();
     let mut ot_games = 0i32;
     let mut ot_wins = 0i32;
@@ -2473,41 +2530,77 @@ pub fn get_insights(
     let mut total_my_demos = 0i32;
 
     for row in &rows {
-        let (_winner, _team, playlist, start_time, is_overtime, score_blue, score_orange, _score, goals, assists, saves, shots, demos) = row;
+        let (
+            _winner,
+            _team,
+            playlist,
+            start_time,
+            is_overtime,
+            score_blue,
+            score_orange,
+            _score,
+            goals,
+            assists,
+            saves,
+            shots,
+            demos,
+        ) = row;
         let playlist_key = playlist.clone().unwrap_or_else(|| "Desconocido".into());
         let entry = by_playlist.entry(playlist_key).or_insert((0, 0));
         entry.0 += 1;
 
         if let (Some(winner), team) = (_winner, _team) {
             let is_win = *winner == *team;
-            if is_win { entry.1 += 1; }
+            if is_win {
+                entry.1 += 1;
+            }
 
             if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(start_time) {
                 let hour = dt.hour();
                 let he = by_hour.entry(hour).or_insert((0, 0));
                 he.0 += 1;
-                if is_win { he.1 += 1; }
+                if is_win {
+                    he.1 += 1;
+                }
             }
 
             if *is_overtime != 0 {
                 ot_games += 1;
-                if is_win { ot_wins += 1; }
+                if is_win {
+                    ot_wins += 1;
+                }
             }
 
-            let my_score = if *team == 0 { *score_blue } else { *score_orange };
-            let their_score = if *team == 0 { *score_orange } else { *score_blue };
+            let my_score = if *team == 0 {
+                *score_blue
+            } else {
+                *score_orange
+            };
+            let their_score = if *team == 0 {
+                *score_orange
+            } else {
+                *score_blue
+            };
             let diff = my_score - their_score;
             if diff.abs() == 1 {
                 close_games += 1;
-                if is_win { close_wins += 1; }
+                if is_win {
+                    close_wins += 1;
+                }
             }
             if diff.abs() >= 4 {
                 blowout_games += 1;
-                if is_win { blowout_wins += 1; }
+                if is_win {
+                    blowout_wins += 1;
+                }
             }
         }
 
-        total_team_goals += if *_team == 0 { *score_blue } else { *score_orange };
+        total_team_goals += if *_team == 0 {
+            *score_blue
+        } else {
+            *score_orange
+        };
         total_my_goals += goals;
         total_my_assists += assists;
         total_my_saves += saves;
@@ -2519,7 +2612,7 @@ pub fn get_insights(
         "SELECT SUM(assists), SUM(saves), SUM(shots), SUM(demos)
          FROM match_players mp
          JOIN matches m ON mp.match_id = m.id
-         WHERE m.start_time >= ?1 AND m.start_time < date(?2, '+1 day')"
+         WHERE m.start_time >= ?1 AND m.start_time < date(?2, '+1 day')",
     );
     let mut team_args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     team_args.push(Box::new(start_date.to_string()));
@@ -2535,18 +2628,34 @@ pub fn get_insights(
         team_args.push(Box::new(pl.to_string()));
     }
 
-    let team_params_refs: Vec<&dyn rusqlite::ToSql> = team_args.iter().map(|a| a.as_ref()).collect();
+    let team_params_refs: Vec<&dyn rusqlite::ToSql> =
+        team_args.iter().map(|a| a.as_ref()).collect();
     let mut team_stmt = conn.prepare(&team_sql)?;
-    let (total_team_assists, total_team_saves, total_team_shots, total_team_demos): (i32, i32, i32, i32) = team_stmt.query_row(
-        &*team_params_refs,
-        |row| Ok((row.get::<_, i32>(0)?, row.get::<_, i32>(1)?, row.get::<_, i32>(2)?, row.get::<_, i32>(3)?)),
-    ).unwrap_or((0, 0, 0, 0));
+    let (total_team_assists, total_team_saves, total_team_shots, total_team_demos): (
+        i32,
+        i32,
+        i32,
+        i32,
+    ) = team_stmt
+        .query_row(&*team_params_refs, |row| {
+            Ok((
+                row.get::<_, i32>(0)?,
+                row.get::<_, i32>(1)?,
+                row.get::<_, i32>(2)?,
+                row.get::<_, i32>(3)?,
+            ))
+        })
+        .unwrap_or((0, 0, 0, 0));
 
     let mut best_playlist = String::new();
     let mut best_playlist_wr = 0f64;
     let mut playlist_stats = Vec::new();
     for (name, (played, won)) in &by_playlist {
-        let wr = if *played > 0 { (*won as f64 / *played as f64) * 100.0 } else { 0.0 };
+        let wr = if *played > 0 {
+            (*won as f64 / *played as f64) * 100.0
+        } else {
+            0.0
+        };
         if *played >= 3 && wr > best_playlist_wr {
             best_playlist_wr = wr;
             best_playlist = name.clone();
@@ -2556,13 +2665,22 @@ pub fn get_insights(
             "winRate": wr.round() as i32,
         }));
     }
-    playlist_stats.sort_by(|a, b| b["played"].as_i64().unwrap().cmp(&a["played"].as_i64().unwrap()));
+    playlist_stats.sort_by(|a, b| {
+        b["played"]
+            .as_i64()
+            .unwrap()
+            .cmp(&a["played"].as_i64().unwrap())
+    });
 
     let mut best_hour = 0u32;
     let mut best_hour_wr = 0f64;
     let mut hour_stats = Vec::new();
     for (&hour, (played, won)) in &by_hour {
-        let wr = if *played > 0 { (*won as f64 / *played as f64) * 100.0 } else { 0.0 };
+        let wr = if *played > 0 {
+            (*won as f64 / *played as f64) * 100.0
+        } else {
+            0.0
+        };
         if *played >= 2 && wr > best_hour_wr {
             best_hour_wr = wr;
             best_hour = hour;
@@ -2610,7 +2728,11 @@ pub(crate) fn compute_head_to_head_conn(
         return Ok(HashMap::new());
     }
 
-    let placeholders: Vec<String> = opponent_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+    let placeholders: Vec<String> = opponent_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
     let in_clause = placeholders.join(",");
 
     let sql = format!(
@@ -2639,18 +2761,22 @@ pub(crate) fn compute_head_to_head_conn(
 
     let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|a| a.as_ref()).collect();
 
-    let mut stmt = conn.prepare(&sql).map_err(|e| AppError::StorageError(e.to_string()))?;
-    let rows = stmt.query_map(&*param_refs, |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            HeadToHeadRecord {
-                wins_against: row.get(1)?,
-                losses_against: row.get(2)?,
-                wins_together: row.get(3)?,
-                losses_together: row.get(4)?,
-            },
-        ))
-    }).map_err(|e| AppError::StorageError(e.to_string()))?;
+    let mut stmt = conn
+        .prepare(&sql)
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
+    let rows = stmt
+        .query_map(&*param_refs, |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                HeadToHeadRecord {
+                    wins_against: row.get(1)?,
+                    losses_against: row.get(2)?,
+                    wins_together: row.get(3)?,
+                    losses_together: row.get(4)?,
+                },
+            ))
+        })
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     let mut result = HashMap::new();
     for row in rows {
@@ -2671,7 +2797,11 @@ pub fn get_head_to_head_records(
     }
 
     let conn = get_conn(pool)?;
-    let placeholders: Vec<String> = opponent_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+    let placeholders: Vec<String> = opponent_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
     let in_clause = placeholders.join(",");
 
     let sql = format!(
@@ -2700,18 +2830,22 @@ pub fn get_head_to_head_records(
 
     let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|a| a.as_ref()).collect();
 
-    let mut stmt = conn.prepare(&sql).map_err(|e| AppError::StorageError(e.to_string()))?;
-    let rows = stmt.query_map(&*param_refs, |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            HeadToHeadRecord {
-                wins_against: row.get(1)?,
-                losses_against: row.get(2)?,
-                wins_together: row.get(3)?,
-                losses_together: row.get(4)?,
-            },
-        ))
-    }).map_err(|e| AppError::StorageError(e.to_string()))?;
+    let mut stmt = conn
+        .prepare(&sql)
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
+    let rows = stmt
+        .query_map(&*param_refs, |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                HeadToHeadRecord {
+                    wins_against: row.get(1)?,
+                    losses_against: row.get(2)?,
+                    wins_together: row.get(3)?,
+                    losses_together: row.get(4)?,
+                },
+            ))
+        })
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
 
     let mut result = HashMap::new();
     for row in rows {

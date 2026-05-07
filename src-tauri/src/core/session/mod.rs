@@ -3,9 +3,8 @@ use crate::core::models::{
 };
 use crate::core::settings::{get_settings, set_settings, AppSettings};
 use crate::core::storage::{
-    compute_head_to_head_conn, finish_match_conn, get_conn,
-    get_or_create_player_conn, insert_match_conn,
-    insert_match_event_conn, insert_match_player_conn, insert_session_conn,
+    compute_head_to_head_conn, finish_match_conn, get_conn, get_or_create_player_conn,
+    insert_match_conn, insert_match_event_conn, insert_match_player_conn, insert_session_conn,
     rebuild_daily_rollups_for_identity, upsert_daily_rollup_conn, DbPool, FinishMatchUpdate,
     MatchMmrSnapshot, MatchPlayerRow,
 };
@@ -254,8 +253,7 @@ impl SessionManager {
                     .filter(|id| *id != local_pid)
                     .cloned()
                     .collect();
-                compute_head_to_head_conn(&conn, local_pid, &opponent_ids)
-                    .unwrap_or_default()
+                compute_head_to_head_conn(&conn, local_pid, &opponent_ids).unwrap_or_default()
             } else {
                 HashMap::new()
             };
@@ -295,9 +293,9 @@ impl SessionManager {
                 };
 
                 let player_id = get_or_create_player_conn(&conn, primary_id, &live.name)?;
-                let h2h_json = h2h_map.get(primary_id).map(|r| {
-                    serde_json::to_string(r).unwrap_or_default()
-                });
+                let h2h_json = h2h_map
+                    .get(primary_id)
+                    .map(|r| serde_json::to_string(r).unwrap_or_default());
 
                 insert_match_player_conn(
                     &conn,
@@ -435,7 +433,8 @@ impl SessionManager {
             .map_err(|e| crate::error::AppError::StorageError(format!("COMMIT failed: {e}")))?;
 
         if let Some((local_primary_id, _)) = &local_identity {
-            let should_save = settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
+            let should_save =
+                settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
             if should_save {
                 settings.local_primary_id = Some(local_primary_id.clone());
                 if let Err(e) = set_settings(pool, &settings) {

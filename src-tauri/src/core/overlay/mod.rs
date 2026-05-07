@@ -461,12 +461,14 @@ async fn get_state_handler(
             axum::http::StatusCode::OK,
             [(axum::http::header::CONTENT_TYPE, "application/json")],
             json.clone(),
-        ).into_response(),
+        )
+            .into_response(),
         None => (
             axum::http::StatusCode::OK,
             [(axum::http::header::CONTENT_TYPE, "application/json")],
             "{}",
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 
@@ -476,10 +478,8 @@ async fn serve_sdk() -> impl IntoResponse {
         Some(content) => (
             [(axum::http::header::CONTENT_TYPE, "application/javascript")],
             content.data.to_vec(),
-        ).into_response(),
-        None => (
-            axum::http::StatusCode::NOT_FOUND,
-            "SDK not found",
-        ).into_response(),
+        )
+            .into_response(),
+        None => (axum::http::StatusCode::NOT_FOUND, "SDK not found").into_response(),
     }
 }

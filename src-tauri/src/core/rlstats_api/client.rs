@@ -20,11 +20,7 @@ impl RlstatsClient {
         Ok(Self { http })
     }
 
-    pub async fn fetch_profile_html(
-        &self,
-        platform: &str,
-        identifier: &str,
-    ) -> AppResult<String> {
+    pub async fn fetch_profile_html(&self, platform: &str, identifier: &str) -> AppResult<String> {
         let url = format!("{}/profile/{}/{}", RLSTATS_BASE, platform, identifier);
         debug!(%url, "Fetching RLStats profile HTML");
 

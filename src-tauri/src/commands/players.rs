@@ -65,9 +65,7 @@ pub async fn get_player_detail(
     }
 }
 
-fn resolve_player_names(
-    settings: &crate::core::settings::AppSettings,
-) -> Vec<String> {
+fn resolve_player_names(settings: &crate::core::settings::AppSettings) -> Vec<String> {
     let mut names = Vec::new();
     if !settings.player_name.trim().is_empty() {
         names.push(settings.player_name.trim().to_string());

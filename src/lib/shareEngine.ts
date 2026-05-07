@@ -529,6 +529,9 @@ function drawFooter(c: Ctx, W: number, H: number, pad: number) {
 
 /* ─── Public API ─── */
 export function computeShareHeight(_ctxData: ShareContext, _W: number): number {
+  // _ctxData y _W se reservan para layout dinámico futuro
+  void _ctxData;
+  void _W;
   return 1920;
 }
 

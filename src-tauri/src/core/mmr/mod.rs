@@ -1,12 +1,16 @@
 use crate::core::models::LivePlayer;
 use crate::core::storage::{get_mmr_cache, upsert_mmr_cache, DbPool};
-use crate::core::tracker_api::{PlaylistStats as TrackerPlaylistStats, TrackerClient, TrackerProfile};
+use crate::core::tracker_api::{
+    PlaylistStats as TrackerPlaylistStats, TrackerClient, TrackerProfile,
+};
 use crate::error::{AppError, AppResult};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::task::JoinSet;
 use tracing::warn;
+
+type RankInfoMap = HashMap<String, (Option<String>, Option<String>, Option<i32>)>;
 
 const TRACKER_PROVIDER: &str = "tracker";
 const RLSTATS_PROVIDER: &str = "rlstats";
@@ -146,13 +150,9 @@ async fn resolve_player_mmr(
 
     if let Some(ref resolved_playlist) = inference.primary {
         for playlist_key in &inference.candidates {
-            if let Ok(entry) = resolve_with_tracker(
-                &db_pool,
-                tracker_api_key.clone(),
-                &identity,
-                playlist_key,
-            )
-            .await
+            if let Ok(entry) =
+                resolve_with_tracker(&db_pool, tracker_api_key.clone(), &identity, playlist_key)
+                    .await
             {
                 return build_player_result(
                     identity,
@@ -208,7 +208,8 @@ async fn resolve_player_mmr(
         source: None,
         cached: false,
         error: Some(
-            "No pudimos inferir la playlist actual con suficiente confianza desde la Stats API.".into(),
+            "No pudimos inferir la playlist actual con suficiente confianza desde la Stats API."
+                .into(),
         ),
     }
 }
@@ -301,11 +302,8 @@ async fn resolve_with_tracker(
         .fetch_profile(&identity.tracker_platform, &identity.identifier)
         .await?;
 
-    let cached_profile = map_tracker_profile(
-        &profile,
-        &identity.tracker_platform,
-        &identity.identifier,
-    );
+    let cached_profile =
+        map_tracker_profile(&profile, &identity.tracker_platform, &identity.identifier);
     store_cached_profile(db_pool, &cached_profile)?;
 
     let entry = cached_profile
@@ -370,11 +368,8 @@ async fn resolve_with_rlstats(
         )));
     }
 
-    let cached_profile = parse_rlstats_profile(
-        &body,
-        &identity.tracker_platform,
-        &identity.identifier,
-    )?;
+    let cached_profile =
+        parse_rlstats_profile(&body, &identity.tracker_platform, &identity.identifier)?;
     store_cached_profile(db_pool, &cached_profile)?;
 
     let entry = cached_profile
@@ -400,12 +395,32 @@ fn map_tracker_profile(
 ) -> CachedMmrProfile {
     let mut playlists = HashMap::new();
     insert_tracker_playlist(&mut playlists, "duel", profile.stats.ranked.duel.as_ref());
-    insert_tracker_playlist(&mut playlists, "doubles", profile.stats.ranked.double.as_ref());
-    insert_tracker_playlist(&mut playlists, "standard", profile.stats.ranked.standard.as_ref());
+    insert_tracker_playlist(
+        &mut playlists,
+        "doubles",
+        profile.stats.ranked.double.as_ref(),
+    );
+    insert_tracker_playlist(
+        &mut playlists,
+        "standard",
+        profile.stats.ranked.standard.as_ref(),
+    );
     insert_tracker_playlist(&mut playlists, "hoops", profile.stats.extra.hoops.as_ref());
-    insert_tracker_playlist(&mut playlists, "rumble", profile.stats.extra.rumble.as_ref());
-    insert_tracker_playlist(&mut playlists, "dropshot", profile.stats.extra.dropshot.as_ref());
-    insert_tracker_playlist(&mut playlists, "snowday", profile.stats.extra.snowday.as_ref());
+    insert_tracker_playlist(
+        &mut playlists,
+        "rumble",
+        profile.stats.extra.rumble.as_ref(),
+    );
+    insert_tracker_playlist(
+        &mut playlists,
+        "dropshot",
+        profile.stats.extra.dropshot.as_ref(),
+    );
+    insert_tracker_playlist(
+        &mut playlists,
+        "snowday",
+        profile.stats.extra.snowday.as_ref(),
+    );
     insert_tracker_playlist(&mut playlists, "casual", profile.stats.unranked.as_ref());
 
     CachedMmrProfile {
@@ -428,7 +443,10 @@ fn insert_tracker_playlist(
             CachedPlaylistMmr {
                 mmr: playlist.mmr.and_then(|value| i32::try_from(value).ok()),
                 rank_name: playlist.rank.as_ref().map(|rank| rank.tier.name.clone()),
-                division: playlist.rank.as_ref().map(|rank| rank.division.name.clone()),
+                division: playlist
+                    .rank
+                    .as_ref()
+                    .map(|rank| rank.division.name.clone()),
                 matches_played: playlist.matches_played,
             },
         );
@@ -486,9 +504,7 @@ fn parse_rlstats_profile(
     })
 }
 
-fn extract_rlstats_table_rank_info(
-    html: &str,
-) -> HashMap<String, (Option<String>, Option<String>, Option<i32>)> {
+fn extract_rlstats_table_rank_info(html: &str) -> RankInfoMap {
     let skills_start = match html.find("id=\"skills\"") {
         Some(pos) => pos,
         None => return HashMap::new(),
@@ -506,7 +522,10 @@ fn extract_rlstats_table_rank_info(
     let mut table_count = 0;
     while let Some(table_start) = rem.find("<table") {
         let after = &rem[table_start..];
-        let table_end = after.find("</table>").map(|p| table_start + p + 8).unwrap_or(rem.len());
+        let table_end = after
+            .find("</table>")
+            .map(|p| table_start + p + 8)
+            .unwrap_or(rem.len());
         let table_html = &rem[table_start..table_end];
 
         if !table_html.contains("unranked-block") && !table_html.contains("Casual") {
@@ -520,11 +539,7 @@ fn extract_rlstats_table_rank_info(
     result
 }
 
-fn parse_single_skill_table(
-    table_html: &str,
-    _table_index: usize,
-    out: &mut HashMap<String, (Option<String>, Option<String>, Option<i32>)>,
-) {
+fn parse_single_skill_table(table_html: &str, _table_index: usize, out: &mut RankInfoMap) {
     let rows = extract_rlstats_table_rows(table_html);
     if rows.len() < 6 {
         return;
@@ -533,12 +548,10 @@ fn parse_single_skill_table(
     let headers = extract_tr_cell_texts(&rows[0]);
     let rank_names = extract_tr_cell_texts(&rows[1]);
     let divisions = extract_tr_cell_texts(&rows[2]);
-    let matches_played_row = extract_tr_cell_texts(
-        rows.get(4).unwrap_or(&String::new()),
-    );
+    let matches_played_row = extract_tr_cell_texts(rows.get(4).unwrap_or(&String::new()));
 
-    for i in 0..headers.len() {
-        let key = normalize_playlist_key_from_header(&headers[i]);
+    for (i, header) in headers.iter().enumerate() {
+        let key = normalize_playlist_key_from_header(header);
         let key = match key {
             Some(k) => k.to_string(),
             None => continue,
@@ -550,9 +563,11 @@ fn parse_single_skill_table(
         let division = divisions.get(i).cloned();
         let division = division.filter(|d| !d.is_empty());
 
-        let mp = matches_played_row
-            .get(i)
-            .and_then(|s| s.split_whitespace().last().and_then(|w| w.parse::<i32>().ok()));
+        let mp = matches_played_row.get(i).and_then(|s| {
+            s.split_whitespace()
+                .last()
+                .and_then(|w| w.parse::<i32>().ok())
+        });
 
         out.insert(key, (rank_name, division, mp));
     }
@@ -564,7 +579,10 @@ fn extract_rlstats_table_rows(table_html: &str) -> Vec<String> {
 
     while let Some(tr_start) = remaining.find("<tr") {
         let after = &remaining[tr_start..];
-        let tr_end = after.find("</tr>").map(|p| tr_start + p + 5).unwrap_or(remaining.len());
+        let tr_end = after
+            .find("</tr>")
+            .map(|p| tr_start + p + 5)
+            .unwrap_or(remaining.len());
         rows.push(remaining[tr_start..tr_end].to_string());
         remaining = &remaining[tr_end..];
     }
@@ -700,7 +718,9 @@ fn extract_rlstats_first_row(html: &str) -> AppResult<String> {
     let start = html
         .find(marker)
         .map(|index| index + marker.len())
-        .ok_or_else(|| AppError::ParseError("RLStats no expuso la serie de progreso MMR.".into()))?;
+        .ok_or_else(|| {
+            AppError::ParseError("RLStats no expuso la serie de progreso MMR.".into())
+        })?;
 
     let after = &html[start..];
     let row_start = after
@@ -925,11 +945,23 @@ mod tests {
 
     #[test]
     fn infer_playlist_detects_doubles() {
-        let players = vec![
-            LivePlayer { team: 0, ..Default::default() },
-            LivePlayer { team: 0, ..Default::default() },
-            LivePlayer { team: 1, ..Default::default() },
-            LivePlayer { team: 1, ..Default::default() },
+        let players = [
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 1,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 1,
+                ..Default::default()
+            },
         ];
 
         let inference = infer_playlist(players.iter());
@@ -979,6 +1011,9 @@ mod tests {
     #[test]
     fn extract_last_quoted_literal_returns_last_string() {
         let statement = "data.addColumn( 'number' , \"Doubles\" )";
-        assert_eq!(extract_last_quoted_literal(statement).as_deref(), Some("Doubles"));
+        assert_eq!(
+            extract_last_quoted_literal(statement).as_deref(),
+            Some("Doubles")
+        );
     }
 }

@@ -21,10 +21,10 @@ use crate::core::obs_text;
 use crate::core::overlay::OverlayServer;
 use crate::core::process_watcher::ProcessWatcher;
 use crate::core::profiles::{get_db_path_for_profile, init_profiles};
+use crate::core::rlstats_api::RlstatsClient;
 use crate::core::session::{MatchPhase, SessionManager};
 use crate::core::settings::{get_settings, set_settings};
 use crate::core::storage::{init_storage, DbPool};
-use crate::core::rlstats_api::RlstatsClient;
 use crate::core::tracker_api::TrackerClient;
 
 pub struct AppState {
@@ -281,7 +281,7 @@ pub fn run() {
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                     let app_settings = get_settings(&pool).unwrap_or_default();
-                    
+
                     // Only restore overlay if game is currently running
                     let game_running = app_settings.game_running;
                     if app_settings.overlay_enabled && game_running {
@@ -299,27 +299,27 @@ pub fn run() {
                 tauri::async_runtime::spawn(async move {
                     let app_handle_for_listener = app_handle.clone();
                     let pool_for_closure = pool.clone();
-                    
+
                     let _receiver = app_handle_for_listener.listen("game-status-changed", move |event| {
                         let payload: serde_json::Value = serde_json::from_str(event.payload()).unwrap_or_default();
                         let game_running = payload.get("running").and_then(|v| v.as_bool()).unwrap_or(false);
                         let pool = pool_for_closure.clone();
                         let app_handle = app_handle.clone();
-                        
+
                         tauri::async_runtime::spawn(async move {
                             // Update game_running in settings
                             if let Ok(mut app_settings) = get_settings(&pool) {
                                 app_settings.game_running = game_running;
                                 let _ = set_settings(&pool, &app_settings);
                             }
-                            
+
                             if let Ok(app_settings) = get_settings(&pool) {
                                 if !app_settings.overlay_enabled {
                                     return;
                                 }
-                                
+
                                 let overlay_win = app_handle.get_webview_window("overlay");
-                                
+
                                 if game_running {
                                     // Game started: show overlay if enabled
                                     if overlay_win.is_none() {
@@ -338,7 +338,7 @@ pub fn run() {
                             }
                         });
                     });
-                    
+
                     // Keep task alive
                     loop {
                         tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
@@ -433,7 +433,11 @@ async fn process_events(
                         if let Some(winner) = summary.winner {
                             let settings = get_settings(&db_pool).unwrap_or_default();
                             let local_team = settings.local_primary_id.as_ref().and_then(|pid| {
-                                summary.players.iter().find(|p| &p.primary_id == pid).map(|p| p.team_num)
+                                summary
+                                    .players
+                                    .iter()
+                                    .find(|p| &p.primary_id == pid)
+                                    .map(|p| p.team_num)
                             });
                             let is_win = local_team == Some(winner);
                             if is_win {
@@ -444,10 +448,21 @@ async fn process_events(
                             session_streak = match last_was_win {
                                 Some(true) if is_win => session_streak + 1,
                                 Some(false) if !is_win => session_streak - 1,
-                                _ => if is_win { 1 } else { -1 },
+                                _ => {
+                                    if is_win {
+                                        1
+                                    } else {
+                                        -1
+                                    }
+                                }
                             };
                             last_was_win = Some(is_win);
-                            obs_text::update_obs_files_win(is_win, session_wins, session_losses, session_streak);
+                            obs_text::update_obs_files_win(
+                                is_win,
+                                session_wins,
+                                session_losses,
+                                session_streak,
+                            );
                         }
 
                         let _ = app_handle.emit("match-summary", &summary);
@@ -491,7 +506,10 @@ fn map_live_event(event: &RlEvent) -> Option<serde_json::Value> {
     }))
 }
 
-fn broadcast_to_overlay(overlay: &std::sync::Arc<tokio::sync::Mutex<Option<OverlayServer>>>, event: &RlEvent) {
+fn broadcast_to_overlay(
+    overlay: &std::sync::Arc<tokio::sync::Mutex<Option<OverlayServer>>>,
+    event: &RlEvent,
+) {
     if let Ok(guard) = overlay.try_lock() {
         if let Some(ref server) = *guard {
             match event {
@@ -621,27 +639,39 @@ async fn tracker_refresh_loop(db_pool: Arc<DbPool>, app_handle: tauri::AppHandle
 
                 match RlstatsClient::new() {
                     Ok(rl_client) => {
-                        match rl_client.fetch_profile_html(rlstats_platform, &username).await {
+                        match rl_client
+                            .fetch_profile_html(rlstats_platform, &username)
+                            .await
+                        {
                             Ok(html) => {
-                                match crate::core::rlstats_api::parse_profile_html(&html, &platform, &username) {
+                                match crate::core::rlstats_api::parse_profile_html(
+                                    &html, &platform, &username,
+                                ) {
                                     Ok(profile) => {
                                         if let Ok(profile_json) = serde_json::to_string(&profile) {
-                                            if let Err(e) = crate::core::storage::upsert_rlstats_cache(
-                                                &db_pool,
-                                                &platform,
-                                                &username,
-                                                &profile_json,
-                                            ) {
+                                            if let Err(e) =
+                                                crate::core::storage::upsert_rlstats_cache(
+                                                    &db_pool,
+                                                    &platform,
+                                                    &username,
+                                                    &profile_json,
+                                                )
+                                            {
                                                 tracing::error!(error = %e, "Failed to cache rlstats profile");
                                             } else {
-                                                let _ = app_handle.emit("tracker-profile-updated", &profile);
+                                                let _ = app_handle
+                                                    .emit("tracker-profile-updated", &profile);
                                             }
                                         }
                                     }
-                                    Err(e) => tracing::error!(error = %e, "Failed to parse RLStats profile"),
+                                    Err(e) => {
+                                        tracing::error!(error = %e, "Failed to parse RLStats profile")
+                                    }
                                 }
                             }
-                            Err(e) => tracing::error!(error = %e, "Failed to fetch RLStats profile"),
+                            Err(e) => {
+                                tracing::error!(error = %e, "Failed to fetch RLStats profile")
+                            }
                         }
                     }
                     Err(e) => tracing::error!(error = %e, "Failed to create RLStats client"),
@@ -663,7 +693,10 @@ async fn create_overlay_window_inner(
 
     let win = WebviewWindowBuilder::new(app, "overlay", url)
         .title("RL Overlay")
-        .inner_size(settings.overlay_width as f64, settings.overlay_height as f64)
+        .inner_size(
+            settings.overlay_width as f64,
+            settings.overlay_height as f64,
+        )
         .position(
             settings.overlay_position_x as f64,
             settings.overlay_position_y as f64,
@@ -700,7 +733,10 @@ async fn create_overlay_window_inner(
         }),
     );
     let _ = win.emit("overlay-opacity-changed", settings.overlay_opacity);
-    let _ = win.emit("overlay-clickthrough-changed", settings.overlay_clickthrough);
+    let _ = win.emit(
+        "overlay-clickthrough-changed",
+        settings.overlay_clickthrough,
+    );
 
     let _ = win.show();
 

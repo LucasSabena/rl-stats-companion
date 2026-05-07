@@ -335,7 +335,7 @@ mod session_tests {
     }
 
     #[test]
-    fn session_drops_players_missing_from_new_snapshot() {
+    fn session_preserves_previous_players_on_partial_snapshot() {
         let mut session = SessionManager::new();
 
         let mut initial_players = HashMap::new();
@@ -383,9 +383,19 @@ mod session_tests {
         });
 
         let live = session.live_state();
-        assert_eq!(live.players.len(), 1);
-        assert_eq!(live.players[0].name, "Alpha");
-        assert_eq!(live.players[0].score, 150);
+        // Session intentionally keeps players from prior snapshots so
+        // disconnected teammates are not lost before MatchEnded.
+        assert_eq!(live.players.len(), 2);
+        let alpha = live
+            .players
+            .iter()
+            .find(|p| p.name == "Alpha")
+            .expect("Alpha present");
+        assert_eq!(alpha.score, 150);
+        assert!(
+            live.players.iter().any(|p| p.name == "Bravo"),
+            "Bravo should still be present"
+        );
     }
 
     #[test]

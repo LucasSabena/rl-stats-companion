@@ -58,8 +58,7 @@ pub async fn get_analytics(
         )
         .map_err(|e| e.to_string())?
     } else {
-        storage::get_daily_rollups(pool, &start_str, &end_str)
-            .map_err(|e| e.to_string())?
+        storage::get_daily_rollups(pool, &start_str, &end_str).map_err(|e| e.to_string())?
     };
 
     let (
@@ -76,94 +75,95 @@ pub async fn get_analytics(
         avg_score,
         peak_speed,
         streak,
-    ) = if is_individual && local_id.is_some() {
-        let local_id_str = local_id.unwrap();
-        let summary = storage::get_analytics_summary_for_identity(
-            pool,
-            local_id_str,
-            &start_str,
-            &end_str,
-            playlist.as_deref(),
-            match_type.as_deref(),
-        )
-        .map_err(|e| e.to_string())?;
-        let streak_data = metrics::calculate_streaks(
-            pool,
-            local_id_str,
-            &start_str,
-            &end_str,
-            playlist.as_deref(),
-            match_type.as_deref(),
-        )
-        .unwrap_or(StreakData {
-            best_streak: 0,
-            current_streak: 0,
-        });
-        (
-            summary.total_matches,
-            summary.wins,
-            summary.losses,
-            summary.total_goals,
-            summary.total_conceded,
-            summary.total_shots,
-            summary.total_saves,
-            summary.total_demos,
-            summary.total_assists,
-            summary.avg_duration,
-            summary.avg_score,
-            summary.peak_speed,
-            streak_data,
-        )
-    } else if is_individual {
-        // Individual scope without local_primary_id: compute from individual rollups
-        let total_matches: i32 = rollups.iter().map(|r| r.matches_played).sum();
-        let wins: i32 = rollups.iter().map(|r| r.wins).sum();
-        let losses: i32 = rollups.iter().map(|r| r.losses).sum();
-        let total_goals: i32 = rollups.iter().map(|r| r.goals_scored).sum();
-        let total_conceded: i32 = rollups.iter().map(|r| r.goals_conceded).sum();
-        let total_shots: i32 = rollups.iter().map(|r| r.total_shots).sum();
-        let total_saves: i32 = rollups.iter().map(|r| r.total_saves).sum();
-        let total_demos: i32 = rollups.iter().map(|r| r.total_demos).sum();
-        let total_assists: i32 = rollups.iter().map(|r| r.total_assists).sum();
-
-        let avg_duration: f64 = if total_matches > 0 {
-            rollups
-                .iter()
-                .map(|r| r.avg_duration_seconds as f64 * r.matches_played as f64)
-                .sum::<f64>()
-                / total_matches as f64
-        } else {
-            0.0
-        };
-
-        let avg_score: f64 = if total_matches > 0 {
-            rollups
-                .iter()
-                .map(|r| r.avg_score as f64 * r.matches_played as f64)
-                .sum::<f64>()
-                / total_matches as f64
-        } else {
-            0.0
-        };
-
-        (
-            total_matches,
-            wins,
-            losses,
-            total_goals,
-            total_conceded,
-            total_shots,
-            total_saves,
-            total_demos,
-            total_assists,
-            avg_duration,
-            avg_score,
-            0.0,
-            StreakData {
+    ) = if is_individual {
+        if let Some(local_id_str) = local_id {
+            let summary = storage::get_analytics_summary_for_identity(
+                pool,
+                local_id_str,
+                &start_str,
+                &end_str,
+                playlist.as_deref(),
+                match_type.as_deref(),
+            )
+            .map_err(|e| e.to_string())?;
+            let streak_data = metrics::calculate_streaks(
+                pool,
+                local_id_str,
+                &start_str,
+                &end_str,
+                playlist.as_deref(),
+                match_type.as_deref(),
+            )
+            .unwrap_or(StreakData {
                 best_streak: 0,
                 current_streak: 0,
-            },
-        )
+            });
+            (
+                summary.total_matches,
+                summary.wins,
+                summary.losses,
+                summary.total_goals,
+                summary.total_conceded,
+                summary.total_shots,
+                summary.total_saves,
+                summary.total_demos,
+                summary.total_assists,
+                summary.avg_duration,
+                summary.avg_score,
+                summary.peak_speed,
+                streak_data,
+            )
+        } else {
+            // Individual scope without local_primary_id: compute from individual rollups
+            let total_matches: i32 = rollups.iter().map(|r| r.matches_played).sum();
+            let wins: i32 = rollups.iter().map(|r| r.wins).sum();
+            let losses: i32 = rollups.iter().map(|r| r.losses).sum();
+            let total_goals: i32 = rollups.iter().map(|r| r.goals_scored).sum();
+            let total_conceded: i32 = rollups.iter().map(|r| r.goals_conceded).sum();
+            let total_shots: i32 = rollups.iter().map(|r| r.total_shots).sum();
+            let total_saves: i32 = rollups.iter().map(|r| r.total_saves).sum();
+            let total_demos: i32 = rollups.iter().map(|r| r.total_demos).sum();
+            let total_assists: i32 = rollups.iter().map(|r| r.total_assists).sum();
+
+            let avg_duration: f64 = if total_matches > 0 {
+                rollups
+                    .iter()
+                    .map(|r| r.avg_duration_seconds as f64 * r.matches_played as f64)
+                    .sum::<f64>()
+                    / total_matches as f64
+            } else {
+                0.0
+            };
+
+            let avg_score: f64 = if total_matches > 0 {
+                rollups
+                    .iter()
+                    .map(|r| r.avg_score as f64 * r.matches_played as f64)
+                    .sum::<f64>()
+                    / total_matches as f64
+            } else {
+                0.0
+            };
+
+            (
+                total_matches,
+                wins,
+                losses,
+                total_goals,
+                total_conceded,
+                total_shots,
+                total_saves,
+                total_demos,
+                total_assists,
+                avg_duration,
+                avg_score,
+                0.0,
+                StreakData {
+                    best_streak: 0,
+                    current_streak: 0,
+                },
+            )
+        }
     } else {
         let total_matches: i32 = rollups.iter().map(|r| r.matches_played).sum();
         let wins: i32 = rollups.iter().map(|r| r.wins).sum();
@@ -308,8 +308,14 @@ pub async fn get_sessions(
     let minutes = gap_minutes.unwrap_or(settings.session_gap_minutes);
     let scope_str = scope.as_deref().unwrap_or("team");
 
-    storage::get_match_sessions(pool, minutes, playlist.as_deref(), match_type.as_deref(), Some(scope_str))
-        .map_err(|e| e.to_string())
+    storage::get_match_sessions(
+        pool,
+        minutes,
+        playlist.as_deref(),
+        match_type.as_deref(),
+        Some(scope_str),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -479,10 +485,10 @@ pub async fn get_session_matches(
             None
         };
 
-        let is_win = match (m["winner"].as_i64(), local_team) {
-            (Some(w), Some(lt)) if w == lt as i64 => true,
-            _ => false,
-        };
+        let is_win = matches!(
+            (m["winner"].as_i64(), local_team),
+            (Some(w), Some(lt)) if w == lt as i64
+        );
 
         let my_diffs = local_team.map(|lt| {
             let scored = m[if lt == 0 {
@@ -541,7 +547,11 @@ pub async fn get_insights(
         None => return Ok(serde_json::json!({ "available": false })),
     };
 
-    let days = if period.days == 0 { 365 } else { period.days as i64 };
+    let days = if period.days == 0 {
+        365
+    } else {
+        period.days as i64
+    };
     let end = chrono::Utc::now();
     let start = end - chrono::Duration::days(days);
     let start_str = start.format("%Y-%m-%d").to_string();
@@ -739,7 +749,9 @@ fn get_player_period_stats(
     let params_refs: Vec<&dyn rusqlite::ToSql> = args.iter().map(|a| a.as_ref()).collect();
 
     let (avg_score, total_assists, peak_speed): (f64, i32, f64) = conn
-        .query_row(&sql, &*params_refs, |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .query_row(&sql, &*params_refs, |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
         .map_err(|e| e.to_string())?;
     Ok((avg_score, total_assists, peak_speed))
 }

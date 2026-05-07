@@ -26,7 +26,7 @@ pub fn calculate_streaks(
          WHERE p.primary_id = ?1
            AND m.winner IS NOT NULL
            AND m.start_time >= ?2
-           AND m.start_time < date(?3, '+1 day')"
+           AND m.start_time < date(?3, '+1 day')",
     );
     let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
     args.push(Box::new(local_primary_id.to_string()));
@@ -49,10 +49,7 @@ pub fn calculate_streaks(
     let mut stmt = conn.prepare(&sql)?;
 
     let results: Vec<(Option<i32>, i32)> = stmt
-        .query_map(
-            &*params_refs,
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )?
+        .query_map(&*params_refs, |row| Ok((row.get(0)?, row.get(1)?)))?
         .collect::<Result<Vec<_>, _>>()?;
 
     let (best_streak, current_streak) = compute_streaks(&results);
@@ -93,9 +90,7 @@ pub fn calculate_streaks_for_sessions(
 fn compute_streaks(results: &[(Option<i32>, i32)]) -> (u32, u32) {
     let wins: Vec<bool> = results
         .iter()
-        .filter_map(|(winner, team)| {
-            winner.map(|w| w == *team)
-        })
+        .filter_map(|(winner, team)| winner.map(|w| w == *team))
         .collect();
 
     let mut best_streak = 0u32;

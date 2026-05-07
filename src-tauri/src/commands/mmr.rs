@@ -54,8 +54,6 @@ pub async fn set_session_mmr_snapshot(
     mmr_by_primary_id: HashMap<String, Option<i32>>,
 ) -> Result<(), String> {
     let mut session = state.session_manager.write().await;
-    session.set_mmr_snapshot(MatchMmrSnapshot {
-        mmr_by_primary_id,
-    });
+    session.set_mmr_snapshot(MatchMmrSnapshot { mmr_by_primary_id });
     Ok(())
 }

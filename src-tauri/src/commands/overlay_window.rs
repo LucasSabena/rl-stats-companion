@@ -35,11 +35,7 @@ pub async fn create_overlay_window(
         return Ok(build_state(&app_settings, true));
     }
 
-    let url = if cfg!(debug_assertions) {
-        WebviewUrl::App("index.html".into())
-    } else {
-        WebviewUrl::App("index.html".into())
-    };
+    let url = WebviewUrl::App("index.html".into());
 
     let win = WebviewWindowBuilder::new(&app, OVERLAY_LABEL, url)
         .title("RL Overlay")
@@ -72,9 +68,7 @@ pub async fn create_overlay_window(
 
 /// Destroy the overlay window.
 #[tauri::command]
-pub async fn destroy_overlay_window(
-    app: tauri::AppHandle,
-) -> Result<OverlayWindowState, String> {
+pub async fn destroy_overlay_window(app: tauri::AppHandle) -> Result<OverlayWindowState, String> {
     if let Some(win) = app.get_webview_window(OVERLAY_LABEL) {
         let _ = win.close();
     }
@@ -113,8 +107,10 @@ pub async fn update_overlay_position(
     y: i32,
 ) -> Result<OverlayWindowState, String> {
     if let Some(win) = app.get_webview_window(OVERLAY_LABEL) {
-        win.set_position(tauri::Position::Physical(tauri::PhysicalPosition::new(x, y)))
-            .map_err(|e| e.to_string())?;
+        win.set_position(tauri::Position::Physical(tauri::PhysicalPosition::new(
+            x, y,
+        )))
+        .map_err(|e| e.to_string())?;
     }
 
     let mut app_settings = {
@@ -228,12 +224,9 @@ pub async fn toggle_overlay_enabled(
     crate::core::settings::set_settings(&pool, &app_settings).map_err(|e| e.to_string())?;
 
     if app_settings.overlay_enabled {
-        // Re-use create logic by dropping and calling create
-        drop(settings);
-        // We need a fresh state ref — use the app handle to get it
-        return create_overlay_window(app.clone(), app.state::<crate::AppState>()).await;
+        create_overlay_window(app.clone(), app.state::<crate::AppState>()).await
     } else {
-        return destroy_overlay_window(app).await;
+        destroy_overlay_window(app).await
     }
 }
 

@@ -57,9 +57,7 @@ pub async fn start_overlay_server(
 /// Sends a graceful-shutdown signal and clears the stored handle.
 /// Idempotent — safe to call even when no server is running.
 #[tauri::command]
-pub async fn stop_overlay_server(
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+pub async fn stop_overlay_server(state: State<'_, AppState>) -> Result<(), String> {
     info!("Stopping overlay server");
 
     let mut guard = state.overlay_server.lock().await;
@@ -106,9 +104,7 @@ pub async fn get_overlay_server_status(
 ///
 /// Returns `Err` if the overlay server is not running.
 #[tauri::command]
-pub async fn get_overlay_urls(
-    state: State<'_, AppState>,
-) -> Result<Vec<OverlayUrl>, String> {
+pub async fn get_overlay_urls(state: State<'_, AppState>) -> Result<Vec<OverlayUrl>, String> {
     let guard = state.overlay_server.lock().await;
     let port = match &*guard {
         Some(server) => server.port(),
@@ -136,18 +132,14 @@ pub async fn get_overlay_urls(
 /// Returns the current live match state as a JSON string.
 /// Useful for OBS URL/API source plugins that poll for data.
 #[tauri::command]
-pub async fn get_overlay_state(
-    state: State<'_, AppState>,
-) -> Result<serde_json::Value, String> {
+pub async fn get_overlay_state(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let guard = state.overlay_server.lock().await;
     match &*guard {
         Some(server) => {
             let cached = server.latest_state_handle();
             let value = cached.read().await;
             match &*value {
-                Some(json) => {
-                    serde_json::from_str(json).map_err(|e| e.to_string())
-                }
+                Some(json) => serde_json::from_str(json).map_err(|e| e.to_string()),
                 None => Ok(serde_json::json!({})),
             }
         }

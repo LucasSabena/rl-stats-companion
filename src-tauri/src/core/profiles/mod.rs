@@ -63,28 +63,25 @@ fn find_legacy_db_in_sibling_dirs(app_dir: &Path) -> Option<PathBuf> {
 /// into the current app data dir as the default profile database.
 fn copy_legacy_db_from_sibling(app_dir: &Path, legacy_db: &Path) -> AppResult<()> {
     let default_db = get_db_path_for_profile(app_dir, "default");
-    let legacy_parent = legacy_db.parent().ok_or_else(|| {
-        AppError::ConfigError("Legacy DB has no parent directory".into())
-    })?;
+    let legacy_parent = legacy_db
+        .parent()
+        .ok_or_else(|| AppError::ConfigError("Legacy DB has no parent directory".into()))?;
 
     info!(from = %legacy_db.display(), to = %default_db.display(), "Copying legacy database from sibling directory");
 
-    fs::copy(legacy_db, &default_db).map_err(|e| {
-        AppError::IoError(format!("Failed to copy legacy DB: {e}"))
-    })?;
+    fs::copy(legacy_db, &default_db)
+        .map_err(|e| AppError::IoError(format!("Failed to copy legacy DB: {e}")))?;
 
     // Copy WAL and SHM if they exist — these may contain uncheckpointed data.
     let legacy_wal = legacy_parent.join("rl_stats.db-wal");
     let legacy_shm = legacy_parent.join("rl_stats.db-shm");
     if legacy_wal.exists() {
-        fs::copy(&legacy_wal, app_dir.join("rl_stats_default.db-wal")).map_err(|e| {
-            AppError::IoError(format!("Failed to copy legacy WAL: {e}"))
-        })?;
+        fs::copy(&legacy_wal, app_dir.join("rl_stats_default.db-wal"))
+            .map_err(|e| AppError::IoError(format!("Failed to copy legacy WAL: {e}")))?;
     }
     if legacy_shm.exists() {
-        fs::copy(&legacy_shm, app_dir.join("rl_stats_default.db-shm")).map_err(|e| {
-            AppError::IoError(format!("Failed to copy legacy SHM: {e}"))
-        })?;
+        fs::copy(&legacy_shm, app_dir.join("rl_stats_default.db-shm"))
+            .map_err(|e| AppError::IoError(format!("Failed to copy legacy SHM: {e}")))?;
     }
 
     info!("Legacy database copied successfully");
