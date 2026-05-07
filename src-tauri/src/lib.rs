@@ -60,6 +60,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::live::get_live_state,
+            commands::live::get_live_head_to_head,
             commands::live::get_connection_status,
             commands::mmr::fetch_live_mmr_snapshot,
             commands::mmr::set_session_mmr_snapshot,

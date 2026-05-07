@@ -43,6 +43,8 @@ pub struct PlayerStats {
     pub speed: f64,
     pub boost: i32,
     pub mmr: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub head_to_head: Option<HeadToHeadRecord>,
 }
 
 /// Live player data as received from UpdateState events.
@@ -237,6 +239,15 @@ pub struct SessionSummary {
     pub winner: Option<i32>,
     pub players: Vec<Player>,
     pub match_type: Option<String>,
+}
+
+/// Head-to-head record between the local player and another player.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct HeadToHeadRecord {
+    pub wins_against: i32,
+    pub losses_against: i32,
+    pub wins_together: i32,
+    pub losses_together: i32,
 }
 
 /// Connection status for the ingestor.

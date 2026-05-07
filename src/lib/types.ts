@@ -27,6 +27,7 @@ export interface PlayerStats extends Player {
   avgSpeed?: number;
   timeInAir?: number;
   mmr?: number | null;
+  head_to_head?: HeadToHeadRecord | null;
 }
 
 export interface GameState {
@@ -499,6 +500,13 @@ export interface RlInstallation {
 }
 
 // ─── Player Directory ────────────────────────────────────────────────────────
+
+export interface HeadToHeadRecord {
+  wins_against: number;
+  losses_against: number;
+  wins_together: number;
+  losses_together: number;
+}
 
 export interface PlayerDirectoryEntry {
   player_id: number;

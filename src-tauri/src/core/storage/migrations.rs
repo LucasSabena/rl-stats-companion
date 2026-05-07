@@ -193,6 +193,11 @@ pub static MIGRATIONS: &[Migration] = &[
         );
         CREATE INDEX IF NOT EXISTS idx_friends_player_id ON friends(player_id);",
     },
+    Migration {
+        version: 17,
+        name: "add_head_to_head_to_match_players",
+        sql: "ALTER TABLE match_players ADD COLUMN head_to_head_json TEXT;",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

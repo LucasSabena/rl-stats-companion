@@ -320,7 +320,9 @@ fn import_data_json_internal(
                             speed,
                             boost,
                             mmr: None,
+                            head_to_head: None,
                         },
+                        head_to_head_json: None,
                     },
                 )
                 .map_err(|e| e.to_string())?;

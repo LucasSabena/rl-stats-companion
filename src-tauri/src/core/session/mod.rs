@@ -3,7 +3,8 @@ use crate::core::models::{
 };
 use crate::core::settings::{get_settings, set_settings, AppSettings};
 use crate::core::storage::{
-    finish_match_conn, get_conn, get_or_create_player_conn, insert_match_conn,
+    compute_head_to_head_conn, finish_match_conn, get_conn,
+    get_or_create_player_conn, insert_match_conn,
     insert_match_event_conn, insert_match_player_conn, insert_session_conn,
     rebuild_daily_rollups_for_identity, upsert_daily_rollup_conn, DbPool, FinishMatchUpdate,
     MatchMmrSnapshot, MatchPlayerRow,
@@ -242,6 +243,23 @@ impl SessionManager {
         conn.execute("BEGIN IMMEDIATE", [])
             .map_err(|e| crate::error::AppError::StorageError(format!("BEGIN failed: {e}")))?;
 
+        let settings = get_settings(pool).unwrap_or_else(|_| AppSettings::default());
+        let local_identity = resolve_local_player_identity(self.players.values(), &settings);
+
+        let h2h_map: HashMap<String, crate::core::models::HeadToHeadRecord> =
+            if let Some((local_pid, _)) = &local_identity {
+                let opponent_ids: Vec<String> = self
+                    .players
+                    .keys()
+                    .filter(|id| *id != local_pid)
+                    .cloned()
+                    .collect();
+                compute_head_to_head_conn(&conn, local_pid, &opponent_ids)
+                    .unwrap_or_default()
+            } else {
+                HashMap::new()
+            };
+
         let persist_result = (|| -> AppResult<(i64, Vec<Player>)> {
             let match_id = insert_match_conn(
                 &conn,
@@ -273,9 +291,14 @@ impl SessionManager {
                     speed: live.speed,
                     boost: live.boost,
                     mmr,
+                    head_to_head: None,
                 };
 
                 let player_id = get_or_create_player_conn(&conn, primary_id, &live.name)?;
+                let h2h_json = h2h_map.get(primary_id).map(|r| {
+                    serde_json::to_string(r).unwrap_or_default()
+                });
+
                 insert_match_player_conn(
                     &conn,
                     match_id,
@@ -283,6 +306,7 @@ impl SessionManager {
                         player_id,
                         team_num: live.team,
                         stats: player_stats.clone(),
+                        head_to_head_json: h2h_json,
                     },
                 )?;
 

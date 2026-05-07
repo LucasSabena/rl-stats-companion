@@ -523,7 +523,9 @@ mod storage_crud_tests {
                     speed: 1200.0,
                     boost: 50,
                     mmr: None,
+                    head_to_head: None,
                 },
+                head_to_head_json: None,
             },
         )
         .unwrap();

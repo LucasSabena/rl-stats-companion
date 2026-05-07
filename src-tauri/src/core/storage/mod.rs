@@ -1,4 +1,4 @@
-use crate::core::models::{DailyRollup, Match, MatchEvent, Player, SessionSummary};
+use crate::core::models::{DailyRollup, HeadToHeadRecord, Match, MatchEvent, Player, SessionSummary};
 use crate::error::{AppError, AppResult};
 use chrono::{DateTime, Timelike, Utc};
 use r2d2::{Pool, PooledConnection};
@@ -26,6 +26,7 @@ pub struct MatchPlayerRow {
     pub player_id: i64,
     pub team_num: i32,
     pub stats: crate::core::models::PlayerStats,
+    pub head_to_head_json: Option<String>,
 }
 
 /// MMR snapshot received from the frontend to associate with match players.
@@ -203,8 +204,8 @@ pub(crate) fn insert_match_player_conn(
     player: MatchPlayerRow,
 ) -> AppResult<()> {
     conn.execute(
-        "INSERT INTO match_players (match_id, player_id, team_num, score, goals, shots, assists, saves, touches, car_touches, demos, speed, boost, mmr)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+        "INSERT INTO match_players (match_id, player_id, team_num, score, goals, shots, assists, saves, touches, car_touches, demos, speed, boost, mmr, head_to_head_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
          ON CONFLICT(match_id, player_id) DO UPDATE SET
          score = excluded.score,
          goals = excluded.goals,
@@ -216,7 +217,8 @@ pub(crate) fn insert_match_player_conn(
          demos = excluded.demos,
          speed = excluded.speed,
          boost = excluded.boost,
-         mmr = excluded.mmr",
+         mmr = excluded.mmr,
+         head_to_head_json = excluded.head_to_head_json",
         params![
             match_id,
             player.player_id,
@@ -232,6 +234,7 @@ pub(crate) fn insert_match_player_conn(
             player.stats.speed,
             player.stats.boost,
             player.stats.mmr,
+            player.head_to_head_json,
         ],
     )
     .map_err(|e| AppError::StorageError(e.to_string()))?;
@@ -481,13 +484,16 @@ pub fn get_match_detail(pool: &DbPool, match_id: i64) -> AppResult<(Match, Vec<P
     ).map_err(|e| AppError::StorageError(e.to_string()))?;
 
     let mut stmt = conn.prepare(
-        "SELECT p.id, p.primary_id, p.name, mp.team_num, mp.score, mp.goals, mp.shots, mp.assists, mp.saves, mp.touches, mp.car_touches, mp.demos, mp.speed, mp.boost, mp.mmr
+        "SELECT p.id, p.primary_id, p.name, mp.team_num, mp.score, mp.goals, mp.shots, mp.assists, mp.saves, mp.touches, mp.car_touches, mp.demos, mp.speed, mp.boost, mp.mmr, mp.head_to_head_json
          FROM match_players mp
          JOIN players p ON mp.player_id = p.id
          WHERE mp.match_id = ?1"
     )?;
 
     let player_iter = stmt.query_map(params![match_id], |row| {
+        let h2h_json: Option<String> = row.get(15)?;
+        let h2h = h2h_json
+            .and_then(|s| serde_json::from_str::<HeadToHeadRecord>(&s).ok());
         Ok(Player {
             id: row.get(0)?,
             primary_id: row.get(1)?,
@@ -505,6 +511,7 @@ pub fn get_match_detail(pool: &DbPool, match_id: i64) -> AppResult<(Match, Vec<P
                 speed: row.get(12)?,
                 boost: row.get(13)?,
                 mmr: row.get(14)?,
+                head_to_head: h2h,
             },
         })
     })?;
@@ -2592,4 +2599,125 @@ pub fn get_insights(
             "demosPct": if total_team_demos > 0 { ((total_my_demos as f64 / total_team_demos as f64) * 100.0).round() as i32 } else { 0 },
         },
     }))
+}
+
+pub(crate) fn compute_head_to_head_conn(
+    conn: &rusqlite::Connection,
+    local_primary_id: &str,
+    opponent_ids: &[String],
+) -> AppResult<HashMap<String, HeadToHeadRecord>> {
+    if opponent_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let placeholders: Vec<String> = opponent_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+    let in_clause = placeholders.join(",");
+
+    let sql = format!(
+        "SELECT p_other.primary_id,
+            SUM(CASE WHEN mp_other.team_num != mp_local.team_num AND m.winner = mp_local.team_num THEN 1 ELSE 0 END) as wins_against,
+            SUM(CASE WHEN mp_other.team_num != mp_local.team_num AND m.winner IS NOT NULL AND m.winner != mp_local.team_num THEN 1 ELSE 0 END) as losses_against,
+            SUM(CASE WHEN mp_other.team_num = mp_local.team_num AND m.winner = mp_local.team_num THEN 1 ELSE 0 END) as wins_together,
+            SUM(CASE WHEN mp_other.team_num = mp_local.team_num AND m.winner IS NOT NULL AND m.winner != mp_local.team_num THEN 1 ELSE 0 END) as losses_together
+         FROM match_players mp_local
+         JOIN players p_local ON mp_local.player_id = p_local.id
+         JOIN match_players mp_other ON mp_local.match_id = mp_other.match_id
+         JOIN players p_other ON mp_other.player_id = p_other.id
+         JOIN matches m ON mp_local.match_id = m.id
+         WHERE p_other.primary_id IN ({in_clause})
+           AND p_local.primary_id = ?{n}
+         GROUP BY p_other.primary_id",
+        in_clause = in_clause,
+        n = opponent_ids.len() + 1
+    );
+
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    for id in opponent_ids {
+        params.push(Box::new(id.clone()));
+    }
+    params.push(Box::new(local_primary_id.to_string()));
+
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|a| a.as_ref()).collect();
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| AppError::StorageError(e.to_string()))?;
+    let rows = stmt.query_map(&*param_refs, |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            HeadToHeadRecord {
+                wins_against: row.get(1)?,
+                losses_against: row.get(2)?,
+                wins_together: row.get(3)?,
+                losses_together: row.get(4)?,
+            },
+        ))
+    }).map_err(|e| AppError::StorageError(e.to_string()))?;
+
+    let mut result = HashMap::new();
+    for row in rows {
+        let (id, record) = row.map_err(|e| AppError::StorageError(e.to_string()))?;
+        result.insert(id, record);
+    }
+
+    Ok(result)
+}
+
+pub fn get_head_to_head_records(
+    pool: &DbPool,
+    local_primary_id: &str,
+    opponent_ids: &[String],
+) -> AppResult<HashMap<String, HeadToHeadRecord>> {
+    if opponent_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    let conn = get_conn(pool)?;
+    let placeholders: Vec<String> = opponent_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+    let in_clause = placeholders.join(",");
+
+    let sql = format!(
+        "SELECT p_other.primary_id,
+            SUM(CASE WHEN mp_other.team_num != mp_local.team_num AND m.winner = mp_local.team_num THEN 1 ELSE 0 END) as wins_against,
+            SUM(CASE WHEN mp_other.team_num != mp_local.team_num AND m.winner IS NOT NULL AND m.winner != mp_local.team_num THEN 1 ELSE 0 END) as losses_against,
+            SUM(CASE WHEN mp_other.team_num = mp_local.team_num AND m.winner = mp_local.team_num THEN 1 ELSE 0 END) as wins_together,
+            SUM(CASE WHEN mp_other.team_num = mp_local.team_num AND m.winner IS NOT NULL AND m.winner != mp_local.team_num THEN 1 ELSE 0 END) as losses_together
+         FROM match_players mp_local
+         JOIN players p_local ON mp_local.player_id = p_local.id
+         JOIN match_players mp_other ON mp_local.match_id = mp_other.match_id
+         JOIN players p_other ON mp_other.player_id = p_other.id
+         JOIN matches m ON mp_local.match_id = m.id
+         WHERE p_other.primary_id IN ({in_clause})
+           AND p_local.primary_id = ?{n}
+         GROUP BY p_other.primary_id",
+        in_clause = in_clause,
+        n = opponent_ids.len() + 1
+    );
+
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    for id in opponent_ids {
+        params.push(Box::new(id.clone()));
+    }
+    params.push(Box::new(local_primary_id.to_string()));
+
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|a| a.as_ref()).collect();
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| AppError::StorageError(e.to_string()))?;
+    let rows = stmt.query_map(&*param_refs, |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            HeadToHeadRecord {
+                wins_against: row.get(1)?,
+                losses_against: row.get(2)?,
+                wins_together: row.get(3)?,
+                losses_together: row.get(4)?,
+            },
+        ))
+    }).map_err(|e| AppError::StorageError(e.to_string()))?;
+
+    let mut result = HashMap::new();
+    for row in rows {
+        let (id, record) = row.map_err(|e| AppError::StorageError(e.to_string()))?;
+        result.insert(id, record);
+    }
+
+    Ok(result)
 }

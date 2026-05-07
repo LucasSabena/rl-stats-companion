@@ -1,6 +1,8 @@
-use crate::core::models::{ConnectionStatus, LiveMatchState};
+use crate::core::models::{ConnectionStatus, HeadToHeadRecord, LiveMatchState};
 use crate::core::session::MatchPhase;
+use crate::core::storage;
 use crate::AppState;
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 use tauri::State;
 
@@ -13,6 +15,21 @@ pub async fn get_live_state(state: State<'_, AppState>) -> Result<Option<LiveMat
     } else {
         Ok(Some(live))
     }
+}
+
+#[tauri::command]
+pub async fn get_live_head_to_head(
+    state: State<'_, AppState>,
+    opponent_ids: Vec<String>,
+) -> Result<HashMap<String, HeadToHeadRecord>, String> {
+    let settings = crate::core::settings::get_settings(&state.db_pool)
+        .unwrap_or_default();
+    let local_pid = match settings.local_primary_id.as_deref() {
+        Some(pid) if !pid.is_empty() => pid,
+        _ => return Ok(HashMap::new()),
+    };
+    storage::get_head_to_head_records(&state.db_pool, local_pid, &opponent_ids)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
