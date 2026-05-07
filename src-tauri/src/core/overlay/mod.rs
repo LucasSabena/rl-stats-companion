@@ -399,10 +399,8 @@ async fn handle_ws(mut socket: WebSocket, state: Arc<AppContext>) {
             // Client frames — handle pings and detect disconnects.
             msg = socket.recv() => {
                 match msg {
-                    Some(Ok(Message::Ping(data))) => {
-                        if socket.send(Message::Pong(data)).await.is_err() {
-                            break;
-                        }
+                    Some(Ok(Message::Ping(data))) if socket.send(Message::Pong(data.clone())).await.is_err() => {
+                        break;
                     }
                     Some(Ok(Message::Close(_))) | None => break,
                     // Ignore other message types (text, binary, pong).

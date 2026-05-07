@@ -186,7 +186,7 @@ jobs:
           gh release upload "${{ github.ref_name }}" "$($installerSig.FullName)" --clobber
 
           $releaseJson = gh release view "${{ github.ref_name }}" --json assets | ConvertFrom-Json
-          $assetUrl = $releaseJson.assets | Where-Object { $_.name -like "*setup.exe" } | Select-Object -ExpandProperty browser_download_url -First 1
+          $assetUrl = ($releaseJson.assets | Where-Object { $_.name -like "*setup.exe" }).browser_download_url
           if (-not $assetUrl) { throw "Uploaded installer asset URL not found" }
 
           $latestJsonPath = Join-Path $env:RUNNER_TEMP "latest.json"
