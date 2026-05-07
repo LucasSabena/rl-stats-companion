@@ -57,6 +57,8 @@
     "player": "Jugador",
     "team": "Equipo",
     "assistsShort": "Asist.",
+    "kickoffGoals": "Goles de saque",
+    "kickoffGoalsShort": "GS",
     "tabTable": "Tabla",
     "tabCompare": "Comparar",
     "emptyData": "No hay datos de jugadores",
@@ -68,7 +70,8 @@
     "pts": "PTS",
     "gol": "GOL",
     "ast": "AST",
-    "par": "PAR"
+    "par": "PAR",
+    "kg": "GS"
   },
   "timeline": {
     "title": "Cronología de eventos",

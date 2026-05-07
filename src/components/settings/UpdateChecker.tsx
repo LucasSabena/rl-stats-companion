@@ -85,7 +85,6 @@ export function UpdateChecker() {
           title: t("settings:update.toasts.available.title", { version: result.version }),
           message: result.body ?? "",
         });
-        await downloadAndInstall(result);
       } else {
         setUpdate(null);
         addToast({ type: "success", title: t("settings:update.toasts.upToDate") });

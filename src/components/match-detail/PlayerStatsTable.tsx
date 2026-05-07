@@ -19,7 +19,7 @@ interface PlayerStatsTableProps {
 }
 
 type Tab = "table" | "compare";
-type StatKey = "goals" | "assists" | "saves" | "shots" | "score" | "demos" | "touches";
+type StatKey = "goals" | "assists" | "saves" | "shots" | "score" | "demos" | "touches" | "kickoffGoals";
 
 export const PlayerStatsTable = memo(function PlayerStatsTable({
   players,
@@ -36,6 +36,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
     { key: "shots", label: t("matchDetail:stats.shots") },
     { key: "score", label: t("matchDetail:stats.score") },
     { key: "demos", label: t("matchDetail:stats.demos") },
+    { key: "kickoffGoals", label: t("matchDetail:stats.kickoffGoals") },
     { key: "touches", label: t("matchDetail:stats.touches") },
   ], [t]);
 
@@ -111,6 +112,7 @@ export const PlayerStatsTable = memo(function PlayerStatsTable({
     { key: "saves", header: t("stats.saves"), sortable: true },
     { key: "shots", header: t("stats.shots"), sortable: true },
     { key: "demos", header: t("stats.demos"), sortable: true },
+    { key: "kickoffGoals", header: t("stats.kickoffGoalsShort"), sortable: true },
     { key: "touches", header: t("stats.touches"), sortable: true },
   ];
 

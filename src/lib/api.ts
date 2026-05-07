@@ -118,6 +118,7 @@ interface RawPlayerStats {
   demos: number;
   speed: number;
   boost: number;
+  kickoff_goals?: number;
 }
 
 interface RawMatchPlayer {
@@ -326,6 +327,7 @@ function mapPlayerStats(player: RawMatchPlayer): PlayerStats {
     touches: player.stats.touches,
     boostAmount: player.stats.boost,
     speed: player.stats.speed,
+    kickoffGoals: player.stats.kickoff_goals,
   };
 }
 

@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { Crown, Medal } from "lucide-react";
+import { Crown, Medal, Rocket } from "lucide-react";
 import type { PlayerStats } from "@/lib/types";
 import { useFriends } from "@/hooks/useFriends";
 
@@ -119,6 +119,12 @@ export const TeamRoster = memo(function TeamRoster({
                   <Stat value={player.goals} label={t("roster.gol")} />
                   <Stat value={player.assists} label={t("roster.ast")} />
                   <Stat value={player.saves} label={t("roster.par")} />
+                  {player.kickoffGoals ? (
+                    <span className="inline-flex items-center gap-0.5 rounded bg-accent-success/10 px-1 py-0.5 text-[10px] font-medium text-accent-success">
+                      <Rocket size={10} />
+                      {player.kickoffGoals} {t("roster.kg")}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -57,6 +57,8 @@
     "player": "Player",
     "team": "Team",
     "assistsShort": "Ast",
+    "kickoffGoals": "Kickoff goals",
+    "kickoffGoalsShort": "KG",
     "tabTable": "Table",
     "tabCompare": "Compare",
     "emptyData": "No player data",
@@ -68,7 +70,8 @@
     "pts": "PTS",
     "gol": "GL",
     "ast": "AST",
-    "par": "SAV"
+    "par": "SAV",
+    "kg": "KG"
   },
   "timeline": {
     "title": "Event timeline",

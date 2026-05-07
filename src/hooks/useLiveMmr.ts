@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { fetchLiveMmrSnapshot, setSessionMmrSnapshot } from "@/lib/api";
 import { useLiveStore } from "@/stores/liveStore";
-import type { LiveMmrSnapshot } from "@/lib/types";
+import type { LiveMmrSnapshot, RlEventType } from "@/lib/types";
 
 export function useLiveMmr() {
   const currentMatch = useLiveStore((state) => state.currentMatch);
@@ -41,8 +41,12 @@ export function useLiveMmr() {
     let disposed = false;
 
     const attach = async () => {
-      const unlisten = await listen("match-started", () => {
-        void query.refetch();
+      const unlisten = await listen<RlEventType>("live-event", (event) => {
+        // CountdownBegin means the room is full and the match is about to start.
+        // match-started fires too early when the room is still being created.
+        if (event.payload === "CountdownBegin") {
+          void query.refetch();
+        }
       });
 
       if (disposed) {
