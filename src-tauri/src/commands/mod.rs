@@ -7,6 +7,7 @@ pub mod mmr;
 pub mod overlay;
 pub mod overlay_window;
 pub mod players;
+pub mod presets;
 pub mod profiles;
 pub mod rlstats;
 pub mod settings;

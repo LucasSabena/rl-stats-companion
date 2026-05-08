@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-08T00:00:00Z",
+  "packs": [
+    {
+      "id": "aerial-car-control-01",
+      "name": "Aerial Car Control",
+      "category": "Aerials",
+      "difficulty": "Beginner",
+      "code": "A503-264C-A7EB-D282",
+      "workshopUrl": null,
+      "description": "Basic air roll and pitch control. Start with simple lifts and landings.",
+      "creator": "Wayton",
+      "tags": ["aerial", "air roll", "beginner"],
+      "estimatedMinutes": 15
+    },
+    {
+      "id": "ring-map-ultimate",
+      "name": "Rings 3 (Normal)",
+      "category": "Rings",
+      "difficulty": "Intermediate",
+      "code": "FA24-B2D7-2E8E-193B",
+      "workshopUrl": null,
+      "description": "Navigate rings while maintaining momentum. Great for air roll practice.",
+      "creator": "DMC",
+      "tags": ["rings", "air dribble", "momentum"],
+      "estimatedMinutes": 30
+    },
+    {
+      "id": "ground-shots-consistency",
+      "name": "Ground Shots Consistency",
+      "category": "Ground Shots",
+      "difficulty": "Beginner",
+      "code": "6EB1-79B2-33B8-681C",
+      "workshopUrl": null,
+      "description": "Repetitive ground shots to build muscle memory and accuracy.",
+      "creator": "Poquito",
+      "tags": ["shooting", "accuracy", "ground"],
+      "estimatedMinutes": 20
+    },
+    {
+      "id": "defense-redirects",
+      "name": "Defense & Redirects",
+      "category": "Defense",
+      "difficulty": "Advanced",
+      "code": "C7E0-9E0B-B739-A899",
+      "workshopUrl": null,
+      "description": "Defensive clears followed by redirect opportunities. Requires fast reads.",
+      "creator": "Thanovic",
+      "tags": ["defense", "redirect", "fast aerial"],
+      "estimatedMinutes": 25
+    },
+    {
+      "id": "flip-resets-mastery",
+      "name": "Flip Reset Mastery",
+      "category": "Freestyle",
+      "difficulty": "Expert",
+      "code": null,
+      "workshopUrl": null,
+      "description": "Advanced flip reset setups from various angles and surfaces.",
+      "creator": "JSTN",
+      "tags": ["flip reset", "freestyle", "mechanics"],
+      "estimatedMinutes": 45
+    },
+    {
+      "id": "rebound-recovery",
+      "name": "Rebound Recovery",
+      "category": "Rebounds",
+      "difficulty": "Intermediate",
+      "code": "9F6D-4387-4C57-2E4B",
+      "workshopUrl": null,
+      "description": "Practice reading rebounds off the backboard and converting them into goals.",
+      "creator": "SunlessKhan",
+      "tags": ["rebounds", "backboard", "reading"],
+      "estimatedMinutes": 20
+    }
+  ]
+}

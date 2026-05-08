@@ -527,6 +527,100 @@ function drawFooter(c: Ctx, W: number, H: number, pad: number) {
   });
 }
 
+/* ─── Config card ─── */
+function drawConfigCard(c: Ctx, W: number, y: number, pad: number, ctx: ShareContext): number {
+  const statsMap = new Map<string, string>();
+  for (const s of ctx.stats) {
+    statsMap.set(s.label, s.value);
+  }
+  const getStat = (label: string) => statsMap.get(label) ?? null;
+
+  const drawSection = (title: string, rows: { label: string; value: string | null }[]) => {
+    const validRows = rows.filter((r): r is { label: string; value: string } => r.value != null);
+    if (validRows.length === 0) return y;
+
+    txt(c, title, pad, y, {
+      font: `600 14px ${FONT.mono}`, fill: C.textMuted, baseline: "top",
+    });
+    y += 36;
+
+    const cols = 2;
+    const gap = 16;
+    const cellW = (W - pad * 2 - gap * (cols - 1)) / cols;
+    const cellH = 90;
+
+    for (let i = 0; i < validRows.length; i++) {
+      const row = validRows[i];
+      const col = i % cols;
+      const rowIdx = Math.floor(i / cols);
+
+      const cellX = pad + col * (cellW + gap);
+      const rowY = y + rowIdx * (cellH + gap);
+
+      if (rowY + cellH > 1850) break;
+
+      c.save();
+      roundRect(c, cellX, rowY, cellW, cellH, 12);
+      c.fillStyle = C.surface;
+      c.fill();
+      c.strokeStyle = C.border;
+      c.lineWidth = 1;
+      roundRect(c, cellX, rowY, cellW, cellH, 12);
+      c.stroke();
+      c.restore();
+
+      txt(c, row.label, cellX + cellW / 2, rowY + 26, {
+        font: `600 13px ${FONT.mono}`, fill: C.textMuted, align: "center", baseline: "middle",
+      });
+      txt(c, row.value, cellX + cellW / 2, rowY + 58, {
+        font: `700 28px ${FONT.heading}`, fill: C.text, align: "center", baseline: "middle",
+      });
+    }
+
+    const totalRows = Math.ceil(validRows.length / cols);
+    y += totalRows * (cellH + gap) + 40;
+    return y;
+  };
+
+  y = drawSection("CÁMERA", [
+    { label: "FOV", value: getStat("FOV") },
+    { label: "HEIGHT", value: getStat("Height") },
+    { label: "ANGLE", value: getStat("Angle") },
+    { label: "DISTANCE", value: getStat("Distance") },
+    { label: "STIFFNESS", value: getStat("Stiffness") },
+    { label: "SWIVEL", value: getStat("Swivel Speed") },
+    { label: "TRANSITION", value: getStat("Transition Speed") },
+    { label: "BALL CAM", value: getStat("Ball Cam") },
+    { label: "CAM SHAKE", value: getStat("Camera Shake") },
+  ]);
+
+  // Deadzone
+  y = drawSection("DEADZONE", [
+    { label: "SHAPE", value: getStat("Deadzone Shape") },
+    { label: "DEADZONE", value: getStat("Deadzone") },
+    { label: "DODGE", value: getStat("Dodge Deadzone") },
+    { label: "AERIAL", value: getStat("Aerial Sens") },
+    { label: "STEERING", value: getStat("Steering Sens") },
+  ]);
+
+  // Controls
+  y = drawSection("CONTROLES", [
+    { label: "POWERSLIDE", value: getStat("Powerslide") },
+    { label: "BOOST", value: getStat("Boost") },
+    { label: "AIR ROLL L", value: getStat("Air Roll Left") },
+    { label: "AIR ROLL R", value: getStat("Air Roll Right") },
+  ]);
+
+  // Hardware
+  y = drawSection("HARDWARE", [
+    { label: "CONTROLLER", value: getStat("Controller") },
+    { label: "MONITOR", value: getStat("Monitor") },
+    { label: "HEADSET", value: getStat("Headset") },
+  ]);
+
+  return y;
+}
+
 /* ─── Public API ─── */
 export function computeShareHeight(_ctxData: ShareContext, _W: number): number {
   // _ctxData y _W se reservan para layout dinámico futuro
@@ -549,17 +643,22 @@ export async function renderShareCard(
   let y = await drawHeader(c, W, pad, ctxData, iconSrc);
 
   const isMatch = ctxData.type === "match";
-  if (isMatch && (ctxData.teamScore !== undefined || ctxData.opponentScore !== undefined)) {
+  const isConfig = ctxData.type === "config";
+
+  if (isConfig) {
+    y = drawConfigCard(c, W, y, pad, ctxData);
+  } else if (isMatch && (ctxData.teamScore !== undefined || ctxData.opponentScore !== undefined)) {
     y = drawScoreHero(c, W, y, pad, ctxData);
     y = drawMatchPlayers(c, W, y, pad, ctxData.matchPlayers);
   } else {
     y = drawTriptychHero(c, W, y, pad, ctxData.stats);
   }
 
-  y = drawSquad(c, W, y, pad, ctxData.friendsPresent);
-
-  const gridStats = isMatch ? ctxData.stats : ctxData.stats.filter(s => !s.highlight);
-  drawStatsGrid(c, W, y, pad, gridStats);
+  if (!isConfig) {
+    y = drawSquad(c, W, y, pad, ctxData.friendsPresent);
+    const gridStats = isMatch ? ctxData.stats : ctxData.stats.filter(s => !s.highlight);
+    drawStatsGrid(c, W, y, pad, gridStats);
+  }
 
   drawFooter(c, W, H, pad);
 }

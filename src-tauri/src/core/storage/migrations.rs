@@ -203,6 +203,11 @@ pub static MIGRATIONS: &[Migration] = &[
         name: "add_kickoff_goals",
         sql: "ALTER TABLE match_players ADD COLUMN kickoff_goals INTEGER NOT NULL DEFAULT 0;\n         ALTER TABLE daily_rollups ADD COLUMN kickoff_goals_scored INTEGER NOT NULL DEFAULT 0;\n         ALTER TABLE daily_rollups ADD COLUMN kickoff_goals_conceded INTEGER NOT NULL DEFAULT 0;",
     },
+    Migration {
+        version: 19,
+        name: "create_user_presets_table",
+        sql: "CREATE TABLE IF NOT EXISTS user_presets (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            name TEXT NOT NULL,\n            description TEXT,\n            camera_json TEXT,\n            controls_json TEXT,\n            deadzone_json TEXT,\n            hardware_json TEXT,\n            created_at TEXT NOT NULL,\n            updated_at TEXT NOT NULL\n        );\n        CREATE INDEX IF NOT EXISTS idx_user_presets_name ON user_presets(name);",
+    },
 ];
 
 /// Run all pending migrations against the given connection.

@@ -593,9 +593,70 @@ export interface FriendRecord {
   created_at: string;
 }
 
+// ─── User Presets ────────────────────────────────────────────────────────────
+
+export interface CameraSettings {
+  fov: number;
+  height: number;
+  angle: number;
+  distance: number;
+  stiffness: number;
+  swivelSpeed: number;
+  transitionSpeed: number;
+  ballCamera: string;
+  cameraShake: string;
+}
+
+export interface ControlSettings {
+  powerslide: string;
+  airRollLeft: string;
+  airRollRight: string;
+  boost: string;
+  jump: string;
+  ballCam: string;
+  brake: string;
+  throttle: string;
+}
+
+export interface DeadzoneSettings {
+  deadzoneShape: string;
+  deadzone: number;
+  dodgeDeadzone: number;
+  aerialSensitivity: number;
+  steeringSensitivity: number;
+}
+
+export interface HardwareSettings {
+  controller: string;
+  monitor: string;
+  headset: string;
+}
+
+export interface UserPreset {
+  id: number;
+  name: string;
+  description?: string | null;
+  camera?: CameraSettings | null;
+  controls?: ControlSettings | null;
+  deadzone?: DeadzoneSettings | null;
+  hardware?: HardwareSettings | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserPresetInput {
+  id?: number;
+  name: string;
+  description?: string | null;
+  camera?: CameraSettings | null;
+  controls?: ControlSettings | null;
+  deadzone?: DeadzoneSettings | null;
+  hardware?: HardwareSettings | null;
+}
+
 // ─── Share ───────────────────────────────────────────────────────────────────
 
-export type ShareType = "match" | "session" | "day" | "week";
+export type ShareType = "match" | "session" | "day" | "week" | "config";
 
 export interface ShareContext {
   type: ShareType;
@@ -609,8 +670,33 @@ export interface ShareContext {
   win?: boolean;
   dateLabel: string;
   matchPlayers?: SharePlayer[];
-
 }
+
+export interface ShareStat {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}
+
+export interface SharePlayer {
+  name: string;
+  score: number;
+  goals: number;
+  assists: number;
+  saves: number;
+  isLocal: boolean;
+}
+
+
+export interface SharePlayer {
+  name: string;
+  score: number;
+  goals: number;
+  assists: number;
+  saves: number;
+  isLocal: boolean;
+}
+
 
 export interface ShareStat {
   label: string;

@@ -1,5 +1,6 @@
 use crate::core::models::{
-    DailyRollup, HeadToHeadRecord, Match, MatchEvent, Player, SessionSummary,
+    CameraSettings, ControlSettings, DailyRollup, DeadzoneSettings, HardwareSettings,
+    HeadToHeadRecord, Match, MatchEvent, Player, SessionSummary, UserPreset,
 };
 use crate::error::{AppError, AppResult};
 use chrono::{DateTime, Timelike, Utc};
@@ -2932,4 +2933,128 @@ pub fn get_head_to_head_records(
     }
 
     Ok(result)
+}
+
+// --- User Presets -----------------------------------------------------------
+
+fn optional_json<T: serde::Serialize>(value: &Option<T>) -> AppResult<Option<String>> {
+    match value {
+        Some(v) => serde_json::to_string(v)
+            .map(Some)
+            .map_err(|e| AppError::ParseError(e.to_string())),
+        None => Ok(None),
+    }
+}
+
+fn map_user_preset_row(row: &rusqlite::Row) -> rusqlite::Result<UserPreset> {
+    let camera_json: Option<String> = row.get(3)?;
+    let controls_json: Option<String> = row.get(4)?;
+    let deadzone_json: Option<String> = row.get(5)?;
+    let hardware_json: Option<String> = row.get(6)?;
+
+    Ok(UserPreset {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        description: row.get(2)?,
+        camera: camera_json.and_then(|s| serde_json::from_str(&s).ok()),
+        controls: controls_json.and_then(|s| serde_json::from_str(&s).ok()),
+        deadzone: deadzone_json.and_then(|s| serde_json::from_str(&s).ok()),
+        hardware: hardware_json.and_then(|s| serde_json::from_str(&s).ok()),
+        created_at: row.get(7)?,
+        updated_at: row.get(8)?,
+    })
+}
+
+pub fn list_user_presets(pool: &DbPool) -> AppResult<Vec<UserPreset>> {
+    let conn = get_conn(pool)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, name, description, camera_json, controls_json, deadzone_json, hardware_json, created_at, updated_at
+         FROM user_presets
+         ORDER BY updated_at DESC",
+    )?;
+    let iter = stmt.query_map([], map_user_preset_row)?;
+    let mut result = Vec::new();
+    for r in iter {
+        result.push(r.map_err(|e| AppError::StorageError(e.to_string()))?);
+    }
+    Ok(result)
+}
+
+pub fn get_user_preset(pool: &DbPool, id: i64) -> AppResult<Option<UserPreset>> {
+    let conn = get_conn(pool)?;
+    let result = conn
+        .query_row(
+            "SELECT id, name, description, camera_json, controls_json, deadzone_json, hardware_json, created_at, updated_at
+             FROM user_presets
+             WHERE id = ?1",
+            params![id],
+            map_user_preset_row,
+        )
+        .optional()
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
+    Ok(result)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn insert_user_preset(
+    pool: &DbPool,
+    name: &str,
+    description: Option<&str>,
+    camera: &Option<CameraSettings>,
+    controls: &Option<ControlSettings>,
+    deadzone: &Option<DeadzoneSettings>,
+    hardware: &Option<HardwareSettings>,
+) -> AppResult<i64> {
+    let conn = get_conn(pool)?;
+    let camera_json = optional_json(camera)?;
+    let controls_json = optional_json(controls)?;
+    let deadzone_json = optional_json(deadzone)?;
+    let hardware_json = optional_json(hardware)?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT INTO user_presets (name, description, camera_json, controls_json, deadzone_json, hardware_json, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![name, description, camera_json, controls_json, deadzone_json, hardware_json, now, now],
+    )
+    .map_err(|e| AppError::StorageError(e.to_string()))?;
+
+    let id = conn.last_insert_rowid();
+    info!(preset_id = id, name, "Inserted user preset");
+    Ok(id)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn update_user_preset(
+    pool: &DbPool,
+    id: i64,
+    name: &str,
+    description: Option<&str>,
+    camera: &Option<CameraSettings>,
+    controls: &Option<ControlSettings>,
+    deadzone: &Option<DeadzoneSettings>,
+    hardware: &Option<HardwareSettings>,
+) -> AppResult<()> {
+    let conn = get_conn(pool)?;
+    let camera_json = optional_json(camera)?;
+    let controls_json = optional_json(controls)?;
+    let deadzone_json = optional_json(deadzone)?;
+    let hardware_json = optional_json(hardware)?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        "UPDATE user_presets SET name = ?1, description = ?2, camera_json = ?3, controls_json = ?4, deadzone_json = ?5, hardware_json = ?6, updated_at = ?7 WHERE id = ?8",
+        params![name, description, camera_json, controls_json, deadzone_json, hardware_json, now, id],
+    )
+    .map_err(|e| AppError::StorageError(e.to_string()))?;
+    info!(preset_id = id, name, "Updated user preset");
+    Ok(())
+}
+
+pub fn delete_user_preset(pool: &DbPool, id: i64) -> AppResult<()> {
+    let conn = get_conn(pool)?;
+    conn.execute("DELETE FROM user_presets WHERE id = ?1", params![id])
+        .map_err(|e| AppError::StorageError(e.to_string()))?;
+    info!(preset_id = id, "Deleted user preset");
+    Ok(())
 }

@@ -116,6 +116,7 @@ fn export_data_json_internal(pool: &storage::DbPool) -> Result<String, String> {
     let sessions = storage::get_all_sessions(pool).map_err(|e| e.to_string())?;
     let daily_rollups = storage::get_all_daily_rollups_all(pool).map_err(|e| e.to_string())?;
     let app_settings = get_settings(pool).map_err(|e| e.to_string())?;
+    let user_presets = storage::list_user_presets(pool).map_err(|e| e.to_string())?;
 
     let export = serde_json::json!({
         "version": "1.0",
@@ -127,6 +128,7 @@ fn export_data_json_internal(pool: &storage::DbPool) -> Result<String, String> {
         "match_events": match_events,
         "sessions": sessions,
         "daily_rollups": daily_rollups,
+        "user_presets": user_presets,
     });
 
     serde_json::to_string_pretty(&export).map_err(|e| e.to_string())
@@ -413,6 +415,43 @@ fn import_data_json_internal(
             }
         }
         info!(imported_sessions, "Sessions imported");
+
+        // ── 6. User Presets ──
+        let mut imported_presets = 0u32;
+        if let Some(presets) = import.get("user_presets").and_then(|v| v.as_array()) {
+            for p in presets {
+                let name = p
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Imported Preset");
+                let description = p.get("description").and_then(|v| v.as_str());
+                let camera: Option<crate::core::models::CameraSettings> = p
+                    .get("camera")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
+                let controls: Option<crate::core::models::ControlSettings> = p
+                    .get("controls")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
+                let deadzone: Option<crate::core::models::DeadzoneSettings> = p
+                    .get("deadzone")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
+                let hardware: Option<crate::core::models::HardwareSettings> = p
+                    .get("hardware")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
+
+                storage::insert_user_preset(
+                    pool,
+                    name,
+                    description,
+                    &camera,
+                    &controls,
+                    &deadzone,
+                    &hardware,
+                )
+                .map_err(|e| e.to_string())?;
+                imported_presets += 1;
+            }
+        }
+        info!(imported_presets, "User presets imported");
 
         Ok(())
     })();

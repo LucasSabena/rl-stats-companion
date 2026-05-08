@@ -265,3 +265,80 @@ pub struct ConnectionStatus {
     pub reconnect_attempts: u32,
     pub game_running: bool,
 }
+
+/// Camera settings preset section.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CameraSettings {
+    pub fov: i32,
+    pub height: i32,
+    pub angle: f64,
+    pub distance: i32,
+    pub stiffness: f64,
+    pub swivel_speed: f64,
+    pub transition_speed: f64,
+    pub ball_camera: String,
+    pub camera_shake: String,
+}
+
+/// Control settings preset section.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ControlSettings {
+    pub powerslide: String,
+    pub air_roll_left: String,
+    pub air_roll_right: String,
+    pub boost: String,
+    pub jump: String,
+    pub ball_cam: String,
+    pub brake: String,
+    pub throttle: String,
+}
+
+/// Deadzone settings preset section.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeadzoneSettings {
+    pub deadzone_shape: String,
+    pub deadzone: f64,
+    pub dodge_deadzone: f64,
+    pub aerial_sensitivity: f64,
+    pub steering_sensitivity: f64,
+}
+
+/// Hardware settings preset section.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HardwareSettings {
+    pub controller: String,
+    pub monitor: String,
+    pub headset: String,
+}
+
+/// User-defined preset containing camera, control, deadzone and hardware settings.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserPreset {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub camera: Option<CameraSettings>,
+    pub controls: Option<ControlSettings>,
+    pub deadzone: Option<DeadzoneSettings>,
+    pub hardware: Option<HardwareSettings>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Input for creating or updating a user preset (used by commands).
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserPresetInput {
+    pub id: Option<i64>,
+    pub name: String,
+    pub description: Option<String>,
+    pub camera: Option<CameraSettings>,
+    pub controls: Option<ControlSettings>,
+    pub deadzone: Option<DeadzoneSettings>,
+    pub hardware: Option<HardwareSettings>,
+}
