@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.7.1 — Local MMR Estimation, Analytics Scope & Training Packs Polish
+
+### Features
+
+**Local MMR Estimation System**
+- Estimación de MMR local cuando no hay datos online disponibles.
+- Partidas entre lobby y online se usan para rastrear evolución local: +/-9 MMR por partida.
+- Se considera "estimado" si pasaron más de 3 partidas desde último refresh online.
+- Se expone `estimated`, `stale`, `estimate_matches_since_refresh`, y `updated_at` en cada jugador del snapshot de MMR.
+- Estado persistente en SQLite con TTL implícito (solo invalida cuando se refresca online).
+- Fallback automático a último MMR online en DB cuando no hay estimación local previa.
+
+**Analytics — Session Scope**
+- Nuevos comandos backend (`get_session_scope_stats`) para calcular estadísticas de sesión por scope: `me`, `team`, `all`.
+- Integra con filtros de playlist, match_type, y rango de fechas.
+- Utiliza `local_stats` (calculados desde eventos de la sesión) para agregaciones locales.
+
+**Training Packs Page Polish**
+- Hook `useTrainingPacks` con caché de 5 min, refresco manual, y manejo de estado.
+- Mejor filtrado por categoría y dificultad con contadores de packs por categoría.
+- Modal de agregar packs con validación de campos y soporte multilenguaje.
+- Soporte para favoritos locales con persistencia en `localStorage`.
+- Mejoras visuales en `CategoryFilter` con iconos y estados activos/inactivos.
+
+**Live Head-to-Head**
+- Nuevo hook `useLiveHeadToHead` para consultar historial head-to-head contra oponentes del lobby.
+
+### Fixes
+- **Kickoff Goals Conceded**: se corrigió el cálculo de goles de saque concedidos en `get_match_sessions` para usar `opponent_kickoff_goals` de `local_stats` en vez del total del equipo contrario.
+- **MMR Snapshot Timing** (refinado): el hook `useLiveMmr` ahora refetch MMR al evento `CountdownBegin` en lugar de `match-started`, sincronizando mejor con el cálculo de sesión.
+- **Storage**: nueva función `get_latest_player_mmr_for_playlist` para obtener el último MMR online de un jugador en una playlist específica.
+
+### Improvements
+- Rust: clippy / cargo fmt fixes en `analytics.rs`, `mmr.rs`, `mmr/mod.rs`, `session/mod.rs`, `storage/mod.rs`.
+- Frontend: mejora de tipos en `trainingPacksTypes.ts`, i18n completo EN/ES/PT para training packs.
+
 ## v1.7.0 — Training Packs Repository & User Presets
 
 ### Features
