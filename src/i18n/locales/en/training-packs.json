@@ -21,7 +21,12 @@
     "deletePack": "Delete pack",
     "deletePackConfirm": "Are you sure you want to delete this pack? This action cannot be undone.",
     "packAdded": "Pack added successfully",
-    "requiredField": "Required field"
+    "requiredField": "Required field",
+    "packList": "Available Packs",
+    "selectPack": "Choose a pack to see details",
+    "selectPackDesc": "Select a training pack from the grid to see its details, copy the code, or add it to favorites.",
+    "featuredPacks": "Featured Packs",
+    "noFeatured": "No featured packs"
   },
   "categories": {
     "all": "All",
@@ -29,8 +34,6 @@
     "aerial": "Aerial",
     "dribbling": "Dribbling",
     "shooting": "Shooting",
-    "rings": "Rings",
-    "obstacle-course": "Obstacle Course",
     "kickoff": "Kickoff",
     "wall-ceiling": "Wall & Ceiling",
     "goalie": "Goalie",

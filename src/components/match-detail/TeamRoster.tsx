@@ -64,6 +64,9 @@ export const TeamRoster = memo(function TeamRoster({
           const rank = sortedAllPlayers.findIndex((p) => p.id === player.id) + 1;
           const isTop3 = rank <= 3;
           const isMVP = rank === 1;
+          const headToHeadLabel = player.head_to_head
+            ? `Comp ${player.head_to_head.wins_together}-${player.head_to_head.losses_together} · Rival ${player.head_to_head.wins_against}-${player.head_to_head.losses_against}`
+            : null;
 
           return (
             <div
@@ -114,6 +117,11 @@ export const TeamRoster = memo(function TeamRoster({
                     </span>
                   )}
                 </div>
+                {headToHeadLabel && (
+                  <div className="mt-1 text-[10px] font-medium text-text-tertiary">
+                    {headToHeadLabel}
+                  </div>
+                )}
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-secondary">
                   <Stat value={player.score} label={t("roster.pts")} />
                   <Stat value={player.goals} label={t("roster.gol")} />

@@ -21,7 +21,12 @@
     "deletePack": "Eliminar pack",
     "deletePackConfirm": "¿Estás seguro de que quieres eliminar este pack? Esta acción no se puede deshacer.",
     "packAdded": "Pack añadido correctamente",
-    "requiredField": "Campo obligatorio"
+    "requiredField": "Campo obligatorio",
+    "packList": "Packs disponibles",
+    "selectPack": "Elegí un pack para ver los detalles",
+    "selectPackDesc": "Seleccioná un pack de entrenamiento de la grilla para ver sus detalles, copiar el código o agregarlo a favoritos.",
+    "featuredPacks": "Packs Destacados",
+    "noFeatured": "No hay packs destacados"
   },
   "categories": {
     "all": "Todas",
@@ -29,14 +34,12 @@
     "aerial": "Aéreos",
     "dribbling": "Dribbling",
     "shooting": "Tiro",
-    "rings": "Anillos",
-    "obstacle-course": "Circuito de obstáculos",
     "kickoff": "Saque",
     "wall-ceiling": "Muro y techo",
     "goalie": "Portero",
     "freestyle": "Freestyle",
     "defense": "Defensa",
-    "powershot": "Potencia de tiro"
+    "powershot": "Potencia"
   },
   "difficulties": {
     "beginner": "Principiante",

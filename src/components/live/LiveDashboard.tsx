@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { RankWidget } from "@/components/tracker/RankWidget";
 import { useLiveMmr } from "@/hooks/useLiveMmr";
+import { useSettings } from "@/hooks/useSettings";
+import { useLiveHeadToHead } from "@/hooks/useLiveHeadToHead";
 import { cn } from "@/lib/utils";
 import { Radio, X, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -118,6 +120,8 @@ export function LiveDashboard() {
   const currentMatch = useLiveStore((state) => state.currentMatch);
   const connectionStatus = useLiveStore((state) => state.connectionStatus);
   const { data: liveMmr, isFetching: isFetchingMmr, forceRefresh } = useLiveMmr();
+  const { data: liveHeadToHead } = useLiveHeadToHead();
+  const { data: settings } = useSettings();
 
   const bluePlayers = currentMatch?.players.filter((player) => player.team === 0) ?? [];
   const orangePlayers = currentMatch?.players.filter((player) => player.team === 1) ?? [];
@@ -212,6 +216,8 @@ export function LiveDashboard() {
           team="blue"
           players={bluePlayers}
           mmrByPlayerId={mmrByPlayerId}
+          headToHeadByPlayerId={liveHeadToHead}
+          localPrimaryId={settings?.localPrimaryId ?? null}
           mmrLoading={isFetchingMmr}
           isLocalMatch={currentMatch.matchType === "local"}
         />
@@ -219,6 +225,8 @@ export function LiveDashboard() {
           team="orange"
           players={orangePlayers}
           mmrByPlayerId={mmrByPlayerId}
+          headToHeadByPlayerId={liveHeadToHead}
+          localPrimaryId={settings?.localPrimaryId ?? null}
           mmrLoading={isFetchingMmr}
           isLocalMatch={currentMatch.matchType === "local"}
         />
@@ -237,7 +245,9 @@ export function LiveDashboard() {
               <PlayerCard
                 key={player.id}
                 player={player}
+                isCurrentUser={player.id === (settings?.localPrimaryId ?? null)}
                 mmr={mmrByPlayerId[player.id] ?? null}
+                headToHead={liveHeadToHead?.[player.id] ?? null}
                 mmrLoading={isFetchingMmr}
               />
             ))}

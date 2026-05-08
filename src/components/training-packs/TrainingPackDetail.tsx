@@ -1,38 +1,39 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
 import type { TrainingPack, PackDifficulty } from "@/lib/trainingPacksTypes";
-import {
-  ExternalLink,
-  Copy,
-  Star,
-  PackageOpen,
-} from "lucide-react";
+import { ExternalLink, Copy, Star, X, Check } from "lucide-react";
 import { useState } from "react";
 
 interface TrainingPackDetailProps {
   pack: TrainingPack | null;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  onClose?: () => void;
 }
 
-const DIFFICULTY_STYLES: Record<PackDifficulty, { badge: string; labelColor: string }> = {
+const DIFFICULTY_STYLES: Record<
+  PackDifficulty,
+  { badge: string; label: string }
+> = {
   beginner: {
-    badge: "bg-accent-success-subtle text-accent-success border border-accent-success/20",
-    labelColor: "text-accent-success",
+    badge:
+      "bg-accent-success-subtle text-accent-success border border-accent-success/20",
+    label: "Principiante",
   },
   intermediate: {
-    badge: "bg-accent-info-subtle text-accent-info border border-accent-info/20",
-    labelColor: "text-accent-info",
+    badge:
+      "bg-accent-info-subtle text-accent-info border border-accent-info/20",
+    label: "Intermedio",
   },
   advanced: {
-    badge: "bg-accent-warning-subtle text-accent-warning border border-accent-warning/20",
-    labelColor: "text-accent-warning",
+    badge:
+      "bg-accent-warning-subtle text-accent-warning border border-accent-warning/20",
+    label: "Avanzado",
   },
   pro: {
-    badge: "bg-accent-danger-subtle text-accent-danger border border-accent-danger/20",
-    labelColor: "text-accent-danger",
+    badge:
+      "bg-accent-danger-subtle text-accent-danger border border-accent-danger/20",
+    label: "Profesional",
   },
 };
 
@@ -40,20 +41,13 @@ export function TrainingPackDetail({
   pack,
   isFavorite,
   onToggleFavorite,
+  onClose,
 }: TrainingPackDetailProps) {
   const { t } = useTranslation("trainingPacks");
   const [copied, setCopied] = useState(false);
+  const [justToggled, setJustToggled] = useState(false);
 
-  if (!pack) {
-    return (
-      <EmptyState
-        icon={PackageOpen}
-        title={t("page.noResults")}
-        description={t("page.searchPlaceholder")}
-        className="h-full"
-      />
-    );
-  }
+  if (!pack) return null;
 
   const diffStyle = DIFFICULTY_STYLES[pack.difficulty];
 
@@ -67,73 +61,68 @@ export function TrainingPackDetail({
     }
   };
 
+  const handleToggleFavorite = () => {
+    onToggleFavorite();
+    setJustToggled(true);
+    setTimeout(() => setJustToggled(false), 600);
+  };
+
   return (
-    <div className="bg-bg-surface/80 backdrop-blur-xl border border-border-subtle rounded-xl p-6 h-full flex flex-col gap-5 animate-slide-in-up">
+    <div className="bg-bg-surface border border-border-subtle rounded-2xl p-6 flex flex-col gap-5 shadow-2xl max-h-[85vh] overflow-y-auto">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">
-            {t("page.codeLabel")}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="rounded-full bg-bg-elevated border border-border-subtle px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+              {t(`categories.${pack.category}`)}
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-wide",
+                diffStyle.badge
+              )}
+            >
+              {t(`difficulties.${pack.difficulty}`)}
+            </span>
+          </div>
           <h2 className="font-display text-xl font-bold text-text-primary leading-tight">
             {pack.name}
           </h2>
+          <p className="mt-1 text-sm text-text-muted">{pack.creator}</p>
         </div>
-      </div>
-
-      {/* Badges */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide bg-bg-elevated text-text-secondary border border-border-subtle">
-          {t(`categories.${pack.category}`)}
-        </span>
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide",
-            diffStyle.badge
-          )}
-        >
-          {t(`difficulties.${pack.difficulty}`)}
-        </span>
-      </div>
-
-      {/* Creator + source link */}
-      <div className="flex items-center gap-2 text-sm text-text-secondary">
-        <span className="text-text-muted">{pack.creator}</span>
-        {pack.sourceUrl && (
-          <a
-            href={pack.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-link hover:text-link-hover transition-colors"
-            onClick={(e) => e.stopPropagation()}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-bg-hover hover:text-text-primary"
           >
-            <ExternalLink size={12} />
-            {t("card.viewDetails")}
-          </a>
+            <X size={18} />
+          </button>
         )}
       </div>
 
-      {/* Big code display */}
-      <div className="rounded-xl border border-border-subtle bg-bg-base p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">
+      {/* Code display */}
+      <div className="rounded-xl border border-border-subtle bg-bg-base p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
             {t("page.codeLabel")}
           </span>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={Copy}
+          <button
+            type="button"
             onClick={handleCopyCode}
             className={cn(
-              "transition-all",
-              copied && "bg-accent-success hover:bg-accent-success"
+              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+              copied
+                ? "bg-accent-success text-white"
+                : "bg-accent-primary text-white hover:brightness-110"
             )}
           >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
             {copied ? t("page.copied") : t("page.copyCode")}
-          </Button>
+          </button>
         </div>
         <div
-          className="font-mono text-lg font-semibold tracking-widest text-text-primary break-all select-all cursor-pointer"
+          className="font-mono text-xl font-bold tracking-widest text-text-primary break-all select-all cursor-pointer"
           onClick={handleCopyCode}
           title={t("page.copyCode")}
         >
@@ -143,8 +132,8 @@ export function TrainingPackDetail({
 
       {/* Description */}
       {pack.description && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted block mb-1.5">
             {t("page.descriptionLabel")}
           </span>
           <p className="text-sm text-text-secondary leading-relaxed">
@@ -155,15 +144,15 @@ export function TrainingPackDetail({
 
       {/* Tags */}
       {pack.tags && pack.tags.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[10px] font-semibold tracking-wider text-text-muted uppercase">
+        <div>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted block mb-1.5">
             Tags
           </span>
           <div className="flex flex-wrap gap-2">
             {pack.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-block rounded-full bg-bg-elevated border border-border-subtle px-2.5 py-0.5 text-xs font-medium text-text-secondary"
+                className="rounded-full bg-bg-elevated border border-border-subtle px-2.5 py-0.5 text-xs font-medium text-text-secondary"
               >
                 {tag}
               </span>
@@ -172,20 +161,43 @@ export function TrainingPackDetail({
         </div>
       )}
 
-      {/* Actions */}
-      <div className="mt-auto pt-2">
-        <Button
-          variant={isFavorite ? "secondary" : "primary"}
-          leftIcon={Star}
-          onClick={onToggleFavorite}
-          className={cn(
-            "w-full",
-            isFavorite && "text-yellow-400 border-yellow-400/30 hover:border-yellow-400/50"
-          )}
+      {/* Source link */}
+      {pack.sourceUrl && (
+        <a
+          href={pack.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 text-sm text-link hover:text-link-hover transition-colors"
         >
-          {isFavorite ? t("page.removedFromFavorites") : t("page.addedToFavorites")}
-        </Button>
-      </div>
+          <ExternalLink size={13} />
+          {t("card.viewDetails")}
+        </a>
+      )}
+
+      {/* Favorite button */}
+      <button
+        type="button"
+        onClick={handleToggleFavorite}
+        className={cn(
+          "flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-semibold transition-all",
+          isFavorite
+            ? "border-yellow-400/40 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
+            : "border-border-subtle bg-bg-panel text-text-secondary hover:bg-bg-hover hover:text-text-primary",
+          justToggled && "scale-[1.02]"
+        )}
+      >
+        <Star
+          size={16}
+          className={cn(
+            "transition-all",
+            isFavorite ? "fill-yellow-400 text-yellow-400" : "",
+            justToggled && "animate-spin"
+          )}
+        />
+        {isFavorite
+          ? t("page.removedFromFavorites")
+          : t("page.addedToFavorites")}
+      </button>
     </div>
   );
 }

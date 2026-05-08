@@ -493,6 +493,10 @@ export interface LiveMmrPlayer {
   matchesPlayed: number | null;
   source: string | null;
   cached: boolean;
+  estimated: boolean;
+  stale: boolean;
+  estimateMatchesSinceRefresh: number | null;
+  updatedAt: string | null;
   error: string | null;
 }
 

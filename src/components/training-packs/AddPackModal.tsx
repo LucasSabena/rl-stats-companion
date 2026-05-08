@@ -12,8 +12,6 @@ const PACK_CATEGORIES: PackCategory[] = [
   "aerial",
   "dribbling",
   "shooting",
-  "rings",
-  "obstacle-course",
   "kickoff",
   "wall-ceiling",
   "goalie",

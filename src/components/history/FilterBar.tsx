@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +14,7 @@ interface FilterBarProps {
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {
   const { t } = useTranslation(["history", "common"]);
+  const filtersRef = useRef(filters);
 
   const resultOptions = [
     { value: "all", label: t("history:filters.results.all") },
@@ -47,18 +48,23 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   const [search, setSearch] = useState(filters.search ?? "");
 
   useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
     setSearch(filters.search ?? "");
   }, [filters.search]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      if (search !== (filters.search ?? "")) {
-        onChange({ ...filters, search: search || undefined });
+      const currentFilters = filtersRef.current;
+      if (search !== (currentFilters.search ?? "")) {
+        onChange({ ...currentFilters, search: search || undefined });
       }
     }, 250);
 
     return () => window.clearTimeout(timeout);
-  }, [filters, onChange, search]);
+  }, [onChange, search]);
 
   const handleSearch = useCallback(
     (value: string) => {
@@ -69,50 +75,53 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
 
   const handleResult = useCallback(
     (value: string) => {
+      const currentFilters = filtersRef.current;
       onChange({
-        ...filters,
+        ...currentFilters,
         result: value === "all" ? null : (value as "win" | "loss"),
       });
     },
-    [filters, onChange]
+    [onChange]
   );
 
   const handleMatchType = useCallback(
     (value: string) => {
+      const currentFilters = filtersRef.current;
       onChange({
-        ...filters,
+        ...currentFilters,
         matchType: value === "all" ? null : (value as MatchType),
       });
     },
-    [filters, onChange]
+    [onChange]
   );
 
   const handleMode = useCallback(
     (value: string) => {
+      const currentFilters = filtersRef.current;
       onChange({
-        ...filters,
+        ...currentFilters,
         mode: value === "all" ? null : value,
       });
     },
-    [filters, onChange]
+    [onChange]
   );
 
   const handleDateFrom = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       const timestamp = value ? parseLocalDateToUnix(value) : null;
-      onChange({ ...filters, dateFrom: timestamp });
+      onChange({ ...filtersRef.current, dateFrom: timestamp });
     },
-    [filters, onChange]
+    [onChange]
   );
 
   const handleDateTo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       const timestamp = value ? parseLocalDateToUnix(value, true) : null;
-      onChange({ ...filters, dateTo: timestamp });
+      onChange({ ...filtersRef.current, dateTo: timestamp });
     },
-    [filters, onChange]
+    [onChange]
   );
 
   const clearFilters = useCallback(() => {

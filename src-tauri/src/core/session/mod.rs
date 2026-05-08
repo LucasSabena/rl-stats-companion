@@ -1,3 +1,4 @@
+use crate::core::mmr::{playlist_label_to_key, update_local_mmr_estimate};
 use crate::core::models::{
     LiveMatchState, LivePlayer, Player, PlayerStats, RlEvent, SessionSummary,
 };
@@ -452,6 +453,13 @@ impl SessionManager {
             .map(|p| p.stats.kickoff_goals)
             .sum();
 
+        let local_pre_match_mmr = local_identity.as_ref().and_then(|(local_primary_id, _)| {
+            players_vec
+                .iter()
+                .find(|player| player.primary_id == *local_primary_id)
+                .and_then(|player| player.stats.mmr)
+        });
+
         let summary = SessionSummary {
             match_guid: guid.clone(),
             duration_seconds: duration,
@@ -497,6 +505,28 @@ impl SessionManager {
 
         conn.execute("COMMIT", [])
             .map_err(|e| crate::error::AppError::StorageError(format!("COMMIT failed: {e}")))?;
+
+        if self.is_online {
+            if let (Some((local_primary_id, _)), Some(playlist_label), Some(is_win)) = (
+                local_identity.as_ref(),
+                playlist.as_deref(),
+                winner
+                    .zip(my_team)
+                    .map(|(winner_team, my_team)| winner_team == my_team),
+            ) {
+                if let Some(playlist_key) = playlist_label_to_key(playlist_label) {
+                    if let Err(error) = update_local_mmr_estimate(
+                        pool,
+                        local_primary_id,
+                        playlist_key,
+                        local_pre_match_mmr,
+                        is_win,
+                    ) {
+                        warn!(error = %error, "Failed to update local MMR estimate");
+                    }
+                }
+            }
+        }
 
         if let Some((local_primary_id, _)) = &local_identity {
             let should_save =

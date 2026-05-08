@@ -3,8 +3,6 @@ export type PackCategory =
   | "aerial"
   | "dribbling"
   | "shooting"
-  | "rings"
-  | "obstacle-course"
   | "kickoff"
   | "wall-ceiling"
   | "goalie"

@@ -119,6 +119,7 @@ interface RawPlayerStats {
   speed: number;
   boost: number;
   kickoff_goals?: number;
+  head_to_head?: PlayerStats["head_to_head"];
 }
 
 interface RawMatchPlayer {
@@ -328,6 +329,7 @@ function mapPlayerStats(player: RawMatchPlayer): PlayerStats {
     boostAmount: player.stats.boost,
     speed: player.stats.speed,
     kickoffGoals: player.stats.kickoff_goals,
+    head_to_head: player.stats.head_to_head ?? null,
   };
 }
 
@@ -434,6 +436,12 @@ export async function restartApp(): Promise<void> {
 export async function getLiveState(): Promise<LiveMatchState | null> {
   const state = await invokeCommand<RawLiveMatchState | null>("get_live_state");
   return mapLiveState(state);
+}
+
+export async function getLiveHeadToHead(opponentIds: string[]): Promise<Record<string, NonNullable<PlayerStats["head_to_head"]>>> {
+  return invokeCommand<Record<string, NonNullable<PlayerStats["head_to_head"]>>>("get_live_head_to_head", {
+    opponentIds,
+  });
 }
 
 export async function getConnectionStatus(): Promise<ConnectionStatus> {

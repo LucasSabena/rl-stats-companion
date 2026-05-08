@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { formatBoost, formatSpeed } from "@/lib/utils";
-import type { LiveMmrPlayer, Player } from "@/lib/types";
+import type { HeadToHeadRecord, LiveMmrPlayer, Player } from "@/lib/types";
 import { useTranslation } from "react-i18next";
 import { useFriends } from "@/hooks/useFriends";
 
@@ -9,19 +9,33 @@ interface PlayerCardProps {
   player: Player;
   isCurrentUser?: boolean;
   mmr?: LiveMmrPlayer | null;
+  headToHead?: HeadToHeadRecord | null;
   mmrLoading?: boolean;
 }
 
-export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr, mmrLoading }: PlayerCardProps) {
+export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr, headToHead, mmrLoading }: PlayerCardProps) {
   const { t } = useTranslation(["live", "common", "players"]);
   const { data: friends } = useFriends();
   const isBlue = player.team === 0;
   const hasMmr = mmr?.mmr !== null && mmr?.mmr !== undefined;
-  const mmrLabel = hasMmr ? `MMR ${mmr?.mmr}` : null;
+  const mmrLabel = hasMmr ? `MMR ${mmr?.estimated ? "≈" : ""}${mmr?.mmr}` : null;
   const rankLabel = mmr?.rankName
     ? `${mmr.rankName}${mmr.division ? ` ${mmr.division}` : ""}`
     : null;
-  const sourceLabel = mmr?.source === "tracker" ? "Tracker" : mmr?.source === "rlstats" ? "RLStats" : null;
+  const sourceLabel =
+    mmr?.source === "tracker"
+      ? "Tracker"
+      : mmr?.source === "rlstats"
+        ? "RLStats"
+        : mmr?.source === "local-estimate"
+          ? "Local"
+          : null;
+  const headToHeadLabel = headToHead
+    ? `Comp ${headToHead.wins_together}-${headToHead.losses_together} · Rival ${headToHead.wins_against}-${headToHead.losses_against}`
+    : null;
+  const updatedLabel = mmr?.updatedAt
+    ? new Date(mmr.updatedAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+    : null;
 
   return (
     <div
@@ -63,8 +77,15 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
               {mmrLabel ? <span className="font-mono font-semibold text-text-secondary">{mmrLabel}</span> : null}
               {rankLabel ? <span>{rankLabel}</span> : null}
               {sourceLabel ? <span>{sourceLabel}</span> : null}
+              {mmr?.estimated ? <span className="uppercase tracking-wide">est.</span> : null}
+              {mmr?.stale ? <span className="uppercase tracking-wide text-accent-warning">venc.</span> : null}
+              {typeof mmr?.estimateMatchesSinceRefresh === "number" && mmr.estimateMatchesSinceRefresh > 0 ? (
+                <span>{mmr.estimateMatchesSinceRefresh}p</span>
+              ) : null}
               {mmr?.cached ? <span className="uppercase tracking-wide">cache</span> : null}
+              {updatedLabel ? <span>act. {updatedLabel}</span> : null}
               {mmr?.error ? <span className="text-accent-warning">{mmr.error}</span> : null}
+              {headToHeadLabel ? <span className="text-text-secondary">{headToHeadLabel}</span> : null}
             </div>
           </div>
         </div>

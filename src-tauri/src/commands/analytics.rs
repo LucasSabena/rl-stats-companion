@@ -7,6 +7,132 @@ use std::collections::HashMap;
 use tauri::State;
 use tracing::error;
 
+fn is_local_identity(
+    local_primary_id: Option<&str>,
+    player_names: &[String],
+    primary_id: &str,
+    name: &str,
+) -> bool {
+    if local_primary_id == Some(primary_id) {
+        return true;
+    }
+
+    let normalized_name = name.trim();
+    player_names
+        .iter()
+        .any(|candidate| candidate.trim().eq_ignore_ascii_case(normalized_name))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn get_session_scope_stats(
+    pool: &crate::core::storage::DbPool,
+    start_time: &str,
+    end_time: &str,
+    local_primary_id: Option<&str>,
+    player_names: &[String],
+    playlist: Option<&str>,
+    match_type: Option<&str>,
+    scope: &str,
+) -> Result<(f64, f64), String> {
+    let conn = get_conn(pool).map_err(|e| e.to_string())?;
+
+    let mut sql =
+        String::from("SELECT id FROM matches WHERE start_time >= ?1 AND start_time <= ?2");
+    let mut args: Vec<Box<dyn rusqlite::ToSql>> = vec![
+        Box::new(start_time.to_string()),
+        Box::new(end_time.to_string()),
+    ];
+
+    if let Some(mt) = match_type {
+        sql.push_str(" AND LOWER(match_type) = LOWER(?)");
+        args.push(Box::new(mt.to_string()));
+    }
+    if let Some(pl) = playlist {
+        sql.push_str(" AND LOWER(playlist) = LOWER(?)");
+        args.push(Box::new(pl.to_string()));
+    }
+
+    let arg_refs: Vec<&dyn rusqlite::ToSql> = args.iter().map(|arg| arg.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let match_ids: Vec<i64> = stmt
+        .query_map(&*arg_refs, |row| row.get(0))
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    if match_ids.is_empty() {
+        return Ok((0.0, 0.0));
+    }
+
+    let local_stats_by_match =
+        storage::get_local_match_stats(pool, &match_ids, local_primary_id, player_names)
+            .map_err(|e| e.to_string())?;
+
+    let mut total_score = 0i32;
+    let mut scored_matches = 0i32;
+    for match_id in &match_ids {
+        if let Some(stats) = local_stats_by_match.get(match_id) {
+            total_score += if scope == "me" {
+                stats.score
+            } else {
+                stats.team_score
+            };
+            scored_matches += 1;
+        }
+    }
+
+    let placeholders = vec!["?"; match_ids.len()].join(", ");
+    let speed_sql = format!(
+        "SELECT mp.match_id, mp.team_num, mp.speed, p.primary_id, p.name
+         FROM match_players mp
+         JOIN players p ON mp.player_id = p.id
+         WHERE mp.match_id IN ({})",
+        placeholders
+    );
+    let speed_params: Vec<&dyn rusqlite::ToSql> = match_ids
+        .iter()
+        .map(|match_id| match_id as &dyn rusqlite::ToSql)
+        .collect();
+    let mut speed_stmt = conn.prepare(&speed_sql).map_err(|e| e.to_string())?;
+    let rows = speed_stmt
+        .query_map(&*speed_params, |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, i32>(1)?,
+                row.get::<_, f64>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+            ))
+        })
+        .map_err(|e| e.to_string())?;
+
+    let mut peak_speed = 0.0f64;
+    for row in rows {
+        let (match_id, team_num, speed, primary_id, name) = row.map_err(|e| e.to_string())?;
+        let Some(local_stats) = local_stats_by_match.get(&match_id) else {
+            continue;
+        };
+
+        let include = if scope == "me" {
+            is_local_identity(local_primary_id, player_names, &primary_id, &name)
+        } else {
+            local_stats.local_team_num == Some(team_num)
+        };
+
+        if include && speed > peak_speed {
+            peak_speed = speed;
+        }
+    }
+
+    let avg_score = if scored_matches > 0 {
+        total_score as f64 / scored_matches as f64
+    } else {
+        0.0
+    };
+
+    Ok((avg_score, peak_speed))
+}
+
 #[derive(Deserialize)]
 pub struct AnalyticsPeriod {
     pub days: i32,
@@ -655,17 +781,19 @@ async fn get_session_analytics_inner(
         (today.clone(), today)
     };
 
-    let (avg_score, peak_speed) = if let Some(ref local_id) = settings.local_primary_id {
-        let stats = get_player_period_stats(
+    let player_names = storage::identity_candidate_names(&settings);
+    let (avg_score, peak_speed) = if let Some(recent_session) = recent {
+        get_session_scope_stats(
             pool,
-            local_id,
-            &start_str,
-            &end_str,
+            &recent_session.start_time,
+            &recent_session.end_time,
+            settings.local_primary_id.as_deref(),
+            &player_names,
             playlist.as_deref(),
             match_type.as_deref(),
+            scope_str,
         )
-        .unwrap_or((0.0, 0, 0.0));
-        (stats.0, stats.2)
+        .unwrap_or((0.0, 0.0))
     } else {
         (0.0, 0.0)
     };
@@ -719,8 +847,8 @@ async fn get_session_analytics_inner(
         0.0
     };
 
-    let total_kickoff_goals_scored: i32 = sessions.iter().map(|s| s.kickoff_goals_scored).sum();
-    let total_kickoff_goals_conceded: i32 = sessions.iter().map(|s| s.kickoff_goals_conceded).sum();
+    let total_kickoff_goals_scored = recent.map(|s| s.kickoff_goals_scored).unwrap_or(0);
+    let total_kickoff_goals_conceded = recent.map(|s| s.kickoff_goals_conceded).unwrap_or(0);
     let avg_kickoff_goals_scored = if total_matches > 0 {
         total_kickoff_goals_scored as f64 / total_matches as f64
     } else {

@@ -1768,11 +1768,8 @@ pub fn get_match_sessions(
                         m.score_blue
                     };
                     kickoff_goals_scored += local_stats.map(|s| s.kickoff_goals).unwrap_or(0);
-                    kickoff_goals_conceded += if lt == 0 {
-                        m.score_orange
-                    } else {
-                        m.score_blue
-                    };
+                    kickoff_goals_conceded +=
+                        local_stats.map(|s| s.opponent_kickoff_goals).unwrap_or(0);
                 } else {
                     goals_scored += if lt == 0 {
                         m.score_blue
@@ -1960,6 +1957,29 @@ pub fn delete_mmr_cache(
     )
     .map_err(|e| AppError::StorageError(e.to_string()))?;
     Ok(())
+}
+
+pub fn get_latest_player_mmr_for_playlist(
+    pool: &DbPool,
+    primary_id: &str,
+    playlist: &str,
+) -> AppResult<Option<i32>> {
+    let conn = get_conn(pool)?;
+    conn.query_row(
+        "SELECT mp.mmr
+         FROM match_players mp
+         JOIN players p ON p.id = mp.player_id
+         JOIN matches m ON m.id = mp.match_id
+         WHERE p.primary_id = ?1
+           AND LOWER(COALESCE(m.playlist, '')) = LOWER(?2)
+           AND mp.mmr IS NOT NULL
+         ORDER BY m.start_time DESC
+         LIMIT 1",
+        params![primary_id, playlist],
+        |row| row.get::<_, i32>(0),
+    )
+    .optional()
+    .map_err(|e| AppError::StorageError(e.to_string()))
 }
 
 // ─── Friends ─────────────────────────────────────────────────────────────────

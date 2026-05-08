@@ -42,6 +42,8 @@ pub async fn fetch_live_mmr_snapshot(
     resolve_lobby_mmr(
         state.db_pool.clone(),
         settings.tracker_api_key.clone(),
+        settings.local_primary_id.clone(),
+        !force_refresh,
         live_players,
     )
     .await

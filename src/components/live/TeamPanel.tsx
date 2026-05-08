@@ -1,18 +1,20 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import { PlayerCard } from "./PlayerCard";
-import type { LiveMmrPlayer, Player } from "@/lib/types";
+import type { HeadToHeadRecord, LiveMmrPlayer, Player } from "@/lib/types";
 import { useTranslation } from "react-i18next";
 
 interface TeamPanelProps {
   team: "blue" | "orange";
   players: Player[];
   mmrByPlayerId?: Record<string, LiveMmrPlayer>;
+  headToHeadByPlayerId?: Record<string, HeadToHeadRecord>;
+  localPrimaryId?: string | null;
   mmrLoading?: boolean;
   isLocalMatch?: boolean;
 }
 
-export const TeamPanel = memo(function TeamPanel({ team, players, mmrByPlayerId, mmrLoading, isLocalMatch }: TeamPanelProps) {
+export const TeamPanel = memo(function TeamPanel({ team, players, mmrByPlayerId, headToHeadByPlayerId, localPrimaryId, mmrLoading, isLocalMatch }: TeamPanelProps) {
   const { t } = useTranslation(["live", "common"]);
   const isBlue = team === "blue";
   const averageMmr = (() => {
@@ -74,7 +76,9 @@ export const TeamPanel = memo(function TeamPanel({ team, players, mmrByPlayerId,
             <PlayerCard
               key={player.id}
               player={player}
+              isCurrentUser={player.id === localPrimaryId}
               mmr={mmrByPlayerId?.[player.id] ?? null}
+              headToHead={headToHeadByPlayerId?.[player.id] ?? null}
               mmrLoading={mmrLoading}
             />
           ))

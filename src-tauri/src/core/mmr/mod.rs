@@ -1,5 +1,7 @@
 use crate::core::models::LivePlayer;
-use crate::core::storage::{get_mmr_cache, upsert_mmr_cache, DbPool};
+use crate::core::storage::{
+    get_latest_player_mmr_for_playlist, get_mmr_cache, upsert_mmr_cache, DbPool,
+};
 use crate::core::tracker_api::{
     PlaylistStats as TrackerPlaylistStats, TrackerClient, TrackerProfile,
 };
@@ -14,9 +16,13 @@ type RankInfoMap = HashMap<String, (Option<String>, Option<String>, Option<i32>)
 
 const TRACKER_PROVIDER: &str = "tracker";
 const RLSTATS_PROVIDER: &str = "rlstats";
+const LOCAL_ESTIMATE_PROVIDER: &str = "local-estimate";
+const LOCAL_ESTIMATE_PLATFORM: &str = "local";
 const TRACKER_CACHE_TTL_MINUTES: i64 = 15;
 const RLSTATS_CACHE_TTL_MINUTES: i64 = 30;
 const RLSTATS_BASE: &str = "https://rlstats.net";
+const LOCAL_ESTIMATE_MAX_MATCHES: u32 = 3;
+const LOCAL_ESTIMATE_DELTA: i32 = 9;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +48,10 @@ pub struct LivePlayerMmr {
     pub matches_played: Option<i64>,
     pub source: Option<String>,
     pub cached: bool,
+    pub estimated: bool,
+    pub stale: bool,
+    pub estimate_matches_since_refresh: Option<u32>,
+    pub updated_at: Option<String>,
     pub error: Option<String>,
 }
 
@@ -78,9 +88,33 @@ struct PlaylistInference {
     confidence: &'static str,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+struct LocalMmrState {
+    playlists: HashMap<String, LocalMmrEstimate>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct LocalMmrEstimate {
+    mmr: i32,
+    matches_since_refresh: u32,
+    estimated: bool,
+    updated_at: String,
+}
+
+#[derive(Clone, Debug)]
+struct LocalEstimateResolution {
+    mmr: i32,
+    estimated: bool,
+    stale: bool,
+    matches_since_refresh: u32,
+    updated_at: String,
+}
+
 pub async fn resolve_lobby_mmr(
     db_pool: std::sync::Arc<DbPool>,
     tracker_api_key: Option<String>,
+    local_primary_id: Option<String>,
+    prefer_local_estimate: bool,
     players: Vec<LivePlayer>,
 ) -> AppResult<LiveMmrSnapshot> {
     let inference = infer_playlist(players.iter());
@@ -91,9 +125,18 @@ pub async fn resolve_lobby_mmr(
         let db_pool = std::sync::Arc::clone(&db_pool);
         let tracker_api_key = tracker_api_key.clone();
         let inference = inference.clone();
+        let local_primary_id = local_primary_id.clone();
 
         join_set.spawn(async move {
-            resolve_player_mmr(db_pool, tracker_api_key, player, inference).await
+            resolve_player_mmr(
+                db_pool,
+                tracker_api_key,
+                local_primary_id,
+                prefer_local_estimate,
+                player,
+                inference,
+            )
+            .await
         });
     }
 
@@ -125,6 +168,8 @@ pub async fn resolve_lobby_mmr(
 async fn resolve_player_mmr(
     db_pool: std::sync::Arc<DbPool>,
     tracker_api_key: Option<String>,
+    local_primary_id: Option<String>,
+    prefer_local_estimate: bool,
     player: LivePlayer,
     inference: PlaylistInference,
 ) -> LivePlayerMmr {
@@ -143,10 +188,56 @@ async fn resolve_player_mmr(
                 matches_played: None,
                 source: None,
                 cached: false,
+                estimated: false,
+                stale: false,
+                estimate_matches_since_refresh: None,
+                updated_at: None,
                 error: Some(error.to_string()),
             };
         }
     };
+
+    let is_local_player = local_primary_id.as_deref() == Some(identity.source_primary_id.as_str());
+
+    if prefer_local_estimate && is_local_player {
+        if let Some(playlist_key) = inference.primary.as_deref() {
+            if let Ok(Some(local_estimate)) =
+                resolve_local_estimate(&db_pool, &identity.source_primary_id, playlist_key)
+            {
+                return LivePlayerMmr {
+                    primary_id: identity.source_primary_id,
+                    player_name: identity.player_name,
+                    platform: identity.tracker_platform,
+                    identifier: identity.identifier,
+                    playlist: Some(playlist_key.to_string()),
+                    mmr: Some(local_estimate.mmr),
+                    rank_name: None,
+                    division: None,
+                    matches_played: None,
+                    source: Some(LOCAL_ESTIMATE_PROVIDER.into()),
+                    cached: true,
+                    estimated: local_estimate.estimated,
+                    stale: local_estimate.stale,
+                    estimate_matches_since_refresh: Some(local_estimate.matches_since_refresh),
+                    updated_at: if local_estimate.updated_at.is_empty() {
+                        None
+                    } else {
+                        Some(local_estimate.updated_at.clone())
+                    },
+                    error: if local_estimate.estimated {
+                        Some(if local_estimate.stale {
+                            "MMR local estimado. Ya acumulo varias partidas sin refrescarse online."
+                                .into()
+                        } else {
+                            "MMR local estimado a partir de tu ultimo valor conocido y resultados recientes.".into()
+                        })
+                    } else {
+                        None
+                    },
+                };
+            }
+        }
+    }
 
     if let Some(ref resolved_playlist) = inference.primary {
         for playlist_key in &inference.candidates {
@@ -154,6 +245,14 @@ async fn resolve_player_mmr(
                 resolve_with_tracker(&db_pool, tracker_api_key.clone(), &identity, playlist_key)
                     .await
             {
+                if is_local_player {
+                    let _ = sync_local_trusted_mmr(
+                        &db_pool,
+                        &identity.source_primary_id,
+                        playlist_key,
+                        entry.mmr,
+                    );
+                }
                 return build_player_result(
                     identity,
                     Some(playlist_key.clone()),
@@ -163,6 +262,14 @@ async fn resolve_player_mmr(
             }
 
             if let Ok(entry) = resolve_with_rlstats(&db_pool, &identity, playlist_key).await {
+                if is_local_player {
+                    let _ = sync_local_trusted_mmr(
+                        &db_pool,
+                        &identity.source_primary_id,
+                        playlist_key,
+                        entry.mmr,
+                    );
+                }
                 return build_player_result(
                     identity,
                     Some(playlist_key.clone()),
@@ -184,6 +291,10 @@ async fn resolve_player_mmr(
             matches_played: None,
             source: None,
             cached: false,
+            estimated: false,
+            stale: false,
+            estimate_matches_since_refresh: None,
+            updated_at: None,
             error: Some(if inference.confidence == "low" {
                 format!(
                     "No se pudo resolver MMR. La playlist actual es ambigua en la Stats API; candidatos: {}.",
@@ -207,6 +318,10 @@ async fn resolve_player_mmr(
         matches_played: None,
         source: None,
         cached: false,
+        estimated: false,
+        stale: false,
+        estimate_matches_since_refresh: None,
+        updated_at: None,
         error: Some(
             "No pudimos inferir la playlist actual con suficiente confianza desde la Stats API."
                 .into(),
@@ -232,8 +347,57 @@ fn build_player_result(
         matches_played: entry.matches_played,
         source: Some(entry.source),
         cached: entry.cached,
+        estimated: false,
+        stale: false,
+        estimate_matches_since_refresh: None,
+        updated_at: None,
         error,
     }
+}
+
+pub fn update_local_mmr_estimate(
+    db_pool: &DbPool,
+    local_primary_id: &str,
+    playlist: &str,
+    pre_match_mmr: Option<i32>,
+    did_win: bool,
+) -> AppResult<()> {
+    let mut state = read_local_mmr_state(db_pool, local_primary_id)?;
+    let baseline = pre_match_mmr
+        .or_else(|| state.playlists.get(playlist).map(|estimate| estimate.mmr))
+        .or_else(|| {
+            get_latest_player_mmr_for_playlist(db_pool, local_primary_id, playlist)
+                .ok()
+                .flatten()
+        });
+
+    let Some(baseline) = baseline else {
+        return Ok(());
+    };
+
+    let next_mmr = baseline
+        + if did_win {
+            LOCAL_ESTIMATE_DELTA
+        } else {
+            -LOCAL_ESTIMATE_DELTA
+        };
+    let previous_matches = state
+        .playlists
+        .get(playlist)
+        .map(|estimate| estimate.matches_since_refresh)
+        .unwrap_or(0);
+
+    state.playlists.insert(
+        playlist.to_string(),
+        LocalMmrEstimate {
+            mmr: next_mmr,
+            matches_since_refresh: previous_matches.saturating_add(1),
+            estimated: true,
+            updated_at: Utc::now().to_rfc3339(),
+        },
+    );
+
+    write_local_mmr_state(db_pool, local_primary_id, &state)
 }
 
 fn maybe_confidence_warning(
@@ -780,10 +944,7 @@ fn split_csv_like(input: &str) -> Vec<String> {
 }
 
 fn normalize_playlist_key(label: &str) -> Option<&'static str> {
-    match label.trim() {
-        "Duel" => Some("duel"),
-        "Doubles" => Some("doubles"),
-        "Standard" => Some("standard"),
+    playlist_label_to_key(label).or(match label.trim() {
         "Tournament" => Some("tournament"),
         "Quads" => Some("quads"),
         "Heatseeker" => Some("heatseeker"),
@@ -792,7 +953,102 @@ fn normalize_playlist_key(label: &str) -> Option<&'static str> {
         "Dropshot" => Some("dropshot"),
         "Snow Day" => Some("snowday"),
         _ => None,
+    })
+}
+
+pub fn playlist_label_to_key(label: &str) -> Option<&'static str> {
+    match label.trim() {
+        "Duel" => Some("duel"),
+        "Doubles" => Some("doubles"),
+        "Standard" => Some("standard"),
+        "Chaos" => Some("quads"),
+        _ => None,
     }
+}
+
+fn resolve_local_estimate(
+    db_pool: &DbPool,
+    local_primary_id: &str,
+    playlist: &str,
+) -> AppResult<Option<LocalEstimateResolution>> {
+    let state = read_local_mmr_state(db_pool, local_primary_id)?;
+    let Some(estimate) = state.playlists.get(playlist) else {
+        return Ok(
+            get_latest_player_mmr_for_playlist(db_pool, local_primary_id, playlist)?.map(|mmr| {
+                LocalEstimateResolution {
+                    mmr,
+                    estimated: false,
+                    stale: false,
+                    matches_since_refresh: 0,
+                    updated_at: String::new(),
+                }
+            }),
+        );
+    };
+
+    Ok(Some(LocalEstimateResolution {
+        mmr: estimate.mmr,
+        estimated: estimate.estimated,
+        stale: estimate.estimated && estimate.matches_since_refresh >= LOCAL_ESTIMATE_MAX_MATCHES,
+        matches_since_refresh: estimate.matches_since_refresh,
+        updated_at: estimate.updated_at.clone(),
+    }))
+}
+
+fn sync_local_trusted_mmr(
+    db_pool: &DbPool,
+    local_primary_id: &str,
+    playlist: &str,
+    mmr: Option<i32>,
+) -> AppResult<()> {
+    let Some(mmr) = mmr else {
+        return Ok(());
+    };
+
+    let mut state = read_local_mmr_state(db_pool, local_primary_id)?;
+    state.playlists.insert(
+        playlist.to_string(),
+        LocalMmrEstimate {
+            mmr,
+            matches_since_refresh: 0,
+            estimated: false,
+            updated_at: Utc::now().to_rfc3339(),
+        },
+    );
+    write_local_mmr_state(db_pool, local_primary_id, &state)
+}
+
+fn read_local_mmr_state(db_pool: &DbPool, local_primary_id: &str) -> AppResult<LocalMmrState> {
+    let Some((payload_json, _)) = get_mmr_cache(
+        db_pool,
+        LOCAL_ESTIMATE_PROVIDER,
+        LOCAL_ESTIMATE_PLATFORM,
+        local_primary_id,
+    )?
+    else {
+        return Ok(LocalMmrState::default());
+    };
+
+    serde_json::from_str(&payload_json)
+        .map_err(|e| AppError::ParseError(format!("Estado local MMR invalido: {e}")))
+}
+
+fn write_local_mmr_state(
+    db_pool: &DbPool,
+    local_primary_id: &str,
+    state: &LocalMmrState,
+) -> AppResult<()> {
+    let payload_json = serde_json::to_string(state).map_err(|e| {
+        AppError::ParseError(format!("No se pudo serializar el estado local MMR: {e}"))
+    })?;
+    upsert_mmr_cache(
+        db_pool,
+        LOCAL_ESTIMATE_PROVIDER,
+        LOCAL_ESTIMATE_PLATFORM,
+        local_primary_id,
+        &payload_json,
+        &Utc::now().to_rfc3339(),
+    )
 }
 
 fn parse_primary_id(primary_id: &str, player_name: &str) -> AppResult<ProviderIdentity> {
@@ -837,18 +1093,27 @@ fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> Playlist
 
     let total = blue_count + orange_count;
     let team_size = blue_count.max(orange_count);
+
+    if blue_count == 0 || orange_count == 0 || blue_count != orange_count {
+        return PlaylistInference {
+            primary: None,
+            candidates: Vec::new(),
+            confidence: "unknown",
+        };
+    }
+
     match total {
         2 => PlaylistInference {
             primary: Some("duel".into()),
             candidates: vec!["duel".into()],
             confidence: "high",
         },
-        3 | 4 if team_size == 2 => PlaylistInference {
+        4 if team_size == 2 => PlaylistInference {
             primary: Some("doubles".into()),
             candidates: vec!["doubles".into(), "hoops".into(), "heatseeker".into()],
             confidence: "low",
         },
-        5 | 6 if team_size == 3 => PlaylistInference {
+        6 if team_size == 3 => PlaylistInference {
             primary: Some("standard".into()),
             candidates: vec![
                 "standard".into(),
@@ -858,7 +1123,7 @@ fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> Playlist
             ],
             confidence: "low",
         },
-        7 | 8 if team_size >= 4 => PlaylistInference {
+        8 if team_size >= 4 => PlaylistInference {
             primary: Some("quads".into()),
             candidates: vec!["quads".into()],
             confidence: "high",
@@ -967,6 +1232,58 @@ mod tests {
         let inference = infer_playlist(players.iter());
         assert_eq!(inference.primary.as_deref(), Some("doubles"));
         assert_eq!(inference.confidence, "low");
+    }
+
+    #[test]
+    fn infer_playlist_rejects_incomplete_doubles_lobby() {
+        let players = [
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 1,
+                ..Default::default()
+            },
+        ];
+
+        let inference = infer_playlist(players.iter());
+        assert_eq!(inference.primary, None);
+        assert_eq!(inference.confidence, "unknown");
+    }
+
+    #[test]
+    fn infer_playlist_rejects_incomplete_standard_lobby() {
+        let players = [
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 0,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 1,
+                ..Default::default()
+            },
+            LivePlayer {
+                team: 1,
+                ..Default::default()
+            },
+        ];
+
+        let inference = infer_playlist(players.iter());
+        assert_eq!(inference.primary, None);
+        assert_eq!(inference.confidence, "unknown");
     }
 
     #[test]

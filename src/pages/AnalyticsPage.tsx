@@ -453,6 +453,7 @@ export function AnalyticsPage() {
   const clearFilters = useCallback(() => {
     setPlaylist("all");
     setMatchType("all");
+    setScope("me");
   }, []);
 
   const [shareOpen, setShareOpen] = useState(false);
