@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.7.0 — Training Packs Repository & User Presets
+
+### Features
+
+**Training Packs Repository**
+- Nueva página `/training-packs` con catálogo completo de packs de entrenamiento.
+- 60+ packs de la comunidad organizados por categoría (Speedflip, Aerials, Shooting, Dribbling, Defense, etc.) y dificultad (Beginner → Pro).
+- Datos cargados desde `public/training-packs.json` — editable vía PRs en GitHub.
+- Filtros por categoría, dificultad, búsquedas por nombre/creador/código.
+- Favoritos locales persistidos en `localStorage`.
+- Agregar packs personalizados con modal propio.
+- i18n completo: ES/EN/PT para categorías, dificultades y UI.
+
+**User Presets System**
+- Gestión de configuraciones personales: Camera, Controls, Deadzone, Hardware.
+- CRUD completo en base de datos SQLite.
+- Exportar/importar presets como JSON.
+- Botón de compartir con tarjeta visual generada por Canvas.
+
+**Pro Configs Page**
+- Catálogo de configs de jugadores profesionales (cam, controls, deadzone) organizados por continente/equipo.
+- Búsqueda por nombre, equipo o nacionalidad.
+
+### Improvements
+- Training Packs: `public/training-packs.json` se sirve estáticamente y se descarga en vivo desde GitHub raw.
+- Nueva ruta de sidebar: `Entrenamientos` (icono Dumbbell).
+
 ## v1.6.1 — Match Detail Kickoff Goals, MMR Timing & Update Flow
 
 ### Features
