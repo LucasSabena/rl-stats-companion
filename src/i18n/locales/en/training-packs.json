@@ -1,0 +1,64 @@
+{
+  "page": {
+    "title": "Training Packs",
+    "searchPlaceholder": "Search by name, code, or creator...",
+    "noResults": "No training packs found",
+    "addPack": "Add pack",
+    "myPacks": "My packs",
+    "favorites": "Favorites",
+    "allPacks": "All",
+    "copyCode": "Copy code",
+    "copied": "Code copied!",
+    "codeLabel": "Code",
+    "creatorLabel": "Creator",
+    "categoryLabel": "Category",
+    "difficultyLabel": "Difficulty",
+    "descriptionLabel": "Description",
+    "featured": "Featured",
+    "name": "Pack Name",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "deletePack": "Delete pack",
+    "deletePackConfirm": "Are you sure you want to delete this pack? This action cannot be undone.",
+    "packAdded": "Pack added successfully",
+    "requiredField": "Required field"
+  },
+  "categories": {
+    "all": "All",
+    "speedflip": "Speedflip",
+    "aerial": "Aerial",
+    "dribbling": "Dribbling",
+    "shooting": "Shooting",
+    "rings": "Rings",
+    "obstacle-course": "Obstacle Course",
+    "kickoff": "Kickoff",
+    "wall-ceiling": "Wall & Ceiling",
+    "goalie": "Goalie",
+    "freestyle": "Freestyle",
+    "defense": "Defense",
+    "powershot": "Powershot"
+  },
+  "difficulties": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "pro": "Pro"
+  },
+  "modal": {
+    "addTitle": "Add Training Pack",
+    "editTitle": "Edit Training Pack",
+    "namePlaceholder": "Pack name",
+    "codePlaceholder": "AAAA-BBBB-CCCC-DDDD",
+    "creatorPlaceholder": "Creator (optional)",
+    "categoryPlaceholder": "Select a category",
+    "difficultyPlaceholder": "Select a difficulty",
+    "descriptionPlaceholder": "Description (optional)",
+    "tagsPlaceholder": "Tags separated by commas",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "card": {
+    "copy": "Copy",
+    "viewDetails": "View details"
+  }
+}

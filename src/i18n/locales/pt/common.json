@@ -5,6 +5,7 @@
     "analytics": "Análises",
     "players": "Jogadores",
     "proConfigs": "Configs Pros",
+    "trainingPacks": "Packs de Treino",
     "profile": "Perfil",
     "settings": "Configurações",
     "collapse": "Recolher barra lateral",
@@ -15,6 +16,7 @@
     "history": "Histórico de Partidas",
     "analytics": "Análises de Desempenho",
     "proConfigs": "Configs de Pros",
+    "trainingPacks": "Packs de Treino",
     "settings": "Configurações",
     "fallback": "RL Stats"
   },

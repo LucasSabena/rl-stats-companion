@@ -1,0 +1,64 @@
+{
+  "page": {
+    "title": "Entrenamientos",
+    "searchPlaceholder": "Buscar por nombre, código o creador...",
+    "noResults": "No se encontraron packs de entrenamiento",
+    "addPack": "Añadir pack",
+    "myPacks": "Mis packs",
+    "favorites": "Favoritos",
+    "allPacks": "Todos",
+    "copyCode": "Copiar código",
+    "copied": "¡Código copiado!",
+    "codeLabel": "Código",
+    "creatorLabel": "Creador",
+    "categoryLabel": "Categoría",
+    "difficultyLabel": "Dificultad",
+    "descriptionLabel": "Descripción",
+    "featured": "Destacados",
+    "name": "Nombre del pack",
+    "addedToFavorites": "Añadido a favoritos",
+    "removedFromFavorites": "Eliminado de favoritos",
+    "deletePack": "Eliminar pack",
+    "deletePackConfirm": "¿Estás seguro de que quieres eliminar este pack? Esta acción no se puede deshacer.",
+    "packAdded": "Pack añadido correctamente",
+    "requiredField": "Campo obligatorio"
+  },
+  "categories": {
+    "all": "Todas",
+    "speedflip": "Speedflip",
+    "aerial": "Aéreos",
+    "dribbling": "Dribbling",
+    "shooting": "Tiro",
+    "rings": "Anillos",
+    "obstacle-course": "Circuito de obstáculos",
+    "kickoff": "Saque",
+    "wall-ceiling": "Muro y techo",
+    "goalie": "Portero",
+    "freestyle": "Freestyle",
+    "defense": "Defensa",
+    "powershot": "Potencia de tiro"
+  },
+  "difficulties": {
+    "beginner": "Principiante",
+    "intermediate": "Intermedio",
+    "advanced": "Avanzado",
+    "pro": "Profesional"
+  },
+  "modal": {
+    "addTitle": "Añadir pack de entrenamiento",
+    "editTitle": "Editar pack de entrenamiento",
+    "namePlaceholder": "Nombre del pack",
+    "codePlaceholder": "AAAA-BBBB-CCCC-DDDD",
+    "creatorPlaceholder": "Creador (opcional)",
+    "categoryPlaceholder": "Selecciona una categoría",
+    "difficultyPlaceholder": "Selecciona una dificultad",
+    "descriptionPlaceholder": "Descripción (opcional)",
+    "tagsPlaceholder": "Etiquetas separadas por comas",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  },
+  "card": {
+    "copy": "Copiar",
+    "viewDetails": "Ver detalles"
+  }
+}

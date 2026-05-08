@@ -15,6 +15,8 @@ import players from "./locales/es/players.json";
 import matchDetail from "./locales/es/match-detail.json";
 import proConfigs from "./locales/es/pro-configs.json";
 import share from "./locales/es/share.json";
+import presets from "./locales/es/presets.json";
+import trainingPacks from "./locales/es/training-packs.json";
 
 import commonEn from "./locales/en/common.json";
 import liveEn from "./locales/en/live.json";
@@ -29,6 +31,8 @@ import playersEn from "./locales/en/players.json";
 import matchDetailEn from "./locales/en/match-detail.json";
 import proConfigsEn from "./locales/en/pro-configs.json";
 import shareEn from "./locales/en/share.json";
+import presetsEn from "./locales/en/presets.json";
+import trainingPacksEn from "./locales/en/training-packs.json";
 
 import commonPt from "./locales/pt/common.json";
 import livePt from "./locales/pt/live.json";
@@ -43,6 +47,8 @@ import playersPt from "./locales/pt/players.json";
 import matchDetailPt from "./locales/pt/match-detail.json";
 import proConfigsPt from "./locales/pt/pro-configs.json";
 import sharePt from "./locales/pt/share.json";
+import presetsPt from "./locales/pt/presets.json";
+import trainingPacksPt from "./locales/pt/training-packs.json";
 
 i18n
   .use(LanguageDetector)
@@ -63,6 +69,8 @@ i18n
         matchDetail,
         proConfigs,
         share,
+        presets,
+        trainingPacks,
       },
       en: {
         common: commonEn,
@@ -78,6 +86,8 @@ i18n
         matchDetail: matchDetailEn,
         proConfigs: proConfigsEn,
         share: shareEn,
+        presets: presetsEn,
+        trainingPacks: trainingPacksEn,
       },
       pt: {
         common: commonPt,
@@ -93,6 +103,8 @@ i18n
         matchDetail: matchDetailPt,
         proConfigs: proConfigsPt,
         share: sharePt,
+        presets: presetsPt,
+        trainingPacks: trainingPacksPt,
       },
     },
     fallbackLng: "es",
@@ -111,6 +123,8 @@ i18n
       "matchDetail",
       "proConfigs",
       "share",
+      "presets",
+      "trainingPacks",
     ],
     defaultNS: "common",
     interpolation: {

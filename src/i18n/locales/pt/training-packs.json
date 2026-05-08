@@ -1,0 +1,63 @@
+{
+  "page": {
+    "title": "Treinamentos",
+    "searchPlaceholder": "Buscar por nome, código ou criador...",
+    "noResults": "Nenhum pack de treinamento encontrado",
+    "addPack": "Adicionar pack",
+    "myPacks": "Meus packs",
+    "favorites": "Favoritos",
+    "allPacks": "Todos",
+    "copyCode": "Copiar código",
+    "copied": "Código copiado!",
+    "codeLabel": "Código",
+    "creatorLabel": "Criador",
+    "categoryLabel": "Categoria",
+    "difficultyLabel": "Dificuldade",
+    "descriptionLabel": "Descrição",
+    "featured": "Destaques",
+    "addedToFavorites": "Adicionado aos favoritos",
+    "removedFromFavorites": "Removido dos favoritos",
+    "deletePack": "Excluir pack",
+    "deletePackConfirm": "Tem certeza de que deseja excluir este pack? Esta ação não pode ser desfeita.",
+    "packAdded": "Pack adicionado com sucesso",
+    "requiredField": "Campo obrigatório"
+  },
+  "categories": {
+    "all": "Todas",
+    "speedflip": "Speedflip",
+    "aerial": "Aéreos",
+    "dribbling": "Dribbling",
+    "shooting": "Chute",
+    "rings": "Anéis",
+    "obstacle-course": "Circuito de obstáculos",
+    "kickoff": "Kickoff",
+    "wall-ceiling": "Parede e teto",
+    "goalie": "Goleiro",
+    "freestyle": "Freestyle",
+    "defense": "Defesa",
+    "powershot": "Potência de chute"
+  },
+  "difficulties": {
+    "beginner": "Iniciante",
+    "intermediate": "Intermediário",
+    "advanced": "Avançado",
+    "pro": "Profissional"
+  },
+  "modal": {
+    "addTitle": "Adicionar pack de treinamento",
+    "editTitle": "Editar pack de treinamento",
+    "namePlaceholder": "Nome do pack",
+    "codePlaceholder": "AAAA-BBBB-CCCC-DDDD",
+    "creatorPlaceholder": "Criador (opcional)",
+    "categoryPlaceholder": "Selecione uma categoria",
+    "difficultyPlaceholder": "Selecione uma dificuldade",
+    "descriptionPlaceholder": "Descrição (opcional)",
+    "tagsPlaceholder": "Tags separadas por vírgulas",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "card": {
+    "copy": "Copiar",
+    "viewDetails": "Ver detalhes"
+  }
+}

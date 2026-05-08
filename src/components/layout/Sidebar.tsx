@@ -4,7 +4,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useLiveStore } from "@/stores/liveStore";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Radio, List, BarChart3, Settings, User, Gamepad2, Users } from "lucide-react";
+import { Radio, List, BarChart3, Settings, User, Gamepad2, Users, Dumbbell } from "lucide-react";
 
 const navItems = [
   { path: "/", labelKey: "sidebar.live", icon: Radio },
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/analytics", labelKey: "sidebar.analytics", icon: BarChart3 },
   { path: "/players", labelKey: "sidebar.players", icon: Users },
   { path: "/pro-configs", labelKey: "sidebar.proConfigs", icon: Gamepad2 },
+  { path: "/training-packs", labelKey: "sidebar.trainingPacks", icon: Dumbbell },
   { path: "/profile", labelKey: "sidebar.profile", icon: User },
   { path: "/settings", labelKey: "sidebar.settings", icon: Settings },
 ];

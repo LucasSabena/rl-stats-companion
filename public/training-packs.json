@@ -1,0 +1,522 @@
+{
+  "lastUpdated": "2026-05-08",
+  "packs": [
+    {
+      "id": "musty-speedflip-kickoff-test",
+      "name": "Speedflip Kickoff Test",
+      "code": "A503-264C-A7EB-D282",
+      "creator": "Musty",
+      "category": "speedflip",
+      "difficulty": "intermediate",
+      "description": "The definitive speedflip kickoff training pack. Practice flip-cancel kickoffs from multiple positions and test your consistency.",
+      "tags": ["kickoff", "flip cancel", "essential"],
+      "featured": true
+    },
+    {
+      "id": "musty-best-goals-recreated",
+      "name": "Best Goals Recreated",
+      "code": "7593-53A0-3827-1AC9",
+      "creator": "Musty",
+      "category": "shooting",
+      "difficulty": "pro",
+      "description": "Recreate iconic Rocket League goals. High-intensity scenarios testing creativity and mechanical precision.",
+      "tags": ["high intensity", "variety", "competitive"]
+    },
+    {
+      "id": "musty-preflip-test",
+      "name": "Musty Preflip Test",
+      "code": "D278-781E-6C94-C1A1",
+      "creator": "Musty",
+      "category": "freestyle",
+      "difficulty": "advanced",
+      "description": "Preflip and redirect scenarios designed to push your mechanical creativity to the limit.",
+      "tags": ["redirects", "pre-flips", "offensive"]
+    },
+    {
+      "id": "musty-back-wall-air-dribbles",
+      "name": "Back Wall Air Dribbles",
+      "code": "0BFC-9281-F0E8-F627",
+      "creator": "Musty",
+      "category": "wall-ceiling",
+      "difficulty": "intermediate",
+      "description": "Air dribble setups starting from the back wall. Build confidence taking the ball up the wall and across the pitch.",
+      "tags": ["air dribbles", "off the wall", "offensive"]
+    },
+    {
+      "id": "musty-impossible-shot",
+      "name": "Impossible Shot Challenge",
+      "code": "E715-3F2F-0D83-9E2D",
+      "creator": "Musty",
+      "category": "shooting",
+      "difficulty": "pro",
+      "description": "One extremely difficult shot that will test even SSL-level players. Can you make the impossible look easy?",
+      "tags": ["high intensity", "offensive", "pre-flips"]
+    },
+    {
+      "id": "wayton-sudden-aerials",
+      "name": "Sudden Aerials",
+      "code": "F001-A333-AAEB-2786",
+      "creator": "Wayton Pilkin",
+      "category": "aerial",
+      "difficulty": "advanced",
+      "description": "Fast aerial challenges with limited setup time. Mimics real-game pressure where you must react instantly.",
+      "tags": ["aerials", "competitive", "high intensity"]
+    },
+    {
+      "id": "wayton-beginner-dribble",
+      "name": "Beginner Dribble Training",
+      "code": "6F35-CE3B-ABCB-FE13",
+      "creator": "Wayton Pilkin",
+      "category": "dribbling",
+      "difficulty": "beginner",
+      "description": "Fundamental dribbling and flick practice for new players. Focuses on ball control while moving across the field.",
+      "tags": ["dribbling", "good for beginners", "ground shots"]
+    },
+    {
+      "id": "wayton-power-shots",
+      "name": "Power Shots",
+      "code": "0274-95F1-C1BD-2AA6",
+      "creator": "Wayton Pilkin",
+      "category": "powershot",
+      "difficulty": "intermediate",
+      "description": "Long-range strike training to develop powerful, accurate shots. Focus on timing your dodge for maximum velocity.",
+      "tags": ["ground shots", "offensive", "long shots"],
+      "featured": true
+    },
+    {
+      "id": "wayton-angled-shots",
+      "name": "Angled Shots",
+      "code": "04A6-F117-971F-3625",
+      "creator": "Wayton Pilkin",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Shooting scenarios from awkward angles to improve goal-scoring from positions where you don't have a straight shot.",
+      "tags": ["aerials", "aerial control", "offensive"]
+    },
+    {
+      "id": "wayton-aerial-lv1",
+      "name": "Aerial Lv1",
+      "code": "AE34-6C1E-8CCD-D8A5",
+      "creator": "Wayton Pilkin",
+      "category": "aerial",
+      "difficulty": "beginner",
+      "description": "Basic aerial practice with static ball positions. The perfect first pack for players learning to fly consistently.",
+      "tags": ["aerials", "good for beginners"]
+    },
+    {
+      "id": "poquito-ground-shots",
+      "name": "Ground Shots",
+      "code": "6EB1-79B2-33B8-681C",
+      "creator": "Poquito",
+      "category": "shooting",
+      "difficulty": "beginner",
+      "description": "50 ground-level shots covering every common in-game scenario. Poquito's most popular pack for building shooting fundamentals.",
+      "tags": ["ground shots", "competitive", "good for beginners"],
+      "featured": true
+    },
+    {
+      "id": "poquito-aerials-double-tap",
+      "name": "Aerials-Double Tap Setups",
+      "code": "3454-D3F9-62AC-3EC8",
+      "creator": "Poquito",
+      "category": "aerial",
+      "difficulty": "advanced",
+      "description": "50 shots focused on aerial setups into double taps. Learn to follow your own shot off the backboard for clean goals.",
+      "tags": ["aerials", "offensive", "2 touches"]
+    },
+    {
+      "id": "poquito-aerial-redirects",
+      "name": "Aerial Shots - Redirects",
+      "code": "8D93-C997-0ACD-8416",
+      "creator": "Poquito",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Redirect scenarios where you must adjust mid-air to score. Great for improving aerial adaptability.",
+      "tags": ["redirects", "offensive"]
+    },
+    {
+      "id": "poquito-wall-shots",
+      "name": "Wall Shots",
+      "code": "9F6D-4387-4C57-2E4B",
+      "creator": "Poquito",
+      "category": "wall-ceiling",
+      "difficulty": "intermediate",
+      "description": "48 shots starting from the wall. Practice reading bounces off the wall and striking before the ball hits the ground.",
+      "tags": ["wall shots"]
+    },
+    {
+      "id": "poquito-clears-backboard",
+      "name": "Clears-Backboard Reads",
+      "code": "85B9-2469-C941-1176",
+      "creator": "Poquito",
+      "category": "defense",
+      "difficulty": "advanced",
+      "description": "44 defensive clears and backboard reads. Learn to clear with power and read bounces off your own backboard.",
+      "tags": ["clears", "defensive", "backboards"]
+    },
+    {
+      "id": "poquito-aerial-pass",
+      "name": "Aerial Shots-Pass",
+      "code": "C7E0-9E0B-B739-A899",
+      "creator": "Poquito",
+      "category": "aerial",
+      "difficulty": "intermediate",
+      "description": "Aerial shots off passes. Improve your ability to convert team plays with airborne strikes.",
+      "tags": ["aerials", "backboards", "offensive"]
+    },
+    {
+      "id": "poquito-complete-warmup",
+      "name": "A Complete Warm-Up X Spookluke",
+      "code": "A2D5-7908-A70B-EDA9",
+      "creator": "Poquito",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Comprehensive warm-up pack covering aerials, backboards, and awkward reads. Perfect before jumping into ranked.",
+      "tags": ["aerials", "backboards", "awkward reads"]
+    },
+    {
+      "id": "poquito-saves",
+      "name": "Saves",
+      "code": "2E23-ABD5-20C6-DBD4",
+      "creator": "Poquito",
+      "category": "goalie",
+      "difficulty": "intermediate",
+      "description": "Goalie saves from various positions and speeds. Build your last-line-of-defense reactions.",
+      "tags": ["saves", "defensive"]
+    },
+    {
+      "id": "poquito-dribbles",
+      "name": "Dribbles",
+      "code": "BFF5-2F90-5E7C-B9CD",
+      "creator": "Poquito",
+      "category": "dribbling",
+      "difficulty": "beginner",
+      "description": "Basic dribble and flick setups on the ground. Learn to keep the ball on your hood and pop it past defenders.",
+      "tags": ["dribbling"]
+    },
+    {
+      "id": "poquito-aerial-rebound",
+      "name": "Aerial Shots - Rebound",
+      "code": "E94F-C04B-434D-7FE6",
+      "creator": "Poquito",
+      "category": "aerial",
+      "difficulty": "intermediate",
+      "description": "Aerial shots following rebounds. Practice reading the ball after it hits the backboard.",
+      "tags": ["aerials", "backboards", "offensive"]
+    },
+    {
+      "id": "poquito-clears",
+      "name": "Clears",
+      "code": "5DA1-EA21-5EF9-EA21",
+      "creator": "Poquito",
+      "category": "defense",
+      "difficulty": "intermediate",
+      "description": "48 powerful clear scenarios. Focus on sending the ball to safe zones under pressure.",
+      "tags": ["wall shots", "defensive", "clears"]
+    },
+    {
+      "id": "lethamyr-breakaway-passes",
+      "name": "Breakaway Passes",
+      "code": "5A61-5289-FD96-5884",
+      "creator": "Lethamyr",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Passing and shooting drills based on breakaway scenarios. Improve your transition from defense to offense.",
+      "tags": ["passing", "offensive", "competitive"]
+    },
+    {
+      "id": "lethamyr-redirect-mechanics",
+      "name": "Redirect Mechanics Warmup",
+      "code": "42B5-985A-EF76-12A1",
+      "creator": "Lethamyr",
+      "category": "shooting",
+      "difficulty": "advanced",
+      "description": "Redirect shot mechanics designed to warm you up. Multiple angles and speeds to dial in your reads.",
+      "tags": ["redirects", "competitive"]
+    },
+    {
+      "id": "lethamyr-high-clear-defense",
+      "name": "High Clear Defense 2/2",
+      "code": "F0C9-173D-C328-8BCE",
+      "creator": "Lethamyr",
+      "category": "defense",
+      "difficulty": "intermediate",
+      "description": "Defensive high clears from pressured positions. Learn to keep the ball out when opponents are crashing.",
+      "tags": ["clears", "defensive"]
+    },
+    {
+      "id": "lethamyr-leading-backboard",
+      "name": "Leading Backboard Shots",
+      "code": "840C-0E09-F3FB-63FF",
+      "creator": "Lethamyr",
+      "category": "shooting",
+      "difficulty": "advanced",
+      "description": "Advanced backboard shot setups where you lead the ball into the perfect rebound angle.",
+      "tags": ["backboards", "offensive"]
+    },
+    {
+      "id": "thanovic-diamond-champ",
+      "name": "Diamond-Champion Training",
+      "code": "3187-E789-8419-FBAA",
+      "creator": "Thanovic",
+      "category": "shooting",
+      "difficulty": "advanced",
+      "description": "Rank-specific training for Diamond through Champion players. All-around mechanical development.",
+      "tags": ["shooting", "competitive"]
+    },
+    {
+      "id": "thanovic-bronze-silver",
+      "name": "Bronze-Silver Training",
+      "code": "2D89-9321-42D2-48BA",
+      "creator": "Thanovic",
+      "category": "shooting",
+      "difficulty": "beginner",
+      "description": "Beginner-friendly shots for Bronze and Silver players. Focus on consistency and basic mechanics.",
+      "tags": ["ground shots", "good for beginners", "offensive"]
+    },
+    {
+      "id": "thanovic-gold-plat",
+      "name": "Gold-Platinum Training",
+      "code": "B570-9D41-63B0-BCDD",
+      "creator": "Thanovic",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Core mechanics pack for Gold and Platinum players. Covers power shots, aerials, and basic defense.",
+      "tags": ["offensive", "ground shots"]
+    },
+    {
+      "id": "thanovic-champ-gc",
+      "name": "Champion - GC Training",
+      "code": "6FBA-31F7-ADEC-6D5F",
+      "creator": "Thanovic",
+      "category": "shooting",
+      "difficulty": "advanced",
+      "description": "Fast-paced scenarios for Champion and Grand Champion players. Push your consistency under pressure.",
+      "tags": ["aerials", "offensive", "rebounds"]
+    },
+    {
+      "id": "thanovic-all-around",
+      "name": "All Around Training",
+      "code": "BB6E-3966-DE26-A17B",
+      "creator": "Thanovic",
+      "category": "aerial",
+      "difficulty": "intermediate",
+      "description": "Mixed aerial and shooting scenarios. Great for warming up multiple mechanics at once.",
+      "tags": ["aerials", "offensive", "rebounds"]
+    },
+    {
+      "id": "thanovic-grand-champion",
+      "name": "Grand Champion",
+      "code": "CF35-4070-8876-28AA",
+      "creator": "Thanovic",
+      "category": "shooting",
+      "difficulty": "pro",
+      "description": "Pro-level shots for Grand Champion players. High speed and mechanical complexity.",
+      "tags": ["offensive"]
+    },
+    {
+      "id": "gregan-ultimate-warmup",
+      "name": "The Ultimate Warmup",
+      "code": "74A3-EB2A-8E6D-7B84",
+      "creator": "Gregan",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Gregan's signature warmup covering ground shots, aerials, and wall shots. A staple before ranked sessions.",
+      "tags": ["aerials", "ground shots", "wall shots"],
+      "featured": true
+    },
+    {
+      "id": "flabbynostril-backboard",
+      "name": "Self-Set Backboard Consistency",
+      "code": "23BC-0377-C228-A338",
+      "creator": "FlabbyNostril",
+      "category": "aerial",
+      "difficulty": "advanced",
+      "description": "Master self-set backboard double taps. Multiple starting positions teach you to read and redirect your own shots.",
+      "tags": ["backboards", "double tap", "competitive"],
+      "featured": true
+    },
+    {
+      "id": "flabbynostril-redirect",
+      "name": "Redirect Consistency",
+      "code": "9D8F-7799-B10C-9CD6",
+      "creator": "FlabbyNostril",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Redirect scenarios to improve your ability to adjust mid-air and score from passes or clears.",
+      "tags": ["redirects", "competitive", "offensive"]
+    },
+    {
+      "id": "johnnyboi-clearing",
+      "name": "Clearing for Beans",
+      "code": "3B34-F63D-27BE-8404",
+      "creator": "JohnnyBoi_i",
+      "category": "defense",
+      "difficulty": "intermediate",
+      "description": "Official RLCS7 featured pack by JohnnyBoi_i. Defensive clear scenarios with realistic pressure.",
+      "tags": ["clears", "defensive"]
+    },
+    {
+      "id": "virge-dribble-training",
+      "name": "Dribble Training",
+      "code": "04C1-42C8-6E5D-6F75",
+      "creator": "Virge",
+      "category": "dribbling",
+      "difficulty": "intermediate",
+      "description": "Official RLCS7 featured dribbling pack. Covers ball control, flicks, and ground-based offense.",
+      "tags": ["dribbling", "competitive"],
+      "featured": true
+    },
+    {
+      "id": "wayprotein-shooting-consistency",
+      "name": "Shooting Consistency",
+      "code": "4912-A5C9-9A56-555D",
+      "creator": "Wayprotein",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "20 varied shots from backboard rebounds to infield passes. A forgiving warm-up for all skill levels.",
+      "tags": ["shooting", "backboards", "warm-up"],
+      "featured": true
+    },
+    {
+      "id": "wayprotein-novice-defender",
+      "name": "Novice Defender",
+      "code": "87E7-773A-CBE5-B2C3",
+      "creator": "Wayprotein",
+      "category": "defense",
+      "difficulty": "beginner",
+      "description": "Official RLCS7 featured defensive pack for Gold players. Learn positioning and shadow defense basics.",
+      "tags": ["defensive", "shadow defense", "good for beginners"]
+    },
+    {
+      "id": "wayprotein-shadow-saves",
+      "name": "Shadow Saves",
+      "code": "6A8C-7B90-2AAA-B6B5",
+      "creator": "Wayprotein",
+      "category": "goalie",
+      "difficulty": "intermediate",
+      "description": "Shadow defense and save scenarios for Platinum players. Improve your last-man-back positioning and reactions.",
+      "tags": ["saves", "shadow defense", "defensive"]
+    },
+    {
+      "id": "fickle-shots-miss",
+      "name": "Shots You Shouldn't Miss",
+      "code": "42BF-686D-E047-574B",
+      "creator": "Fickle Platypus",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "10 first-time shot scenarios under time pressure. No bounces allowed — pure striking consistency.",
+      "tags": ["shooting", "consistency", "competitive"]
+    },
+    {
+      "id": "lachinio-backboard",
+      "name": "Backboard Shots",
+      "code": "AFFD-5023-BD4F-D320",
+      "creator": "Lachinio",
+      "category": "shooting",
+      "difficulty": "advanced",
+      "description": "Official RLCS7 featured pack. Backboard rebound shots at Champion-level difficulty.",
+      "tags": ["backboards", "offensive", "competitive"]
+    },
+    {
+      "id": "mertzy-rlcs7",
+      "name": "Recreating RLCS7",
+      "code": "D7B1-F15D-E870-0F8D",
+      "creator": "Mertzy",
+      "category": "shooting",
+      "difficulty": "pro",
+      "description": "Official RLCS7 featured pack. Recreate iconic shots from the RLCS Season 7 Championship.",
+      "tags": ["high intensity", "competitive", "variety"]
+    },
+    {
+      "id": "majowww-walldrag",
+      "name": "Treino De Walldrag",
+      "code": "5008-1A49-7B3A-AA4E",
+      "creator": "Majowww",
+      "category": "wall-ceiling",
+      "difficulty": "intermediate",
+      "description": "Official RLCS7 featured pack. Wall drag and wall-shot training at Champion difficulty.",
+      "tags": ["wall shots", "off the wall", "competitive"]
+    },
+    {
+      "id": "fluump-pass-training",
+      "name": "Pass Training",
+      "code": "BFD6-DA9F-49A2-81B3",
+      "creator": "FLuuMP",
+      "category": "shooting",
+      "difficulty": "intermediate",
+      "description": "Official RLCS7 featured passing pack. Practice receiving passes and converting them into goals.",
+      "tags": ["passing", "offensive", "team play"]
+    },
+    {
+      "id": "plasmid-self-double-touch",
+      "name": "Self Double Touch: Pro",
+      "code": "E8EB-C454-38AF-9637",
+      "creator": "Plasmid",
+      "category": "aerial",
+      "difficulty": "advanced",
+      "description": "Official RLCS7 featured double-touch pack. Diamond-level backboard self-setups into redirects.",
+      "tags": ["double tap", "backboards", "offensive"]
+    },
+    {
+      "id": "wayprotein-backboard-therapy",
+      "name": "Backboard Therapy",
+      "code": "D7F8-FD53-98D1-DAFE",
+      "creator": "Wayprotein",
+      "category": "aerial",
+      "difficulty": "intermediate",
+      "description": "Relaxing backboard read scenarios with generous setup time. Perfect for drilling aerial redirects.",
+      "tags": ["backboards", "aerials", "low intensity"]
+    },
+    {
+      "id": "wayprotein-double-tap-playground",
+      "name": "Double Tap Playground",
+      "code": "CAFC-FB3E-3C0F-B8F1",
+      "creator": "Wayprotein",
+      "category": "aerial",
+      "difficulty": "pro",
+      "description": "50 double tap scenarios for Grand Champion players. Comprehensive backboard and redirect training.",
+      "tags": ["double tap", "backboards", "competitive"]
+    },
+    {
+      "id": "wayprotein-dribble-flick",
+      "name": "Dribble Flick Playground",
+      "code": "7067-44F0-A1C8-7DAC",
+      "creator": "Wayprotein",
+      "category": "dribbling",
+      "difficulty": "intermediate",
+      "description": "16 dribble and flick setups for Platinum players. Practice close-control offense and deceptive flicks.",
+      "tags": ["dribbling", "flicks", "good for beginners"]
+    },
+    {
+      "id": "wayprotein-wall-shot-mastery",
+      "name": "Wall Shot Mastery",
+      "code": "8989-46CE-AE49-0561",
+      "creator": "Wayprotein",
+      "category": "wall-ceiling",
+      "difficulty": "intermediate",
+      "description": "30 wall-shot scenarios for Platinum players. Learn to strike accurately after driving up the wall.",
+      "tags": ["wall shots", "off the wall", "offensive"]
+    },
+    {
+      "id": "wayprotein-basic-double-tap",
+      "name": "Basic Backboard Double Taps/Passes",
+      "code": "FDED-E1E4-19A9-D130",
+      "creator": "Wayprotein",
+      "category": "aerial",
+      "difficulty": "intermediate",
+      "description": "12 basic double-tap and pass setups from a grounded start. Recommended for learning backboard reads.",
+      "tags": ["double tap", "backboards", "good for beginners"]
+    },
+    {
+      "id": "thanovic-general-control",
+      "name": "General Control Training",
+      "code": "2D68-2914-2D71-2090",
+      "creator": "Thanovic",
+      "category": "aerial",
+      "difficulty": "intermediate",
+      "description": "Car and ball control drills for Diamond players. Focus on aerial adjustments and recovery.",
+      "tags": ["control", "aerials", "training"]
+    }
+  ]
+}

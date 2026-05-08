@@ -16,6 +16,7 @@ const ProfilePage = lazy(() => import("@/pages/ProfilePage").then((module) => ({
 const ProConfigsPage = lazy(() => import("@/pages/ProConfigsPage").then((module) => ({ default: module.ProConfigsPage })));
 const PlayerDirectoryPage = lazy(() => import("@/pages/PlayerDirectoryPage").then((module) => ({ default: module.PlayerDirectoryPage })));
 const PlayerDetailPage = lazy(() => import("@/pages/PlayerDetailPage").then((module) => ({ default: module.PlayerDetailPage })));
+const TrainingPacksPage = lazy(() => import("@/pages/TrainingPacksPage").then((module) => ({ default: module.TrainingPacksPage })));
 const OnboardingOverlay = lazy(() => import("@/components/onboarding/OnboardingOverlay"));
 
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ function AppContent() {
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/pro-configs" element={<ProConfigsPage />} />
+              <Route path="/training-packs" element={<TrainingPacksPage />} />
               <Route path="/players" element={<PlayerDirectoryPage />} />
               <Route path="/players/:playerId" element={<PlayerDetailPage />} />
               <Route path="/settings" element={<SettingsPage />} />
