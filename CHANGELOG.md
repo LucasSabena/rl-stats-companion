@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.7.2 — RapidAPI MMR Integration, Arena Map Fixes & Arena Assets
+
+### Features
+
+**RapidAPI MMR Provider**
+- Nueva fuente de MMR vía RapidAPI (`rl-data.p.rapidapi.com`) como provider adicional.
+- Se consulta en paralelo con Tracker Network y RLStats para obtener el mejor resultado.
+- Integración completa en `resolve_player_mmr` con fallback secuencial: RapidAPI → Tracker → RLStats → Local estimate.
+- Nuevo componente `RapidApiSetup` en Settings para configurar la API key.
+- Se agrega `rapidapi_key` a `AppSettings`; migraciones correspondientes en storage.
+
+### Fixes
+- **Arena Map (`arenaMap.ts`)**: corregido tipo arena `Farm_Grs` que no mapeaba correctamente a `farm_grs_p.webp`.
+- **Arena Assets**: actualizados/reemplazados todos los thumbnails de arenas con versiones optimizadas/consolidadas.
+
+### Improvements
+- Clippy: agregado `#[allow(clippy::too_many_arguments)]` a `resolve_player_mmr` después de agregar parámetros de RapidAPI.
+- Frontend: soporte visual en `PlayerCard` y `PlayerDetailPage` para MMR proveniente de RapidAPI.
+- `Cargo.lock` actualizado.
+
 ## v1.7.1 — Local MMR Estimation, Analytics Scope & Training Packs Polish
 
 ### Features
