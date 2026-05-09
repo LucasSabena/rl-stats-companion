@@ -27,6 +27,8 @@ export const PlayerCard = memo(function PlayerCard({ player, isCurrentUser, mmr,
       ? "Tracker"
       : mmr?.source === "rlstats"
         ? "RLStats"
+        : mmr?.source === "rapidapi"
+          ? "RapidAPI"
         : mmr?.source === "local-estimate"
           ? "Local"
           : null;

@@ -23,6 +23,8 @@ pub struct AppSettings {
     pub tracker_api_key: Option<String>,
     pub tracker_platform: Option<String>,
     pub tracker_username: Option<String>,
+    pub rapidapi_key: Option<String>,
+    pub rapidapi_enabled: bool,
     pub tracker_auto_refresh: bool,
     pub tracker_refresh_interval_min: u32,
     pub session_gap_minutes: u32,
@@ -65,6 +67,8 @@ impl Default for AppSettings {
             tracker_api_key: None,
             tracker_platform: None,
             tracker_username: None,
+            rapidapi_key: None,
+            rapidapi_enabled: false,
             tracker_auto_refresh: true,
             tracker_refresh_interval_min: 5,
             session_gap_minutes: 30,
@@ -123,6 +127,11 @@ impl AppSettings {
                 "tracker_username",
                 self.tracker_username.clone().unwrap_or_default(),
             ),
+            (
+                "rapidapi_key",
+                self.rapidapi_key.clone().unwrap_or_default(),
+            ),
+            ("rapidapi_enabled", self.rapidapi_enabled.to_string()),
             (
                 "tracker_auto_refresh",
                 self.tracker_auto_refresh.to_string(),
@@ -218,6 +227,10 @@ pub fn get_settings(pool: &DbPool) -> AppResult<AppSettings> {
             "tracker_username" => {
                 settings.tracker_username = if value.is_empty() { None } else { Some(value) };
             }
+            "rapidapi_key" => {
+                settings.rapidapi_key = if value.is_empty() { None } else { Some(value) };
+            }
+            "rapidapi_enabled" => settings.rapidapi_enabled = value.parse().unwrap_or(false),
             "tracker_auto_refresh" => settings.tracker_auto_refresh = value.parse().unwrap_or(true),
             "tracker_refresh_interval_min" => {
                 settings.tracker_refresh_interval_min = value.parse().unwrap_or(5)

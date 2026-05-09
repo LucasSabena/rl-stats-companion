@@ -260,7 +260,7 @@ export function getArenaInfo(arena: string | null | undefined): ArenaInfo | null
 /**
  * Resolve the image path for an arena.
  * Returns null if no image is available.
- * Images are placed in public/arenas/{internalName}.png
+ * Images are placed in public/arenas/{internalName}.webp
  * Case-insensitive matching.
  */
 export function getArenaImagePath(arena: string | null | undefined): string | null {

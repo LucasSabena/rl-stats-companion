@@ -5,6 +5,7 @@ import i18n from "i18next";
 import { usePlayerDetail } from "@/hooks/usePlayerDirectory";
 import { useFriends } from "@/hooks/useFriends";
 import { useAddFriend, useRemoveFriend } from "@/hooks/useFriends";
+import { getArenaDisplayName } from "@/lib/arenaMap";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
@@ -294,7 +295,7 @@ export function PlayerDetailPage() {
                       </Badge>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-text-primary">
-                          {m.playlist ?? t("players:detail.matchFallback")} — {m.arena ?? t("players:detail.arenaFallback")}
+                          {m.playlist ?? t("players:detail.matchFallback")} — {m.arena ? getArenaDisplayName(m.arena) : t("players:detail.arenaFallback")}
                         </p>
                         <p className="text-xs text-text-tertiary">
                           {formatDateTime(m.start_time)}

@@ -16,8 +16,12 @@ type RankInfoMap = HashMap<String, (Option<String>, Option<String>, Option<i32>)
 
 const TRACKER_PROVIDER: &str = "tracker";
 const RLSTATS_PROVIDER: &str = "rlstats";
+const RAPIDAPI_PROVIDER: &str = "rapidapi";
 const LOCAL_ESTIMATE_PROVIDER: &str = "local-estimate";
 const LOCAL_ESTIMATE_PLATFORM: &str = "local";
+const RAPIDAPI_HOST: &str = "rocket-league1.p.rapidapi.com";
+const RAPIDAPI_BASE: &str = "https://rocket-league1.p.rapidapi.com";
+const RAPIDAPI_CACHE_TTL_MINUTES: i64 = 15;
 const TRACKER_CACHE_TTL_MINUTES: i64 = 15;
 const RLSTATS_CACHE_TTL_MINUTES: i64 = 30;
 const RLSTATS_BASE: &str = "https://rlstats.net";
@@ -112,6 +116,8 @@ struct LocalEstimateResolution {
 
 pub async fn resolve_lobby_mmr(
     db_pool: std::sync::Arc<DbPool>,
+    rapidapi_key: Option<String>,
+    rapidapi_enabled: bool,
     tracker_api_key: Option<String>,
     local_primary_id: Option<String>,
     prefer_local_estimate: bool,
@@ -123,6 +129,7 @@ pub async fn resolve_lobby_mmr(
     let mut join_set = JoinSet::new();
     for player in players {
         let db_pool = std::sync::Arc::clone(&db_pool);
+        let rapidapi_key = rapidapi_key.clone();
         let tracker_api_key = tracker_api_key.clone();
         let inference = inference.clone();
         let local_primary_id = local_primary_id.clone();
@@ -130,6 +137,8 @@ pub async fn resolve_lobby_mmr(
         join_set.spawn(async move {
             resolve_player_mmr(
                 db_pool,
+                rapidapi_key,
+                rapidapi_enabled,
                 tracker_api_key,
                 local_primary_id,
                 prefer_local_estimate,
@@ -165,8 +174,11 @@ pub async fn resolve_lobby_mmr(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn resolve_player_mmr(
     db_pool: std::sync::Arc<DbPool>,
+    rapidapi_key: Option<String>,
+    rapidapi_enabled: bool,
     tracker_api_key: Option<String>,
     local_primary_id: Option<String>,
     prefer_local_estimate: bool,
@@ -240,44 +252,94 @@ async fn resolve_player_mmr(
     }
 
     if let Some(ref resolved_playlist) = inference.primary {
+        let mut attempted_errors = Vec::new();
+
         for playlist_key in &inference.candidates {
-            if let Ok(entry) =
-                resolve_with_tracker(&db_pool, tracker_api_key.clone(), &identity, playlist_key)
-                    .await
+            match resolve_with_rapidapi(
+                &db_pool,
+                rapidapi_key.clone(),
+                rapidapi_enabled,
+                &identity,
+                playlist_key,
+            )
+            .await
             {
-                if is_local_player {
-                    let _ = sync_local_trusted_mmr(
-                        &db_pool,
-                        &identity.source_primary_id,
-                        playlist_key,
-                        entry.mmr,
+                Ok(entry) => {
+                    if is_local_player {
+                        let _ = sync_local_trusted_mmr(
+                            &db_pool,
+                            &identity.source_primary_id,
+                            playlist_key,
+                            entry.mmr,
+                        );
+                    }
+                    return build_player_result(
+                        identity,
+                        Some(playlist_key.clone()),
+                        entry,
+                        maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
                     );
                 }
-                return build_player_result(
-                    identity,
-                    Some(playlist_key.clone()),
-                    entry,
-                    maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
-                );
+                Err(error) => attempted_errors.push(format!(
+                    "RapidAPI [{}]: {}",
+                    playlist_key, error
+                )),
             }
 
-            if let Ok(entry) = resolve_with_rlstats(&db_pool, &identity, playlist_key).await {
-                if is_local_player {
-                    let _ = sync_local_trusted_mmr(
-                        &db_pool,
-                        &identity.source_primary_id,
-                        playlist_key,
-                        entry.mmr,
+            match resolve_with_tracker(&db_pool, tracker_api_key.clone(), &identity, playlist_key)
+                .await
+            {
+                Ok(entry) => {
+                    if is_local_player {
+                        let _ = sync_local_trusted_mmr(
+                            &db_pool,
+                            &identity.source_primary_id,
+                            playlist_key,
+                            entry.mmr,
+                        );
+                    }
+                    return build_player_result(
+                        identity,
+                        Some(playlist_key.clone()),
+                        entry,
+                        maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
                     );
                 }
-                return build_player_result(
-                    identity,
-                    Some(playlist_key.clone()),
-                    entry,
-                    maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
-                );
+                Err(error) => attempted_errors.push(format!(
+                    "Tracker [{}]: {}",
+                    playlist_key, error
+                )),
+            }
+
+            match resolve_with_rlstats(&db_pool, &identity, playlist_key).await {
+                Ok(entry) => {
+                    if is_local_player {
+                        let _ = sync_local_trusted_mmr(
+                            &db_pool,
+                            &identity.source_primary_id,
+                            playlist_key,
+                            entry.mmr,
+                        );
+                    }
+                    return build_player_result(
+                        identity,
+                        Some(playlist_key.clone()),
+                        entry,
+                        maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
+                    );
+                }
+                Err(error) => attempted_errors.push(format!(
+                    "RLStats [{}]: {}",
+                    playlist_key, error
+                )),
             }
         }
+
+        let detailed_error = if attempted_errors.is_empty() {
+            None
+        } else {
+            Some(attempted_errors.join(" | "))
+        };
 
         return LivePlayerMmr {
             primary_id: identity.source_primary_id,
@@ -295,7 +357,21 @@ async fn resolve_player_mmr(
             stale: false,
             estimate_matches_since_refresh: None,
             updated_at: None,
-            error: Some(if inference.confidence == "low" {
+            error: Some(if let Some(detailed_error) = detailed_error {
+                if inference.confidence == "low" {
+                    format!(
+                        "No se pudo resolver MMR. La playlist del lobby se estimo como '{}' y se probaron estos candidatos: {}. Detalle: {}",
+                        resolved_playlist,
+                        inference.candidates.join(", "),
+                        detailed_error
+                    )
+                } else {
+                    format!(
+                        "No se pudo resolver MMR para este jugador. Detalle: {}",
+                        detailed_error
+                    )
+                }
+            } else if inference.confidence == "low" {
                 format!(
                     "No se pudo resolver MMR. La playlist actual es ambigua en la Stats API; candidatos: {}.",
                     inference.candidates.join(", ")
@@ -552,6 +628,99 @@ async fn resolve_with_rlstats(
     })
 }
 
+async fn resolve_with_rapidapi(
+    db_pool: &DbPool,
+    rapidapi_key: Option<String>,
+    rapidapi_enabled: bool,
+    identity: &ProviderIdentity,
+    playlist_key: &str,
+) -> AppResult<ResolvedMmrEntry> {
+    if !rapidapi_enabled {
+        return Err(AppError::ConfigError(
+            "RapidAPI esta deshabilitado para este dispositivo.".into(),
+        ));
+    }
+
+    if let Some(cached) = read_cached_profile(
+        db_pool,
+        RAPIDAPI_PROVIDER,
+        &identity.tracker_platform,
+        &identity.identifier,
+        RAPIDAPI_CACHE_TTL_MINUTES,
+    )? {
+        if let Some(entry) = cached.playlists.get(playlist_key) {
+            return Ok(ResolvedMmrEntry {
+                source: RAPIDAPI_PROVIDER.into(),
+                cached: true,
+                mmr: entry.mmr,
+                rank_name: entry.rank_name.clone(),
+                division: entry.division.clone(),
+                matches_played: entry.matches_played,
+            });
+        }
+    }
+
+    let api_key = rapidapi_key.ok_or_else(|| {
+        AppError::ConfigError("RapidAPI no esta configurado para este dispositivo.".into())
+    })?;
+
+    let client = reqwest::Client::builder()
+        .user_agent("RapidAPI Playground")
+        .timeout(std::time::Duration::from_secs(12))
+        .build()?;
+
+    let url = format!("{}/ranks/{}", RAPIDAPI_BASE, identity.identifier);
+    let response = client
+        .get(url)
+        .header("X-RapidAPI-Key", api_key)
+        .header("X-RapidAPI-Host", RAPIDAPI_HOST)
+        .header(reqwest::header::ACCEPT_ENCODING, "identity")
+        .send()
+        .await?;
+    let status = response.status();
+    let body = response.text().await.unwrap_or_default();
+
+    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(AppError::ConnectionError(
+            "RapidAPI devolvio demasiadas solicitudes (429).".into(),
+        ));
+    }
+
+    if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+        return Err(AppError::ConfigError(format!(
+            "RapidAPI rechazo la clave o el acceso (HTTP {}).",
+            status.as_u16()
+        )));
+    }
+
+    if !status.is_success() {
+        return Err(AppError::ConnectionError(format!(
+            "RapidAPI devolvio HTTP {}: {}",
+            status.as_u16(),
+            body.chars().take(300).collect::<String>()
+        )));
+    }
+
+    let cached_profile =
+        parse_rapidapi_profile(&body, &identity.tracker_platform, &identity.identifier)?;
+    store_cached_profile(db_pool, &cached_profile)?;
+
+    let entry = cached_profile
+        .playlists
+        .get(playlist_key)
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(ResolvedMmrEntry {
+        source: RAPIDAPI_PROVIDER.into(),
+        cached: false,
+        mmr: entry.mmr,
+        rank_name: entry.rank_name,
+        division: entry.division,
+        matches_played: entry.matches_played,
+    })
+}
+
 fn map_tracker_profile(
     profile: &TrackerProfile,
     platform: &str,
@@ -614,6 +783,147 @@ fn insert_tracker_playlist(
                 matches_played: playlist.matches_played,
             },
         );
+    }
+}
+
+fn parse_rapidapi_profile(
+    body: &str,
+    platform: &str,
+    identifier: &str,
+) -> AppResult<CachedMmrProfile> {
+    let json: serde_json::Value = serde_json::from_str(body)
+        .map_err(|e| AppError::ParseError(format!("RapidAPI devolvio JSON invalido: {e}")))?;
+
+    let mut playlists = HashMap::new();
+    collect_rapidapi_playlists(&json, None, &mut playlists);
+
+    if playlists.is_empty() {
+        return Err(AppError::ParseError(
+            "RapidAPI no devolvio playlists reconocibles para MMR.".into(),
+        ));
+    }
+
+    Ok(CachedMmrProfile {
+        provider: RAPIDAPI_PROVIDER.into(),
+        platform: platform.into(),
+        identifier: identifier.into(),
+        fetched_at: Utc::now().to_rfc3339(),
+        playlists,
+    })
+}
+
+fn collect_rapidapi_playlists(
+    value: &serde_json::Value,
+    context_playlist: Option<&str>,
+    target: &mut HashMap<String, CachedPlaylistMmr>,
+) {
+    match value {
+        serde_json::Value::Object(map) => {
+            let inferred_playlist = map
+                .get("playlist")
+                .and_then(|v| v.as_str())
+                .and_then(normalize_rapidapi_playlist_key)
+                .or(context_playlist);
+
+            if let Some(playlist_key) = inferred_playlist {
+                if let Some(entry) = parse_rapidapi_playlist_entry(map) {
+                    target.entry(playlist_key.to_string()).or_insert(entry);
+                }
+            }
+
+            for (key, nested) in map {
+                let nested_playlist = normalize_rapidapi_playlist_key(key).or(inferred_playlist);
+                collect_rapidapi_playlists(nested, nested_playlist, target);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                collect_rapidapi_playlists(item, context_playlist, target);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn parse_rapidapi_playlist_entry(
+    map: &serde_json::Map<String, serde_json::Value>,
+) -> Option<CachedPlaylistMmr> {
+    let mmr = map
+        .get("mmr")
+        .or_else(|| map.get("MMR"))
+        .or_else(|| map.get("elo"))
+        .or_else(|| map.get("rating"))
+        .or_else(|| map.get("rankPoints"))
+        .and_then(json_value_to_i32);
+
+    let rank_name = map
+        .get("rank")
+        .or_else(|| map.get("tierName"))
+        .or_else(|| map.get("rankName"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    let division = map
+        .get("division")
+        .or_else(|| map.get("divisionName"))
+        .and_then(json_value_to_string)
+        .filter(|s| !s.is_empty());
+
+    let matches_played = map
+        .get("matchesPlayed")
+        .or_else(|| map.get("matches"))
+        .or_else(|| map.get("totalGames"))
+        .or_else(|| map.get("gamesPlayed"))
+        .and_then(json_value_to_i64);
+
+    if mmr.is_none() && rank_name.is_none() && division.is_none() && matches_played.is_none() {
+        return None;
+    }
+
+    Some(CachedPlaylistMmr {
+        mmr,
+        rank_name,
+        division,
+        matches_played,
+    })
+}
+
+fn normalize_rapidapi_playlist_key(label: &str) -> Option<&'static str> {
+    match label.trim().to_ascii_lowercase().as_str() {
+        "duel" | "1v1" | "1v1 duel" | "10" => Some("duel"),
+        "doubles" | "2v2" | "2v2 doubles" | "11" => Some("doubles"),
+        "standard" | "3v3" | "3v3 standard" | "13" => Some("standard"),
+        "hoops" | "27" => Some("hoops"),
+        "rumble" | "28" => Some("rumble"),
+        "dropshot" | "29" => Some("dropshot"),
+        "snowday" | "snow day" | "30" => Some("snowday"),
+        "quads" | "chaos" | "4v4" => Some("quads"),
+        _ => None,
+    }
+}
+
+fn json_value_to_i32(value: &serde_json::Value) -> Option<i32> {
+    match value {
+        serde_json::Value::Number(number) => number.as_i64().and_then(|v| i32::try_from(v).ok()),
+        serde_json::Value::String(text) => text.trim().parse::<i32>().ok(),
+        _ => None,
+    }
+}
+
+fn json_value_to_i64(value: &serde_json::Value) -> Option<i64> {
+    match value {
+        serde_json::Value::Number(number) => number.as_i64(),
+        serde_json::Value::String(text) => text.trim().parse::<i64>().ok(),
+        _ => None,
+    }
+}
+
+fn json_value_to_string(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::String(text) => Some(text.trim().to_string()),
+        serde_json::Value::Number(number) => Some(number.to_string()),
+        _ => None,
     }
 }
 
@@ -1196,7 +1506,7 @@ fn parse_datetime(value: &str) -> Option<DateTime<Utc>> {
 mod tests {
     use super::{
         extract_last_quoted_literal, extract_rlstats_columns, infer_playlist, parse_primary_id,
-        parse_rlstats_profile,
+        parse_rapidapi_profile, parse_rlstats_profile,
     };
     use crate::core::models::LivePlayer;
 
@@ -1284,6 +1594,24 @@ mod tests {
         let inference = infer_playlist(players.iter());
         assert_eq!(inference.primary, None);
         assert_eq!(inference.confidence, "unknown");
+    }
+
+    #[test]
+    fn parse_rapidapi_profile_extracts_playlist_mmrs() {
+        let json = r#"
+        {
+          "ranks": {
+            "10": { "rank": "Diamond I", "division": "Division II", "mmr": 954, "matchesPlayed": 18 },
+            "11": { "rank": "Champion I", "division": "Division I", "mmr": 1198, "matchesPlayed": 42 },
+            "13": { "rank": "Champion II", "division": "Division III", "mmr": 1322, "matchesPlayed": 88 }
+          }
+        }
+        "#;
+
+        let profile = parse_rapidapi_profile(json, "epic", "abc123").expect("rapidapi profile");
+        assert_eq!(profile.playlists["duel"].mmr, Some(954));
+        assert_eq!(profile.playlists["doubles"].mmr, Some(1198));
+        assert_eq!(profile.playlists["standard"].mmr, Some(1322));
     }
 
     #[test]

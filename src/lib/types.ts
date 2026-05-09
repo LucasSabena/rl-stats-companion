@@ -300,6 +300,8 @@ export interface AppSettings {
   trackerApiKey?: string | null;
   trackerPlatform?: string | null;
   trackerUsername?: string | null;
+  rapidApiKey?: string | null;
+  rapidApiEnabled?: boolean;
   trackerAutoRefresh?: boolean;
   trackerRefreshIntervalMin?: number;
   sessionGapMinutes?: number;

@@ -162,6 +162,8 @@ interface RawAppSettings {
   tracker_api_key?: string | null;
   tracker_platform?: string | null;
   tracker_username?: string | null;
+  rapidapi_key?: string | null;
+  rapidapi_enabled?: boolean;
   tracker_auto_refresh?: boolean;
   tracker_refresh_interval_min?: number;
   session_gap_minutes?: number;
@@ -600,6 +602,8 @@ export async function getSettings(): Promise<AppSettings> {
     trackerApiKey: settings.tracker_api_key ?? null,
     trackerPlatform: settings.tracker_platform ?? null,
     trackerUsername: settings.tracker_username ?? null,
+    rapidApiKey: settings.rapidapi_key ?? null,
+    rapidApiEnabled: settings.rapidapi_enabled ?? false,
     trackerAutoRefresh: settings.tracker_auto_refresh ?? true,
     trackerRefreshIntervalMin: settings.tracker_refresh_interval_min ?? 5,
     sessionGapMinutes: settings.session_gap_minutes ?? 30,
@@ -641,6 +645,8 @@ export async function setSettings(settings: AppSettings): Promise<void> {
       tracker_api_key: settings.trackerApiKey ?? null,
       tracker_platform: settings.trackerPlatform ?? null,
       tracker_username: settings.trackerUsername ?? null,
+      rapidapi_key: settings.rapidApiKey ?? null,
+      rapidapi_enabled: settings.rapidApiEnabled ?? false,
       tracker_auto_refresh: settings.trackerAutoRefresh ?? true,
       tracker_refresh_interval_min: settings.trackerRefreshIntervalMin ?? 5,
       session_gap_minutes: settings.sessionGapMinutes ?? 30,

@@ -27,7 +27,7 @@ pub async fn fetch_live_mmr_snapshot(
             if let Some(parts) = player.id.split('|').nth(1) {
                 let platform = player.id.split('|').next().unwrap_or("");
                 let normalized_platform = platform.to_ascii_lowercase();
-                for provider in &["tracker", "rlstats"] {
+                for provider in &["rapidapi", "tracker", "rlstats"] {
                     let _ = crate::core::storage::delete_mmr_cache(
                         &state.db_pool,
                         provider,
@@ -41,6 +41,8 @@ pub async fn fetch_live_mmr_snapshot(
 
     resolve_lobby_mmr(
         state.db_pool.clone(),
+        settings.rapidapi_key.clone(),
+        settings.rapidapi_enabled,
         settings.tracker_api_key.clone(),
         settings.local_primary_id.clone(),
         !force_refresh,

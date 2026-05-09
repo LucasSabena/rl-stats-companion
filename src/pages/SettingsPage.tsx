@@ -7,6 +7,7 @@ import { UpdateChecker } from "@/components/settings/UpdateChecker";
 import { OverlayConfig } from "@/components/settings/OverlayConfig";
 import { OverlayStreaming } from "@/components/settings/OverlayStreaming";
 import { TrackerSetup } from "@/components/settings/TrackerSetup";
+import { RapidApiSetup } from "@/components/settings/RapidApiSetup";
 import { ProfileManagement } from "@/components/settings/ProfileManagement";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { Settings, Gamepad2, Database, LayoutTemplate, MonitorPlay, Users } from "lucide-react";
@@ -62,6 +63,7 @@ export function SettingsPage() {
 
           <TabsContent value="game" className="space-y-6">
             <IniHelper />
+            <RapidApiSetup />
             <TrackerSetup />
           </TabsContent>
 
