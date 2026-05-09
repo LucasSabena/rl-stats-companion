@@ -280,10 +280,9 @@ async fn resolve_player_mmr(
                         maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
                     );
                 }
-                Err(error) => attempted_errors.push(format!(
-                    "RapidAPI [{}]: {}",
-                    playlist_key, error
-                )),
+                Err(error) => {
+                    attempted_errors.push(format!("RapidAPI [{}]: {}", playlist_key, error))
+                }
             }
 
             match resolve_with_tracker(&db_pool, tracker_api_key.clone(), &identity, playlist_key)
@@ -305,10 +304,9 @@ async fn resolve_player_mmr(
                         maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
                     );
                 }
-                Err(error) => attempted_errors.push(format!(
-                    "Tracker [{}]: {}",
-                    playlist_key, error
-                )),
+                Err(error) => {
+                    attempted_errors.push(format!("Tracker [{}]: {}", playlist_key, error))
+                }
             }
 
             match resolve_with_rlstats(&db_pool, &identity, playlist_key).await {
@@ -328,10 +326,9 @@ async fn resolve_player_mmr(
                         maybe_confidence_warning(&inference, resolved_playlist, playlist_key),
                     );
                 }
-                Err(error) => attempted_errors.push(format!(
-                    "RLStats [{}]: {}",
-                    playlist_key, error
-                )),
+                Err(error) => {
+                    attempted_errors.push(format!("RLStats [{}]: {}", playlist_key, error))
+                }
             }
         }
 
