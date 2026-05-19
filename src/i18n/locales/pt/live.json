@@ -47,7 +47,9 @@
   },
   "mmr": {
     "average": "MMR Médio",
-    "searching": "Buscando..."
+    "searching": "Buscando...",
+    "errorLabel": "Erro",
+    "errorTitle": "Erro de MMR"
   },
   "players": {
     "bots": "Bots",

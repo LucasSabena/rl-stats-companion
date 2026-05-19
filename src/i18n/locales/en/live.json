@@ -47,7 +47,9 @@
   },
   "mmr": {
     "average": "Avg MMR",
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "errorLabel": "Error",
+    "errorTitle": "MMR Error"
   },
   "players": {
     "bots": "Bots",

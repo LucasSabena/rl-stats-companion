@@ -75,6 +75,18 @@ export function OverlayView() {
     return map;
   }, [mmrData.data]);
 
+  const mmrErrorMap = React.useMemo(() => {
+    const map: Record<string, string> = {};
+    if (mmrData.data?.players) {
+      for (const p of mmrData.data.players) {
+        if (p.error) {
+          map[p.primaryId] = p.error;
+        }
+      }
+    }
+    return map;
+  }, [mmrData.data]);
+
   const currentMatch = useLiveStore((s) => s.currentMatch);
   const connectionStatus = useLiveStore((s) => s.connectionStatus);
 
@@ -150,6 +162,7 @@ export function OverlayView() {
           display={display}
           fontScale={fs}
           mmrMap={mmrMap}
+          mmrErrorMap={mmrErrorMap}
         />
       ) : (
         <WaitingState connectionStatus={connectionStatus} />
@@ -192,9 +205,10 @@ interface MatchContentProps {
   display: OverlayDisplaySettings;
   fontScale: FontScale;
   mmrMap: Record<string, number | null>;
+  mmrErrorMap: Record<string, string>;
 }
 
-function MatchContent({ match, connectionStatus, display, fontScale, mmrMap }: MatchContentProps) {
+function MatchContent({ match, connectionStatus, display, fontScale, mmrMap, mmrErrorMap }: MatchContentProps) {
   const { t } = useTranslation(["overlay", "common"]);
   const localTeam = identifyLocalTeam(match.players);
   const allPlayers = match.players;
@@ -280,6 +294,7 @@ function MatchContent({ match, connectionStatus, display, fontScale, mmrMap }: M
                 players={bluePlayers}
                 display={display}
                 mmrMap={mmrMap}
+                mmrErrorMap={mmrErrorMap}
                 fontScale={fontScale}
                 team={0}
               />
@@ -297,6 +312,7 @@ function MatchContent({ match, connectionStatus, display, fontScale, mmrMap }: M
                 players={orangePlayers}
                 display={display}
                 mmrMap={mmrMap}
+                mmrErrorMap={mmrErrorMap}
                 fontScale={fontScale}
                 team={1}
               />
@@ -326,12 +342,14 @@ const TeamSection = memo(function TeamSection({
   players,
   display,
   mmrMap,
+  mmrErrorMap,
   fontScale,
   team,
 }: {
   players: Player[];
   display: OverlayDisplaySettings;
   mmrMap: Record<string, number | null>;
+  mmrErrorMap: Record<string, string>;
   fontScale: FontScale;
   team: number;
 }) {
@@ -351,6 +369,7 @@ const TeamSection = memo(function TeamSection({
           player={p}
           display={display}
           mmr={mmrMap[p.id] ?? null}
+          mmrError={mmrErrorMap[p.id] ?? null}
           fontScale={fontScale}
           isBlue={isBlue}
         />
@@ -365,12 +384,14 @@ const OverlayPlayerRow = memo(function OverlayPlayerRow({
   player,
   display,
   mmr,
+  mmrError,
   fontScale,
   isBlue,
 }: {
   player: Player;
   display: OverlayDisplaySettings;
   mmr: number | null;
+  mmrError: string | null;
   fontScale: FontScale;
   isBlue: boolean;
 }) {
@@ -428,6 +449,19 @@ const OverlayPlayerRow = memo(function OverlayPlayerRow({
         {/* MMR */}
         {display.showMmr && mmr !== null && (
           <MmrBadge mmr={mmr} fontScale={fontScale} />
+        )}
+
+        {/* MMR Error — compact badge with tooltip */}
+        {display.showMmr && mmrError && mmr === null && (
+          <span
+            className={cn(
+              "ml-2 flex items-center justify-center rounded px-2 py-0.5 font-bold uppercase tracking-wide border bg-accent-warning/15 text-accent-warning border-accent-warning/20",
+              fontScale.mmr
+            )}
+            title={mmrError}
+          >
+            !
+          </span>
         )}
 
         {/* Speed */}

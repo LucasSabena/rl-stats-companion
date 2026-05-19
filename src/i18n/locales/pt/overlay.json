@@ -10,7 +10,9 @@
   "labels": {
     "overtime": "Prorrogação",
     "pts": "PTS",
-    "vs": "VS"
+    "vs": "VS",
+    "errorLabel": "Erro",
+    "errorTitle": "Erro de MMR"
   },
   "config": {
     "title": "Overlay In-Game",

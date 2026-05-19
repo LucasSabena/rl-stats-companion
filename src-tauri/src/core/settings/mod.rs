@@ -9,6 +9,7 @@ use tracing::info;
 
 /// Application settings persisted in the database.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct AppSettings {
     pub player_name: String,
     pub local_primary_id: Option<String>,

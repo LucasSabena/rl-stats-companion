@@ -167,6 +167,7 @@ interface RawAppSettings {
   tracker_auto_refresh?: boolean;
   tracker_refresh_interval_min?: number;
   session_gap_minutes?: number;
+  kickoff_goal_threshold_seconds?: number;
   overlay_enabled?: boolean;
   overlay_opacity?: number;
   overlay_position_x?: number;
@@ -607,6 +608,7 @@ export async function getSettings(): Promise<AppSettings> {
     trackerAutoRefresh: settings.tracker_auto_refresh ?? true,
     trackerRefreshIntervalMin: settings.tracker_refresh_interval_min ?? 5,
     sessionGapMinutes: settings.session_gap_minutes ?? 30,
+    kickoffGoalThresholdSeconds: settings.kickoff_goal_threshold_seconds ?? 7,
     overlayEnabled: settings.overlay_enabled ?? false,
     overlayOpacity: settings.overlay_opacity ?? 0.75,
     overlayPositionX: settings.overlay_position_x ?? 40,
@@ -650,6 +652,7 @@ export async function setSettings(settings: AppSettings): Promise<void> {
       tracker_auto_refresh: settings.trackerAutoRefresh ?? true,
       tracker_refresh_interval_min: settings.trackerRefreshIntervalMin ?? 5,
       session_gap_minutes: settings.sessionGapMinutes ?? 30,
+      kickoff_goal_threshold_seconds: settings.kickoffGoalThresholdSeconds ?? 7,
       overlay_enabled: settings.overlayEnabled ?? false,
       overlay_opacity: settings.overlayOpacity ?? 0.75,
       overlay_position_x: settings.overlayPositionX ?? 40,
