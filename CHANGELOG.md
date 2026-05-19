@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.7.3 — MMR Error Handling, Overlay Error Propagation & Settings Fix
+
+### Features
+
+**MMR Error Detail Modal**
+- `PlayerCard` ahora muestra un badge de error cuando un jugador tiene `error` en su snapshot de MMR.
+- Al hacer click en el badge, se abre un modal con el mensaje de error detallado (ej: "RapidAPI no disponible", "Perfil privado", etc.).
+- Nuevo estado local `errorModalOpen` y componentes `Modal` + `Button` reutilizados.
+
+**Overlay — MMR Error Map**
+- `OverlayView` construye y propaga `mmrErrorMap` (Record&lt;primaryId, errorMessage&gt;) al `TeamSection`.
+- Los errores de MMR ahora son visibles también en el overlay in-game.
+
+### Fixes
+- **Settings Serialization**: agregado `kickoff_goal_threshold_seconds` que faltaba en `api.ts` (`getSettings` / `setSettings`).
+- El umbral de kickoff goals ahora persiste correctamente entre sesiones.
+
+### Improvements
+- i18n ES/EN/PT: nuevas keys `errorLabel` y `errorTitle` en `overlay.json`.
+
 ## v1.7.2 — RapidAPI MMR Integration, Arena Map Fixes & Arena Assets
 
 ### Features
