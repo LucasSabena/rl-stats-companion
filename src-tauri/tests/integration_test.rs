@@ -270,9 +270,9 @@ mod session_tests {
             .persist_finished_match(&pool)
             .expect("persist must succeed");
 
-        assert!(!summary.match_guid.is_empty());
-        assert_eq!(summary.players.len(), 2);
-        assert!(summary.duration_seconds >= 0);
+        assert!(!summary.summary.match_guid.is_empty());
+        assert_eq!(summary.summary.players.len(), 2);
+        assert!(summary.summary.duration_seconds >= 0);
 
         // Verify match count
         let count = storage::get_match_count(&pool).unwrap();
@@ -296,7 +296,7 @@ mod session_tests {
         .unwrap();
         assert_eq!(matches.len(), 1);
         let m = &matches[0];
-        assert_eq!(m.guid, summary.match_guid);
+        assert_eq!(m.guid, summary.summary.match_guid);
 
         // Cleanup
         let _ = fs::remove_file(&_path);
@@ -753,8 +753,8 @@ mod storage_crud_tests {
         replay_fixture_into_session("short_match.jsonl", &mut session);
         let summary = session.persist_finished_match(&pool).unwrap();
 
-        assert!(!summary.match_guid.is_empty());
-        assert_eq!(summary.players.len(), 2);
+        assert!(!summary.summary.match_guid.is_empty());
+        assert_eq!(summary.summary.players.len(), 2);
 
         // Verify daily_rollup was upserted
         let conn = pool.get().unwrap();
@@ -862,7 +862,7 @@ fn full_match_lifecycle_persist_and_verify() {
     let stored_match = &matches[0];
 
     // Verify stored match data
-    assert_eq!(stored_match.guid, summary.match_guid);
+    assert_eq!(stored_match.guid, summary.summary.match_guid);
     assert_eq!(stored_match.score_blue, 2);
     assert_eq!(stored_match.score_orange, 1);
     assert_eq!(stored_match.winner, Some(0)); // blue (team 0) won

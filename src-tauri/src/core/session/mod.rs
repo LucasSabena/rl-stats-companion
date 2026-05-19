@@ -81,6 +81,10 @@ impl SessionManager {
         &self.phase
     }
 
+    pub fn players(&self) -> &HashMap<String, LivePlayer> {
+        &self.players
+    }
+
     pub fn set_match_type(&mut self, mt: String) {
         self.match_type = Some(mt);
     }
@@ -251,7 +255,7 @@ impl SessionManager {
     }
 
     /// Persist the finished match to storage and generate summary.
-    pub fn persist_finished_match(&mut self, pool: &DbPool) -> AppResult<SessionSummary> {
+    pub fn persist_finished_match(&mut self, pool: &DbPool) -> AppResult<PersistResult> {
         if self.phase != MatchPhase::Finished {
             return Err(crate::error::AppError::StorageError(
                 "Match not finished".into(),
@@ -528,6 +532,16 @@ impl SessionManager {
             }
         }
 
+        let detected_identity = local_identity.as_ref().map(|(pid, _)| {
+            let player_name = self
+                .players
+                .iter()
+                .find(|(id, _)| *id == pid)
+                .map(|(_, lp)| lp.name.clone())
+                .unwrap_or_default();
+            (pid.clone(), player_name)
+        });
+
         if let Some((local_primary_id, _)) = &local_identity {
             let should_save =
                 settings.local_primary_id.as_deref() != Some(local_primary_id.as_str());
@@ -546,7 +560,11 @@ impl SessionManager {
         }
 
         info!(match_id, "Match persisted successfully");
-        Ok(summary)
+        Ok(PersistResult {
+            summary,
+            detected_primary_id: detected_identity.as_ref().map(|(pid, _)| pid.clone()),
+            detected_player_name: detected_identity.as_ref().map(|(_, name)| name.clone()),
+        })
     }
 
     fn reset(&mut self) {
@@ -578,6 +596,12 @@ impl SessionManager {
             || self.score_blue != 0
             || self.score_orange != 0
     }
+}
+
+pub struct PersistResult {
+    pub summary: SessionSummary,
+    pub detected_primary_id: Option<String>,
+    pub detected_player_name: Option<String>,
 }
 
 fn infer_playlist<'a>(players: impl Iterator<Item = &'a LivePlayer>) -> Option<String> {
@@ -612,7 +636,7 @@ impl Default for SessionManager {
     }
 }
 
-fn resolve_local_player_identity<'a>(
+pub fn resolve_local_player_identity<'a>(
     players: impl Iterator<Item = &'a LivePlayer>,
     settings: &AppSettings,
 ) -> Option<(String, i32)> {
@@ -644,7 +668,7 @@ fn resolve_local_player_identity<'a>(
     None
 }
 
-fn identity_candidate_names(settings: &AppSettings) -> Vec<String> {
+pub fn identity_candidate_names(settings: &AppSettings) -> Vec<String> {
     let mut names = Vec::new();
 
     if !settings.player_name.trim().is_empty() {

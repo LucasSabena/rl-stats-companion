@@ -65,5 +65,13 @@
       "newName": "Novo nome",
       "emptyError": "O nome não pode estar vazio."
     }
+  },
+  "accountMismatch": {
+    "title": "Conta incompatível",
+    "detected": "Detectado <bold>{{name}}</bold> jogando",
+    "currentProfile": "Seu perfil ativo é <bold>{{profile}}</bold>",
+    "switchTo": "Mudar para {{profile}}",
+    "associate": "Associar {{name}} com este perfil",
+    "dismiss": "Ignorar"
   }
 }

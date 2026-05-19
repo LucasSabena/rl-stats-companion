@@ -11,6 +11,8 @@ pub struct Profile {
     pub id: String,
     pub name: String,
     pub created_at: String,
+    pub player_name: Option<String>,
+    pub local_primary_id: Option<String>,
 }
 
 /// Manifest that tracks all profiles and the currently active one.
@@ -174,6 +176,8 @@ pub fn init_profiles(app_dir: &Path) -> AppResult<String> {
         id: "default".to_string(),
         name: "Default".to_string(),
         created_at: Utc::now().to_rfc3339(),
+        player_name: None,
+        local_primary_id: None,
     };
 
     let manifest = ProfilesManifest {
@@ -241,6 +245,8 @@ pub fn create_profile(app_dir: &Path, name: &str) -> AppResult<Profile> {
         id: id.clone(),
         name: name.to_string(),
         created_at: Utc::now().to_rfc3339(),
+        player_name: None,
+        local_primary_id: None,
     };
 
     let db_path = get_db_path_for_profile(app_dir, &id);
@@ -328,5 +334,90 @@ pub fn rename_profile(app_dir: &Path, id: &str, new_name: &str) -> AppResult<()>
     write_manifest(&manifest_path, &manifest)?;
 
     info!(profile_id = %id, new_name = %new_name, "Renamed profile");
+    Ok(())
+}
+
+/// Returns all profiles with their respective settings.
+pub fn get_all_profile_settings(
+    app_dir: &Path,
+) -> AppResult<Vec<(Profile, crate::core::settings::AppSettings)>> {
+    let manifest_path = get_profiles_manifest_path(app_dir);
+    let manifest = read_manifest(&manifest_path)?;
+    let mut result = Vec::new();
+
+    for profile in &manifest.profiles {
+        let db_path = get_db_path_for_profile(app_dir, &profile.id);
+        if !db_path.exists() {
+            continue;
+        }
+        let pool = crate::core::storage::init_storage(&db_path)?;
+        let settings = crate::core::settings::get_settings(&pool)?;
+        result.push((profile.clone(), settings));
+    }
+
+    Ok(result)
+}
+
+/// Finds a profile whose `local_primary_id` or `player_name` matches the given identity.
+pub fn find_matching_profile(
+    app_dir: &Path,
+    primary_id: &str,
+    player_name: &str,
+) -> AppResult<Option<Profile>> {
+    let all = get_all_profile_settings(app_dir)?;
+
+    for (profile, settings) in &all {
+        if let Some(ref stored_pid) = settings.local_primary_id {
+            if stored_pid == primary_id {
+                return Ok(Some(profile.clone()));
+            }
+        }
+        if !player_name.is_empty()
+            && !settings.player_name.trim().is_empty()
+            && settings
+                .player_name
+                .trim()
+                .eq_ignore_ascii_case(player_name.trim())
+        {
+            return Ok(Some(profile.clone()));
+        }
+    }
+
+    Ok(None)
+}
+
+/// Updates a profile's player identity in both the manifest and its settings DB.
+pub fn update_profile_player_identity(
+    app_dir: &Path,
+    profile_id: &str,
+    primary_id: &str,
+    player_name: &str,
+) -> AppResult<()> {
+    let manifest_path = get_profiles_manifest_path(app_dir);
+    let mut manifest = read_manifest(&manifest_path)?;
+
+    let profile = manifest
+        .profiles
+        .iter_mut()
+        .find(|p| p.id == profile_id)
+        .ok_or_else(|| AppError::ConfigError(format!("Profile '{}' not found", profile_id)))?;
+
+    profile.player_name = Some(player_name.to_string());
+    profile.local_primary_id = Some(primary_id.to_string());
+
+    write_manifest(&manifest_path, &manifest)?;
+
+    let db_path = get_db_path_for_profile(app_dir, profile_id);
+    if db_path.exists() {
+        let pool = crate::core::storage::init_storage(&db_path)?;
+        let mut settings = crate::core::settings::get_settings(&pool).unwrap_or_default();
+        settings.local_primary_id = Some(primary_id.to_string());
+        if !player_name.is_empty() {
+            settings.player_name = player_name.to_string();
+        }
+        crate::core::settings::set_settings(&pool, &settings)?;
+    }
+
+    info!(profile_id = %profile_id, primary_id = %primary_id, player_name = %player_name, "Updated profile player identity");
     Ok(())
 }

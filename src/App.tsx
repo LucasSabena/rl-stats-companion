@@ -3,8 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AppShell } from "@/components/layout/AppShell";
+import { AccountMismatchDialog } from "@/components/AccountMismatchDialog";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useAutoUpdateCheck } from "@/hooks/useAutoUpdateCheck";
+import { useAccountMismatch } from "@/hooks/useAccountMismatch";
 
 const OverlayView = lazy(() => import("@/components/overlay/OverlayView").then((module) => ({ default: module.OverlayView })));
 const LivePage = lazy(() => import("@/pages/LivePage").then((module) => ({ default: module.LivePage })));
@@ -40,6 +42,7 @@ function AppContent() {
   const [detecting, setDetecting] = useState(true);
 
   useAutoUpdateCheck();
+  useAccountMismatch();
 
   useEffect(() => {
     try {
@@ -95,6 +98,8 @@ function AppContent() {
           <OnboardingOverlay onComplete={completeOnboarding} />
         </Suspense>
       )}
+
+      <AccountMismatchDialog />
     </>
   );
 }

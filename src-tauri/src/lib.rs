@@ -20,9 +20,14 @@ use crate::core::models::RlEvent;
 use crate::core::obs_text;
 use crate::core::overlay::OverlayServer;
 use crate::core::process_watcher::ProcessWatcher;
-use crate::core::profiles::{get_db_path_for_profile, init_profiles};
+use crate::core::profiles::{
+    find_matching_profile, get_active_profile, get_db_path_for_profile, init_profiles,
+    update_profile_player_identity,
+};
 use crate::core::rlstats_api::RlstatsClient;
-use crate::core::session::{MatchPhase, SessionManager};
+use crate::core::session::{
+    resolve_local_player_identity, MatchPhase, PersistResult, SessionManager,
+};
 use crate::core::settings::{get_settings, set_settings};
 use crate::core::storage::{init_storage, DbPool};
 use crate::core::tracker_api::TrackerClient;
@@ -120,6 +125,8 @@ pub fn run() {
             commands::profiles::delete_profile_cmd,
             commands::profiles::switch_profile_cmd,
             commands::profiles::rename_profile_cmd,
+            commands::profiles::find_matching_profile_cmd,
+            commands::profiles::update_profile_player_identity_cmd,
             commands::friends::add_friend_cmd,
             commands::friends::remove_friend_cmd,
             commands::friends::get_friends_cmd,
@@ -380,6 +387,16 @@ async fn process_events(
     let mut session_streak: i32 = 0;
     let mut last_was_win: Option<bool> = None;
 
+    struct MismatchState {
+        alerted: bool,
+        last_detected_id: Option<String>,
+    }
+
+    let mut mismatch_state = MismatchState {
+        alerted: false,
+        last_detected_id: None,
+    };
+
     while let Some(event) = ingestor.event_rx.recv().await {
         let mut session = session_manager.write().await;
         let was_finished = session.phase() == &MatchPhase::Finished;
@@ -390,6 +407,8 @@ async fn process_events(
                 session_losses = 0;
                 session_streak = 0;
                 last_was_win = None;
+                mismatch_state.alerted = false;
+                mismatch_state.last_detected_id = None;
                 obs_text::update_obs_files(0, 0, "");
 
                 let _ = app_handle.emit(
@@ -425,6 +444,47 @@ async fn process_events(
                     server.broadcast_state(&live_data);
                 }
             };
+
+            // Account mismatch detection
+            let settings = get_settings(&db_pool).unwrap_or_default();
+            let local_identity =
+                resolve_local_player_identity(session.players().values(), &settings);
+
+            if let Some((detected_pid, _detected_team)) = &local_identity {
+                let current_profile_pid = settings.local_primary_id.as_deref();
+                let is_mismatch = match current_profile_pid {
+                    Some(current_pid) => current_pid != detected_pid.as_str(),
+                    None => true,
+                };
+
+                if is_mismatch && !mismatch_state.alerted {
+                    let detected_player_name = session
+                        .players()
+                        .iter()
+                        .find(|(id, _)| *id == detected_pid)
+                        .map(|(_, lp)| lp.name.clone())
+                        .unwrap_or_default();
+
+                    let mut payload = serde_json::json!({
+                        "detected_primary_id": detected_pid,
+                        "detected_player_name": detected_player_name,
+                        "current_profile_id": settings.local_primary_id.clone().unwrap_or_default(),
+                        "current_profile_name": settings.player_name.clone(),
+                    });
+
+                    let app_dir = app_handle.path().app_data_dir().unwrap_or_default();
+                    if let Ok(Some(profile)) =
+                        find_matching_profile(&app_dir, detected_pid, &detected_player_name)
+                    {
+                        payload["matched_profile_id"] = serde_json::json!(profile.id);
+                        payload["matched_profile_name"] = serde_json::json!(profile.name);
+                    }
+
+                    let _ = app_handle.emit("account-mismatch", payload);
+                    mismatch_state.alerted = true;
+                    mismatch_state.last_detected_id = Some(detected_pid.clone());
+                }
+            }
         }
 
         let is_finished = session.phase() == &MatchPhase::Finished;
@@ -435,7 +495,12 @@ async fn process_events(
             let mut session = session_manager.write().await;
             if session.phase() == &MatchPhase::Finished {
                 match session.persist_finished_match(&db_pool) {
-                    Ok(summary) => {
+                    Ok(result) => {
+                        let PersistResult {
+                            summary,
+                            detected_primary_id,
+                            detected_player_name,
+                        } = result;
                         info!(guid = %summary.match_guid, "Match persisted");
 
                         if let Some(winner) = summary.winner {
@@ -477,6 +542,23 @@ async fn process_events(
                         session.handle_event(RlEvent::MatchDestroyed);
                         let final_state = session.live_state();
                         let _ = app_handle.emit("live-update", final_state);
+
+                        // Sync detected identity to profile manifest
+                        if let (Some(pid), Some(pname)) =
+                            (detected_primary_id, detected_player_name)
+                        {
+                            if !pid.is_empty() {
+                                let app_dir = app_handle.path().app_data_dir().unwrap_or_default();
+                                if let Ok(manifest) = get_active_profile(&app_dir) {
+                                    let _ = update_profile_player_identity(
+                                        &app_dir,
+                                        &manifest.id,
+                                        &pid,
+                                        &pname,
+                                    );
+                                }
+                            }
+                        }
                     }
                     Err(e) => {
                         tracing::error!(error = %e, "Failed to persist match");

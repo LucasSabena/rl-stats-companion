@@ -65,5 +65,13 @@
       "newName": "New name",
       "emptyError": "The name cannot be empty."
     }
+  },
+  "accountMismatch": {
+    "title": "Account mismatch",
+    "detected": "Detected <bold>{{name}}</bold> playing",
+    "currentProfile": "Your active profile is <bold>{{profile}}</bold>",
+    "switchTo": "Switch to {{profile}}",
+    "associate": "Associate {{name}} with this profile",
+    "dismiss": "Dismiss"
   }
 }

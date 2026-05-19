@@ -422,7 +422,7 @@ function mapSummaryToAnalyticsData(
   };
 }
 
-async function invokeCommand<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+export async function invokeCommand<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   try {
     return await invoke<T>(command, args);
   } catch (error) {
@@ -873,6 +873,10 @@ export async function switchProfile(id: string): Promise<void> {
 
 export async function renameProfile(id: string, newName: string): Promise<void> {
   return invokeCommand<void>("rename_profile_cmd", { id, new_name: newName });
+}
+
+export async function updateProfilePlayerIdentity(profileId: string, primaryId: string, playerName: string): Promise<void> {
+  return invokeCommand<void>("update_profile_player_identity_cmd", { profileId, primaryId, playerName });
 }
 
 // ─── Friends ─────────────────────────────────────────────────────────────────

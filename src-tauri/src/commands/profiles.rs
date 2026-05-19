@@ -1,6 +1,7 @@
 use crate::core::profiles::{
-    create_profile, delete_profile, get_active_profile, get_db_path_for_profile, list_profiles,
-    rename_profile, switch_profile, Profile,
+    create_profile, delete_profile, find_matching_profile, get_active_profile,
+    get_db_path_for_profile, list_profiles, rename_profile, switch_profile,
+    update_profile_player_identity, Profile,
 };
 use crate::core::settings::{set_settings, AppSettings};
 use crate::core::storage::init_storage;
@@ -74,4 +75,25 @@ pub async fn rename_profile_cmd(
     rename_profile(&app_dir, &id, &new_name)?;
     info!(profile_id = %id, new_name = %new_name, "Renamed profile");
     Ok(())
+}
+
+#[tauri::command]
+pub async fn find_matching_profile_cmd(
+    primary_id: String,
+    player_name: String,
+    app_handle: tauri::AppHandle,
+) -> AppResult<Option<Profile>> {
+    let app_dir = app_data_dir(&app_handle)?;
+    find_matching_profile(&app_dir, &primary_id, &player_name)
+}
+
+#[tauri::command]
+pub async fn update_profile_player_identity_cmd(
+    profile_id: String,
+    primary_id: String,
+    player_name: String,
+    app_handle: tauri::AppHandle,
+) -> AppResult<()> {
+    let app_dir = app_data_dir(&app_handle)?;
+    update_profile_player_identity(&app_dir, &profile_id, &primary_id, &player_name)
 }
