@@ -1,5 +1,58 @@
 # Changelog
 
+## v1.8.0 — Account Mismatch Detection & Profile Identity Binding
+
+### Features
+
+**Account Mismatch Detection System**
+- Durante una partida en vivo, la app detecta automáticamente el `primary_id` del jugador local comparando los jugadores del lobby con la identidad guardada en el perfil activo.
+- Si el jugador detectado **no coincide** con el perfil activo, se emite un evento `account-mismatch` al frontend.
+- El diálogo de mismatch muestra:
+  - Nombre del jugador detectado vs perfil actual.
+  - Botón para **cambiar al perfil coincidente** si existe un match previo.
+  - Botón para **asociar la identidad detectada al perfil actual**.
+  - Botón para **descartar** (ignorar hasta la próxima partida).
+
+**Profile Identity Binding**
+- `Profile` struct (Rust) ahora tiene `player_name` y `local_primary_id` opcionales.
+- `find_matching_profile()`: busca un perfil cuya identidad coincida con un `primary_id` o `player_name`.
+- `update_profile_player_identity()`: vincula un `primary_id` + `player_name` a un perfil existente.
+- Al finalizar una partida, si se detecta una nueva identidad, se guarda automáticamente en `AppSettings` del perfil actual.
+
+**Nuevos Commands (Tauri IPC)**
+- `find_matching_profile_cmd` — busca perfil por identidad de jugador.
+- `update_profile_player_identity_cmd` — actualiza identidad de un perfil.
+
+### Frontend
+- **`AccountMismatchDialog`**: modal global (renderizado en `App.tsx`) que responde al evento `account-mismatch`.
+- **`useAccountMismatch`** hook: escucha evento `account-mismatch`, popula `accountMismatchStore`.
+- **`accountMismatchStore`** (Zustand): gestiona estado del diálogo y datos del mismatch.
+- **`api.ts`**: agregados `findMatchingProfile` y `updateProfilePlayerIdentity`.
+
+### Backend
+- **`lib.rs` — `process_events` loop**:
+  - Detecta mismatch en cada `UpdateState` (solo cuando el lobby tiene jugadores).
+  - Estado `MismatchState` para evitar alertas repetidas dentro de la misma partida.
+  - Al persistir partida finalizada, extrae `detected_primary_id` y `detected_player_name`.
+  - Auto-guarda identidad en settings si cambió respecto al valor previo.
+- **`session/mod.rs`**:
+  - `resolve_local_player_identity()` helper para detectar jugador local.
+  - `persist_finished_match()` ahora retorna `PersistResult` con identidad detectada.
+
+### i18n
+- Nuevas keys en `profiles.json` (ES/EN/PT):
+  - `accountMismatch.title`
+  - `accountMismatch.detected`
+  - `accountMismatch.currentProfile`
+  - `accountMismatch.switchTo`
+  - `accountMismatch.associate`
+  - `accountMismatch.dismiss`
+
+### TODO / Future
+- Persistir estado de mismatch a través de reinicios de app.
+- Opción "no preguntar de nuevo" / "recordar mi elección" por perfil.
+- Auto-cambio de perfil sin diálogo si la confianza es alta.
+
 ## v1.7.3 — MMR Error Handling, Overlay Error Propagation & Settings Fix
 
 ### Features
